@@ -130,9 +130,9 @@ def flx_rest_frame(plate, mjd, fiberid, run2d, z, dbPath):
     """
     # Path to the .fits file of the target spectrum
     fname = f'spec-{plate:04}-{mjd}-{fiberid:04}.fits'
-    SDSSpath = f'/sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate:04}/'
-    dir_path = f'/{dbPath}/{SDSSpath}'
-    dest = f'{dir_path}/{fname}'
+    SDSSpath = f'{working_dir}/data/raw_data/\
+        dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate:04}'
+    dest = f'{SDSSpath}/{fname}'
 
 
     if not(os.path.exists(dest)):

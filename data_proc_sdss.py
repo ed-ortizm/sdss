@@ -26,7 +26,7 @@ gs_n = gs[:n_obs]
 gs_n.index = np.arange(n_obs)
 get_spectra(gs_n, working_dir)
 
-fnames = glob(f'{working_dir}/data/data_proc/*_wave_master.npy')
+fnames = glob(f'{working_dir}/data/data_proc/*_wave_.npy')
 
 proc_spec(fnames[:])
 
