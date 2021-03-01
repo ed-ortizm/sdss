@@ -13,15 +13,17 @@ from functools import partial
 import matplotlib
 import matplotlib.pyplot as plt
 
-from constants_AEs import m_wl
+from constants_sdss import wave_master
 ## Me
-
+################################################################################
+working_dir = '/home/edgar/zorro/SDSSdata'
+################################################################################
 def proc_spec(fnames):
 
     print('Processing all spectra')
 
     N = len(fnames)
-    spec = np.empty((N, m_wl.size))
+    spec = np.empty((N, wave_master.size))
 
     for idx, fname in enumerate(fnames[:N]):
         print(f'Processing spectra N° {idx+1} --> {fname}', end='\r')
@@ -34,6 +36,7 @@ def proc_spec(fnames):
     wkeep = np.where(np.count_nonzero(~np.isfinite(spec), axis=0) < spec.shape[0] / 10)
 # Removing one dimensional axis since wkeep is a tuple
     spec = np.squeeze(spec[:, wkeep])
+    wave_master = np.squeeze(spec[:, wkeep])
 
     print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
 
@@ -49,6 +52,7 @@ def proc_spec(fnames):
 
 
     np.save(f'spec_{N}.npy', spec)
+    np.save(f'wave_master.npy', wave_master)
 
 def get_spectra(gs, dbPath):
     """
@@ -60,7 +64,7 @@ def get_spectra(gs, dbPath):
 
     Returns
     -------
-    m_wl_grid : numpy array 1-D : The master wavelength grid
+    wave_master_grid : numpy array 1-D : The master wavelength grid
     flxs :  numpy array 2-D : Interpolated spectra over the grid
     """
 
@@ -129,7 +133,6 @@ def flx_rest_frame(plate, mjd, fiberid, run2d, z, dbPath):
     SDSSpath = f'/sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate:04}/'
     dir_path = f'/{dbPath}/{SDSSpath}'
     dest = f'{dir_path}/{fname}'
-    save2 = '/home/edgar/zorro/SDSSdata/data_proc'
 
 
     if not(os.path.exists(dest)):
@@ -144,34 +147,8 @@ def flx_rest_frame(plate, mjd, fiberid, run2d, z, dbPath):
     # Deredshifting & min & max
     z_factor = 1./(1. + z)
     wl_rg *= z_factor
-    flx = np.interp(m_wl, wl_rg, flx, left=np.nan, right=np.nan)
+    flx = np.interp(wave_master, wl_rg, flx, left=np.nan, right=np.nan)
 
-    np.save(f'{save2}/{fname.split(".")[0]}.npy', flx)
-
-def plt_spec_pca(flx,pca_flx,componets):
-    '''Comparative plot to see how efficient is the PCA compression'''
-    plt.figure(figsize=(8,4));
-
-    # Original Image
-    plt.subplot(1, 2, 1);
-    plt.plot(flx)
-    plt.xlabel(f'{flx.size} components', fontsize = 14)
-    plt.title('Original Spectra', fontsize = 20)
-
-    # principal components
-    plt.subplot(1, 2, 2);
-    plt.plot(pca_flx)
-    plt.xlabel(f'{componets} componets', fontsize = 14)
-    plt.title('Reconstructed spectra', fontsize = 20)
-    plt.show()
-    plt.close()
-
-def plot_2D(data, title):
-    fig = plt.figure()
-    plt.title(title)
-    plt.plot(data[:,0], data[:, 1], "b.")
-    plt.xlabel("$z_1$", fontsize=18)
-    plt.ylabel("$z_2$", fontsize=18, rotation=0)
-    plt.savefig(f'{title}.png')
-    plt.show()
-    plt.close()
+    np.save(
+        f'{working_dir}/data/data_proc/{fname.split(".")[0]}_wave_master.npy',
+        flx)
