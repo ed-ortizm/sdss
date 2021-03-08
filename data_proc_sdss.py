@@ -9,7 +9,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 from constants_sdss import science_arxive_server_path, spectra_path
-from proc_sdss_lib import get_spectra, proc_spec
+from proc_sdss_lib import DownloadData, get_spectra, proc_spec
 ################################################################################
 working_directory = '/home/edgar/zorro/spectra_sdss'
 ################################################################################
@@ -19,7 +19,7 @@ ti = time()
 gs = pd.read_csv(f'{spectra_path}/gals_DR16.csv')
 
 # Use z_noqso if possible
-gs.z = np.where(gs.z.ne(0), gs.z_noqso, gs.z)
+gs.z = np.where(gs.z_noqso.ne(0), gs.z_noqso, gs.z)
 #gs['z'] = [row['z_noqso'] if row['z_noqso']!=0 else row['z'] for i, row in gs.iterrows()]
 #gs['test'] = [row['z_noqso'] if row['z_noqso']!=0 else row['z'] for i, row in gs.iterrows()]
 #n = np.count_nonzero(np.where(gs.z==gs.test, True, False))
@@ -28,15 +28,16 @@ gs = gs[gs.z > 0.01]
 gs.index = np.arange(len(gs))
 #
 # # Choose the top n_obs median SNR objects
-n_obs = 100_000
-gs = gs[:n_obs]
-#
-# # Create links to their summary on the skyserver - it would be useful later
-gs['url'] = [
-    'http://skyserver.sdss.org/dr14/en/tools/explore/summary.aspx?plate=' +
-    str(row['plate']).zfill(4) + '&mjd=' + str(row['mjd']) + '&fiber=' +
-    str(row['fiberid']).zfill(4) for i, row in gs.iterrows()]
-# ################################################################################
+n_obs = -1
+
+if n_obs != -1:
+    gs = gs[:n_obs]
+
+# Data Download
+
+download_spectra = DownloadData(
+    files_data_frame=gs, download_path=spectra_path, n_processes=50)
+
 # # Data processing
 #
 # ## Loading DataFrame with the data of the galaxies
@@ -45,7 +46,7 @@ gs['url'] = [
 #
 #
 # gs_n.index = np.arange(n_obs)
-get_spectra(gs, spectra_path)
+# get_spectra(gs, spectra_path)
 #
 #fnames = glob(f'{working_dir}/data/data_proc/*_wave_.npy')
 #
