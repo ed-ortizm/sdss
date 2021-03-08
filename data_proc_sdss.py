@@ -32,7 +32,10 @@ n_obs = 100_000
 gs = gs[:n_obs]
 #
 # # Create links to their summary on the skyserver - it would be useful later
-gs['url'] = ['http://skyserver.sdss.org/dr14/en/tools/explore/summary.aspx?plate=' + str(row['plate']).zfill(4) + '&mjd=' + str(row['mjd']) + '&fiber=' + str(row['fiberid']).zfill(4) for i, row in gs.iterrows()]
+gs['url'] = [
+    'http://skyserver.sdss.org/dr14/en/tools/explore/summary.aspx?plate=' +
+    str(row['plate']).zfill(4) + '&mjd=' + str(row['mjd']) + '&fiber=' +
+    str(row['fiberid']).zfill(4) for i, row in gs.iterrows()]
 # ################################################################################
 # # Data processing
 #

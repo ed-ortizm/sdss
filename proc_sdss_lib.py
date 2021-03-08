@@ -14,9 +14,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 from constants_sdss import wave_master
+from constants_sdss import working_dir, science_arxive_server_path
+from constants_sdss import processed_spectra_path, spectra_path
 ## Me
-################################################################################
-working_dir = '/home/edgar/zorro/SDSSdata'
 ################################################################################
 def proc_spec(fnames):
 
@@ -130,7 +130,7 @@ def flx_rest_frame(plate, mjd, fiberid, run2d, z, dbPath):
     """
     # Path to the .fits file of the target spectrum
     fname = f'spec-{plate:04}-{mjd}-{fiberid:04}.fits'
-    SDSSpath = f'{working_dir}/data/raw_data/\
+    SDSSpath = f'{science_arxive_server_path}\
         dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate:04}'
     dest = f'{SDSSpath}/{fname}'
 
@@ -150,5 +150,5 @@ def flx_rest_frame(plate, mjd, fiberid, run2d, z, dbPath):
     flx = np.interp(wave_master, wl_rg, flx, left=np.nan, right=np.nan)
 
     np.save(
-        f'{working_dir}/data/data_proc/{fname.split(".")[0]}_wave_master.npy',
+        f'{spectra_path}/{fname.split(".")[0]}_wave_master.npy',
         flx)
