@@ -18,6 +18,7 @@ from constants_sdss import working_dir, science_arxive_server_path
 from constants_sdss import processed_spectra_path, spectra_path
 ################################################################################
 class DownloadData:
+
     def __init__(self, files_data_frame, download_path, n_processes):
         """
         files_data_frame: Pandas DataFrame with all the imformation of the sdss
@@ -31,7 +32,7 @@ class DownloadData:
 
     def get_files(self):
 
-        print(f'*** Getting {len(gs)} fits files ****')
+        print(f'*** Getting {len(self.data_frame)} fits files ****')
         start_time_download = time.time()
 
         if not os.path.exists(self.download_path):
@@ -48,7 +49,7 @@ class DownloadData:
         print(f'Done! Finished downloading .fits files...')
         print(f'Failed to download {n_failed} files' )
         print(
-            f'Download tool {finish_time_download-start_time_download:.2s}[s]')
+            f'Download took {finish_time_download-start_time_download:.2s}[s]')
 
 
     def _get_file(self, idx_data_frame):
@@ -56,8 +57,9 @@ class DownloadData:
         object = self.data_frame.iloc[idx_data_frame]
         plate, mjd, fiberid, run2d = self._file_identifier(object)
 
-        fname = f'spec-{palte}-{mjd}-{fiberid}.fits'
-        SDSSpath = f'sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{palte}'
+        fname = f'spec-{plate}-{mjd}-{fiberid}.fits'
+
+        SDSSpath = f'sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate}'
         folder_path = f'{self.download_path}/{SDSSpath}'
 
         url =\
@@ -68,17 +70,32 @@ class DownloadData:
 
         self._retrieve_url(url, folder_path, fname)
 
+# Try & Except a failed Download
+
+        try:
+            self._retrieve_url(url, folder_path, fname)
+            return 0
+
+        except Exception as e:
+
+            print(f'Failed : {url}') 
+
+            print(f'{e}')
+            return 1
 
     def _retrieve_url(self, url, folder_path, fname):
 
+        print(f'Downloading {fname}')
+
         if not(os.path.isfile(f'{folder_path}/{fname}')):
-            urllib.urlretrieve(url, f'{folder_path}/{fname}')
+            urllib.request.urlretrieve(url, f'{folder_path}/{fname}')
+            print(f'Downloading {fname}')
 
         j = 0
 
-        while j < 10 and (os.path.getsize(dest) < 60000):
+        while j < 10 and (os.path.getsize(f'{folder_path}/{fname}') < 60000):
             os.remove(f'{folder_path}/{fname}')
-            urllib.urlretrieve(url, f'{folder_path}/{fname}')
+            urllib.request.urlretrieve(url, f'{folder_path}/{fname}')
             j += 1
             time.sleep(1)
 
@@ -90,11 +107,11 @@ class DownloadData:
 
     def _file_identifier(self, object):
 
-        palte = f"{object['plate']:04}"
-        mjd = f"object['mjd']
+        plate = f"{object['plate']:04}"
+        mjd = f"{object['mjd']}"
         mjd = f"{object['mjd']}"
         fiberid = f"{object['fiberid']:04}"
-        run2d = {object['run2d']}
+        run2d = f"{object['run2d']}"
 
         return plate, mjd, fiberid, run2d
 

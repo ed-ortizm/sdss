@@ -9,7 +9,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 from constants_sdss import science_arxive_server_path, spectra_path
-from proc_sdss_lib import DownloadData, get_spectra, proc_spec
+from proc_sdss_lib import DownloadData #, get_spectra, proc_spec
 ################################################################################
 working_directory = '/home/edgar/zorro/spectra_sdss'
 ################################################################################
@@ -38,6 +38,7 @@ if n_obs != -1:
 download_spectra = DownloadData(
     files_data_frame=gs, download_path=spectra_path, n_processes=50)
 
+download_spectra.get_files()
 # # Data processing
 #
 # ## Loading DataFrame with the data of the galaxies
