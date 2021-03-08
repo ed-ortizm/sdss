@@ -8,6 +8,7 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 
+from constants_sdss import science_arxive_server_path, spectra_data_path
 from proc_sdss_lib import get_spectra, proc_spec
 ################################################################################
 working_directory = '/home/edgar/zorro/SDSSdata'
@@ -15,14 +16,15 @@ working_directory = '/home/edgar/zorro/SDSSdata'
 ti = time()
 ################################################################################
 # Sort by SNR
-gs = pd.read_csv(f'{working_dir}/data/gals_DR16.csv')
+gs = pd.read_csv(f'{spectra_data_path}/gals_DR16.csv')
 
 # Use z_noqso if possible
+gs.z = np.where(df.z.ne(0), gs.z_nqso, gs.z)
 gs['z'] = [row['z_noqso'] if row['z_noqso']!=0 else row['z'] for i, row in gs.iterrows()]
 
-# # Remove galaxies with redshift z<=0.01
-# gs = gs[gs.z > 0.01]
-# gs.index = np.arange(len(gs))
+# Remove galaxies with redshift z<=0.01
+gs = gs[gs.z > 0.01]
+gs.index = np.arange(len(gs))
 #
 # # Choose the top n_obs median SNR objects
 # n_obs = 1000
