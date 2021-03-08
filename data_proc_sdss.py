@@ -8,7 +8,7 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 
-from constants_sdss import science_arxive_server_path, spectra_data_path
+from constants_sdss import science_arxive_server_path, spectra_path
 from proc_sdss_lib import get_spectra, proc_spec
 ################################################################################
 working_directory = '/home/edgar/zorro/spectra_sdss'
@@ -16,7 +16,7 @@ working_directory = '/home/edgar/zorro/spectra_sdss'
 ti = time()
 ################################################################################
 # Sort by SNR
-gs = pd.read_csv(f'{spectra_data_path}/gals_DR16.csv')
+gs = pd.read_csv(f'{spectra_path}/gals_DR16.csv')
 
 # Use z_noqso if possible
 gs.z = np.where(gs.z.ne(0), gs.z_noqso, gs.z)
@@ -45,9 +45,9 @@ gs['url'] = [
 #
 #
 # gs_n.index = np.arange(n_obs)
-# get_spectra(gs_n, spectra_data_path)
+get_spectra(gs, spectra_path)
 #
-# fnames = glob(f'{working_dir}/data/data_proc/*_wave_.npy')
+#fnames = glob(f'{working_dir}/data/data_proc/*_wave_.npy')
 #
 # proc_spec(fnames[:])
 
