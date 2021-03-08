@@ -14,21 +14,41 @@ working_directory = '/home/edgar/zorro/SDSSdata'
 ################################################################################
 ti = time()
 ################################################################################
-# Data processing
+# Sort by SNR
+gs = pd.read_csv(f'{working_dir}/data/gals_DR16.csv')
 
-## Loading DataFrame with the data of the galaxies
-# um I don't have SN_median sorted, got to get it
-gs = pd.read_csv(f'{working_dir}/data/gs_SN_median_sorted.csv')
+# Use z_noqso if possible
+gs['z'] = [row['z_noqso'] if row['z_noqso']!=0 else row['z'] for i, row in gs.iterrows()]
 
-
-n_obs = 100_000 # 3188712
-gs_n = gs[:n_obs]
-gs_n.index = np.arange(n_obs)
-get_spectra(gs_n, working_dir)
-
-fnames = glob(f'{working_dir}/data/data_proc/*_wave_.npy')
-
-proc_spec(fnames[:])
+# # Remove galaxies with redshift z<=0.01
+# gs = gs[gs.z > 0.01]
+# gs.index = np.arange(len(gs))
+#
+# # Choose the top n_obs median SNR objects
+# n_obs = 1000
+# gs = gs[:n_obs]
+#
+# # Create links to their summary on the skyserver - it would be useful later
+# gs['url'] = ['http://skyserver.sdss.org/dr14/en/tools/explore/summary.aspx?plate=' + str(row['plate']).zfill(4) + '&mjd=' + str(row['mjd']) + '&fiber=' + str(row['fiberid']).zfill(4) for i, row in gs.iterrows()]
+#
+# # Show DataFrame's head
+# gs.head().style.format({'url': make_clickable})
+# ################################################################################
+# # Data processing
+#
+# ## Loading DataFrame with the data of the galaxies
+# # um I don't have SN_median sorted, got to get it
+# gs = pd.read_csv(f'{working_dir}/data/gs_SN_median_sorted.csv')
+#
+#
+# n_obs = 100_000 # 3188712
+# gs_n = gs[:n_obs]
+# gs_n.index = np.arange(n_obs)
+# get_spectra(gs_n, working_dir)
+#
+# fnames = glob(f'{working_dir}/data/data_proc/*_wave_.npy')
+#
+# proc_spec(fnames[:])
 
 
 tf = time()
