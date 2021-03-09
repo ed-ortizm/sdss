@@ -88,26 +88,29 @@ class DownloadData:
         if not(os.path.isfile(f'{folder_path}/{fname}')):
 
             print(f'Downloading {fname}')
+
             urllib.request.urlretrieve(url, f'{folder_path}/{fname}')
+
+            file_size = os.path.getsize(f'{folder_path}/{fname}')
+
+            j = 0
+
+            while j < 10 and (file_size < 60000):
+
+                os.remove(f'{folder_path}/{fname}')
+                urllib.request.urlretrieve(url, f'{folder_path}/{fname}')
+                j += 1
+                time.sleep(1)
+
+            file_size = os.path.getsize(f'{folder_path}/{fname}')
+
+            if file_size < 60000:
+                print(f"Size of {fname}: {file_size}... Removing file!!")
+                os.remove(f'{folder_path}/{fname}')
+                raise Exception('Spectra wasn\'t found')
+
         else:
             print(f'{fname} already downloaded!!')
-
-        file_size = os.path.getsize(f'{folder_path}/{fname}')
-
-        j = 0
-
-        while j < 10 and (file_size < 60000):
-            os.remove(f'{folder_path}/{fname}')
-            urllib.request.urlretrieve(url, f'{folder_path}/{fname}')
-            j += 1
-            time.sleep(1)
-
-        file_size = os.path.getsize(f'{folder_path}/{fname}')
-
-        if file_size < 60000:
-            print(f"Size of {fname}: {file_size}... Removing file!!")
-            os.remove(f'{folder_path}/{fname}')
-            raise Exception('Spectra wasn\'t found')
 
 
     def _file_identifier(self, object):
