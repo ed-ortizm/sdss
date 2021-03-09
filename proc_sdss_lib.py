@@ -74,32 +74,37 @@ class DownloadData:
 
         try:
             self._retrieve_url(url, folder_path, fname)
+            print(f'returning 0')
             return 0
 
         except Exception as e:
 
             print(f'Failed : {url}') 
 
+            print(f'returning 1')
             print(f'{e}')
             return 1
 
     def _retrieve_url(self, url, folder_path, fname):
 
-        print(f'Downloading {fname}')
-
         if not(os.path.isfile(f'{folder_path}/{fname}')):
-            urllib.request.urlretrieve(url, f'{folder_path}/{fname}')
+
             print(f'Downloading {fname}')
+            urllib.request.urlretrieve(url, f'{folder_path}/{fname}')
+
+        file_size = os.path.getsize(f'{folder_path}/{fname}')
 
         j = 0
 
-        while j < 10 and (os.path.getsize(f'{folder_path}/{fname}') < 60000):
+        while j < 10 and (file_size < 60000):
             os.remove(f'{folder_path}/{fname}')
             urllib.request.urlretrieve(url, f'{folder_path}/{fname}')
             j += 1
             time.sleep(1)
 
-        if (os.path.getsize(f'{folder_path}/{fname}') < 60000):
+        file_size = os.path.getsize(f'{folder_path}/{fname}')
+
+        if file_size < 60000:
             print(f"Size is: {os.path.getsize(f'{folder_path}/{fname}')}")
             os.remove(f'{folder_path}/{fname}')
             raise Exception('Spectra wasn\'t found')
