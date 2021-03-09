@@ -68,8 +68,6 @@ class DownloadData:
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
-        self._retrieve_url(url, folder_path, fname)
-
 # Try & Except a failed Download
 
         try:
@@ -91,6 +89,8 @@ class DownloadData:
 
             print(f'Downloading {fname}')
             urllib.request.urlretrieve(url, f'{folder_path}/{fname}')
+        else:
+            print(f'{fname} already downloaded!!')
 
         file_size = os.path.getsize(f'{folder_path}/{fname}')
 
@@ -105,7 +105,7 @@ class DownloadData:
         file_size = os.path.getsize(f'{folder_path}/{fname}')
 
         if file_size < 60000:
-            print(f"Size is: {os.path.getsize(f'{folder_path}/{fname}')}")
+            print(f"Size of {fname}: {file_size}... Removing file!!")
             os.remove(f'{folder_path}/{fname}')
             raise Exception('Spectra wasn\'t found')
 
