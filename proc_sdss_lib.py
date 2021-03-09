@@ -63,7 +63,7 @@ class DownloadData:
         folder_path = f'{self.download_path}/{SDSSpath}'
 
         url =\
-        f'https://dr16.sdss.org/sas/dr16/sdss/spectro/redux/{SDSSpath}/{fname}'
+        f'https://data.sdss.org/{SDSSpath}/{fname}'
 
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
@@ -79,7 +79,7 @@ class DownloadData:
 
         except Exception as e:
 
-            print(f'Failed : {url}') 
+            print(f'Failed : {url}')
 
             print(f'returning 1')
             print(f'{e}')
