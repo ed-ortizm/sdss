@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 
-from constants_sdss import wave_master
+from constants_sdss import n_waves
 from constants_sdss import working_dir, science_arxive_server_path
 from constants_sdss import processed_spectra_path, spectra_path
 ################################################################################
@@ -122,9 +122,42 @@ class DownloadData:
         run2d = f"{object['run2d']}"
 
         return plate, mjd, fiberid, run2d
-
 ################################################################################
+class ProcessingData:
 
+    def __init__(self, fnames -> list, SN_threshold -> float):
+
+        self.fnames = fnames
+        self.n_spectra = len(self.fnames)
+        self.spectra = np.empty((self.n_spectra, n_waves))
+
+        self.SN_threshold = SN_threshold
+        self.SN_array = np.empty(slef.n_spectra)
+
+    def processing_spectra(self):
+
+        for idx, fname in enumerate(self.fnames[:self.SN_threshold]):
+
+            SN = fname.split('SN_')[-1].split('.')[0]
+            SN = float(SN)
+            self.SN_array[idx] = SN
+
+            print(f'Processing spectra N° {idx} --> {fname}', end='\r')
+            self.spectra[idx, :] = np.load(fname)
+
+        self._sort_SN()
+
+        return self.spectra
+
+    def _sort_SN(self):
+
+        ids_sort_SN = np.argsort(self.SN_array)
+
+        self.spectra[:, :] = self.spectra[ids_sort_SN, :]
+
+
+    def _indefinite_values_handler(self):
+        pass
 ################################################################################
 # def proc_spec(fnames):
 #

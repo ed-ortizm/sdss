@@ -1,7 +1,7 @@
 import numpy as np
 
-n_wave = 4_001
-wave_master = np.linspace(3_500, 7_500, n_wave)
+n_waves = 4_001
+wave_master = np.linspace(3_500, 7_500, n_waves)
 
 working_dir = '/home/edgar/oso/spectra_data_curation'
 spectra_path = '/home/edgar/oso/sdss_data/spectra'

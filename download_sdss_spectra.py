@@ -1,17 +1,13 @@
 #! /usr/bin/env python3
-from glob import glob
-import os
 from time import time
 
 import numpy as np
 import pandas as pd
-import matplotlib
-import matplotlib.pyplot as plt
 
-from constants_sdss import science_arxive_server_path, spectra_path
+from constants_sdss import spectra_path
 from lib_processing_sdss import DownloadData
 ################################################################################
-ti = time()
+ti = time.time()
 ################################################################################
 # Sort by SNR
 gs = pd.read_csv(f'{spectra_path}/gals_DR16.csv')
@@ -37,21 +33,8 @@ download_spectra = DownloadData(
     files_data_frame=gs, download_path=spectra_path, n_processes=60)
 
 download_spectra.get_files()
-# # Data processing
-#
-# ## Loading DataFrame with the data of the galaxies
-# # um I don't have SN_median sorted, got to get it
-# gs = pd.read_csv(f'{working_dir}/data/gs_SN_median_sorted.csv')
-#
-#
-# gs_n.index = np.arange(n_obs)
-# get_spectra(gs, spectra_path)
-#
-#fnames = glob(f'{working_dir}/data/data_proc/*_wave_.npy')
-#
-# proc_spec(fnames[:])
 
-
-tf = time()
+################################################################################
+tf = time.time()
 
 print(f'Running time: {tf-ti:.2f} [seg]')
