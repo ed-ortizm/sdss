@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 
-from constants_sdss import n_waves
+from constants_sdss import n_waves, wave_master
 from constants_sdss import working_dir, science_arxive_server_path
 from constants_sdss import processed_spectra_path, spectra_path
 ################################################################################
@@ -68,7 +68,7 @@ class DownloadData:
         if not os.path.exists(folder_path):
             os.makedirs(folder_path, exist_ok=True)
 
-# Try & Except a failed Download
+        # Try & Except a failed Download
 
         try:
             self._retrieve_url(url, folder_path, fname)
@@ -117,7 +117,6 @@ class DownloadData:
 
         plate = f"{object['plate']:04}"
         mjd = f"{object['mjd']}"
-        mjd = f"{object['mjd']}"
         fiberid = f"{object['fiberid']:04}"
         run2d = f"{object['run2d']}"
 
@@ -125,39 +124,113 @@ class DownloadData:
 ################################################################################
 class DataProcessing:
 
-    def __init__(self, fnames: list, SN_threshold: float):
+    def __init__(self, galaxies_df: PandasDataFrame, n_processes: int): #fnames: list, SN_threshold: float):
 
-        self.fnames = fnames
-        self.n_spectra = len(self.fnames)
-        self.spectra = np.empty((self.n_spectra, n_waves))
+        self.galaxies_df = galaxies_df
+        self.n_processes = n_processes
 
-        self.SN_threshold = SN_threshold
-        self.SN_array = np.empty(slef.n_spectra)
+        self.raw_spectra_path = f'{spectra_path}/raw_spectra'
+        if not os.path.exists(self.raw_spectra_path):
+            os.makedirs(self.raw_spectra_path, exist_ok=True)
 
-    def processing_spectra(self):
+        self.interpolated_spectra_path = f'{spectra_path}/interpolated_spectra'
+        if not os.path.exists(self.interpolated_spectra_path):
+            os.makedirs(self.interpolated_spectra_path, exist_ok=True)
 
-        for idx, fname in enumerate(self.fnames[:self.SN_threshold]):
+        self.processed_spectra_path = f'{spectra_path}/processed_spectra'
+        if not os.path.exists(self.processed_spectra_path):
+            os.makedirs(self.processed_spectra_path, exist_ok=True)
 
-            SN = fname.split('SN_')[-1].split('.')[0]
-            SN = float(SN)
-            self.SN_array[idx] = SN
+    def get_fluxes_SN(self):
 
-            print(f'Processing spectra N° {idx} --> {fname}', end='\r')
-            self.spectra[idx, :] = np.load(fname)
+        print(f'Saving fluxes and SN to {self.raw_spectra_path}')
 
-        self._sort_SN()
+        params = range(len(self.galaxies_df))
 
-        return self.spectra
+        with mp.Pool(processes=self.n_processes) as pool:
+            res = pool.map(self._get_flux_SN, params)
+            n_failed = sum(res)
 
-    def _sort_SN(self):
+        print(f'Fluxes and SN saved in {self.raw_spectra_path}')
+        print(f'Failed to save {n_failed}')
 
-        ids_sort_SN = np.argsort(self.SN_array)
+    def _get_flux_SN(self, idx_galaxy: int):
 
-        self.spectra[:, :] = self.spectra[ids_sort_SN, :]
+        galaxy_fits_path, fname = self._galaxy_fits_path(idx_galaxy)
+
+        if not os.path.exists(galaxy_fits_path):
+            print(f'{fname} not found')
+            return 0
+
+        wave, flux = self._rest_frame(idx_galaxy, galaxy_fits_path)
+
+        flux_interpolated = np.interp(wave_master, wave, flux, left=np.nan, right=np.nan)
+
+        np.save(f'{self.raw_spectra_path}/{fname}.npy',flux)
+        np.save(f'{self.interpolated_spectra_path}/{fname}.npy',flux)
+
+        return 1
+
+    def _rest_frame(self, idx_galaxy, galaxy_fits_path):
+
+        with pyfits.open(galaxy_fits_path) as hdul:
+            wave = 10. ** (hdul[1].data['loglam'])
+            flux = hdul[1].data['flux']
 
 
-    def _indefinite_values_handler(self):
-        pass
+        # Deredshifting & min & max
+        z = galaxy = self.galaxies_df.iloc[idx_galaxy]['z']
+        z_factor = 1./(1. + z)
+        wave *= z_factor
+
+        return wave, flux
+
+    def _galaxy_fits_path(self, idx_galaxy: int):
+
+        galaxy = self.galaxies_df.iloc[idx_galaxy]
+        plate, mjd, fiberid, run2d = self._galaxy_identifiers(galaxy)
+
+        fname = f'spec-{plate}-{mjd}-{fiberid}.fits'
+
+        SDSSpath = f'sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate}'
+        retrieve_path = f'{spectra_path}/{SDSSpath}'
+
+        return f'{retrieve_path}/{fname}', fname
+
+    def _galaxy_identifiers(self, galaxy):
+
+        plate = f"{galaxy['plate']:04}"
+        mjd = f"{galaxy['mjd']}"
+        fiberid = f"{galaxy['fiberid']:04}"
+        run2d = f"{galaxy['run2d']}"
+
+        return plate, mjd, fiberid, run2d
+
+    # def processing_spectra(self):
+    #
+    #     for idx, fname in enumerate(self.fnames[:self.SN_threshold]):
+    #
+    #         SN = fname.split('SN_')[-1].split('.')[0]
+    #         SN = float(SN)
+    #         self.SN_array[idx] = SN
+    #
+    #         print(f'Processing spectra N° {idx} --> {fname}', end='\r')
+    #         self.spectra[idx, :] = np.load(fname)
+    #
+    #     self._sort_SN()
+    #
+    #     return self.spectra
+    #
+    #
+    # def _sort_SN(self):
+    #
+    #     ids_sort_SN = np.argsort(self.SN_array)
+    #
+    #     self.spectra[:, :] = self.spectra[ids_sort_SN, :]
+    #
+    #
+    # def _indefinite_values_handler(self):
+    #     pass
 ################################################################################
 # def proc_spec(fnames):
 #
