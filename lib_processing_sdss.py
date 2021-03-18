@@ -49,7 +49,7 @@ class DownloadData:
         print(f'Done! Finished downloading .fits files...')
         print(f'Failed to download {n_failed} files' )
         print(
-            f'Download took {finish_time_download-start_time_download:.2s}[s]')
+            f'Download took {finish_time_download-start_time_download:.2f}[s]')
 
 
     def _get_file(self, idx_data_frame):
@@ -66,7 +66,7 @@ class DownloadData:
         f'https://data.sdss.org/{SDSSpath}/{fname}'
 
         if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
+            os.makedirs(folder_path, exist_ok=True)
 
 # Try & Except a failed Download
 
