@@ -123,9 +123,9 @@ class DownloadData:
 
         return plate, mjd, fiberid, run2d
 ################################################################################
-class ProcessingData:
+class DataProcessing:
 
-    def __init__(self, fnames -> list, SN_threshold -> float):
+    def __init__(self, fnames: list, SN_threshold: float):
 
         self.fnames = fnames
         self.n_spectra = len(self.fnames)
