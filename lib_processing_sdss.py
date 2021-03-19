@@ -142,33 +142,33 @@ class DataProcessing:
         if not os.path.exists(self.processed_spectra_path):
             os.makedirs(self.processed_spectra_path, exist_ok=True)
 
-    def indefinite_values_handler(self, spec: array):
+    # def indefinite_values_handler(self, spec: array):
+    #
+    #     n_indefinite = np.count_nonzero(~np.isfinite(spec))
+    #     print(f'Indfinite vals in the input array: {n_indefinite}')
+    #
+    #     print(f'Discarding spectra with more than 10% of indefininte values')
+    # # valunes in a given wl for al training set
+    #     wkeep = np.where(np.count_nonzero(~np.isfinite(spec), axis=0) < spec.shape[0] / 10)
+    # # Removing one dimensional axis since wkeep is a tuple
+    #     spec = np.squeeze(spec[:, wkeep])
+    #     wave_master = np.squeeze(spec[:, wkeep])
+    #
+    #     print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
+    #
+    # # Replacing indefinite values in a spectrum with its nan median
+    #     for flx in spec.T:
+    #         flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
+    #
+    #     print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
 
-        n_indefinite = np.count_nonzero(~np.isfinite(spec))
-        print(f'Indfinite vals in the input array: {n_indefinite}')
+    def sort_spec_SN(self, spectra: 'array'):
 
-        print(f'Discarding spectra with more than 10% of indefininte values')
-    # valunes in a given wl for al training set
-        wkeep = np.where(np.count_nonzero(~np.isfinite(spec), axis=0) < spec.shape[0] / 10)
-    # Removing one dimensional axis since wkeep is a tuple
-        spec = np.squeeze(spec[:, wkeep])
-        wave_master = np.squeeze(spec[:, wkeep])
+        SN_arg_sort = np.argsort(spectra[:, -1])
 
-        print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
+        return spectra[SN_arg_sort]
 
-    # Replacing indefinite values in a spectrum with its nan median
-        for flx in spec.T:
-            flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
-
-        print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
-
-    def sort_spec_SN(self, spec: array):
-
-        SN_arg_sort = np.argsort(spec[:, -1])
-
-        return spec(SN_arg_sort)
-
-    def spec_to_single_array(self, fnames: list):
+    def spec_to_single_array(self, fnames: 'list'):
 
         n_spec = len(fnames)
         self.spectra = np.empty((n_spec, n_waves))

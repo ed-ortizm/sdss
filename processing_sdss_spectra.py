@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 import glob
 import os
+import sys
 import time
 
 import numpy as np
@@ -11,6 +12,8 @@ import matplotlib.pyplot as plt
 from constants_sdss import spectra_path
 from lib_processing_sdss import DataProcessing
 
+################################################################################
+n_obs = int(sys.argv[1])
 ################################################################################
 ti = time.time()
 ################################################################################
@@ -26,7 +29,6 @@ gs = gs[gs.z > 0.01]
 gs.index = np.arange(len(gs))
 
 # Choose the top n_obs median SNR objects
-n_obs = -1
 if n_obs != -1:
     gs = gs[:n_obs]
 
@@ -35,8 +37,13 @@ if n_obs != -1:
 data_processing = DataProcessing(galaxies_df= gs, n_processes=60)
 data_processing.get_fluxes_SN()
 ################################################################################
-# Getting array for train opening
-dat_processing.
+# Getting array
+fnames = glob.glob(
+    f'{spectra_path}/interpolated_spectra/*.interpolated_spectra.npy'
+    )
+
+spectra = data_processing.spec_to_single_array(fnames=fnames)
+data_processing.sort_spec_SN(spectra=spectra)
 ################################################################################
 
 tf = time.time()
