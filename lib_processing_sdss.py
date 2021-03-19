@@ -157,7 +157,7 @@ class DataProcessing:
     def _get_flux_SN(self, idx_galaxy: int):
 
         galaxy_fits_path, fname = self._galaxy_fits_path(idx_galaxy)
-
+        fname = fname.split('.')[0]
         if not os.path.exists(galaxy_fits_path):
             print(f'{fname} not found')
             return 1
@@ -167,7 +167,7 @@ class DataProcessing:
         flux_interpolated = np.interp(wave_master, wave, flux, left=np.nan, right=np.nan)
 
         np.save(f'{self.raw_spectra_path}/{fname}.npy',flux)
-        np.save(f'{self.interpolated_spectra_path}/{fname}.npy',flux)
+        np.save(f'{self.interpolated_spectra_path}/{fname}_interpolated.npy',flux)
 
         return 0
 
