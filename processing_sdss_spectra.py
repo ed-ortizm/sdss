@@ -8,14 +8,32 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 
-from constants_sdss import science_arxive_server_path, spectra_path
-from proc_sdss_lib import DownloadData
+from lib_processing_sdss import DataProcessing
 
 ################################################################################
 ti = time.time()
 ################################################################################
-# Data processing
+# Loading data DataFrame with galaxies info
+# SNR sorted data
+gs = pd.read_csv(f'{spectra_path}/gals_DR16.csv')
 
+# Use z_noqso if possible
+gs.z = np.where(gs.z_noqso.ne(0), gs.z_noqso, gs.z)
+
+# Remove galaxies with redshift z<=0.01
+gs = gs[gs.z > 0.01]
+gs.index = np.arange(len(gs))
+
+# Choose the top n_obs median SNR objects
+n_obs = 1_000
+if n_obs != -1:
+    gs = gs[:n_obs]
+
+################################################################################
+# Data processing
+data_processing = DataProcessing(galaxies_df: gs, n_processes=60)
+
+data_processing.get_fluxes_SN()
 ################################################################################
 
 tf = time.time()
