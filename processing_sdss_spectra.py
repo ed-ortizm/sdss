@@ -33,8 +33,10 @@ if n_obs != -1:
 ################################################################################
 # Data processing
 data_processing = DataProcessing(galaxies_df= gs, n_processes=60)
-
 data_processing.get_fluxes_SN()
+################################################################################
+# Getting array for train opening
+dat_processing.
 ################################################################################
 
 tf = time.time()
