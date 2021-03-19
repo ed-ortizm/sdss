@@ -124,7 +124,7 @@ class DownloadData:
 ################################################################################
 class DataProcessing:
 
-    def __init__(self, galaxies_df: PandasDataFrame, n_processes: int): #fnames: list, SN_threshold: float):
+    def __init__(self, galaxies_df, n_processes): #fnames: list, SN_threshold: float):
 
         self.galaxies_df = galaxies_df
         self.n_processes = n_processes
@@ -160,7 +160,7 @@ class DataProcessing:
 
         if not os.path.exists(galaxy_fits_path):
             print(f'{fname} not found')
-            return 0
+            return 1
 
         wave, flux = self._rest_frame(idx_galaxy, galaxy_fits_path)
 
@@ -169,7 +169,7 @@ class DataProcessing:
         np.save(f'{self.raw_spectra_path}/{fname}.npy',flux)
         np.save(f'{self.interpolated_spectra_path}/{fname}.npy',flux)
 
-        return 1
+        return 0
 
     def _rest_frame(self, idx_galaxy, galaxy_fits_path):
 

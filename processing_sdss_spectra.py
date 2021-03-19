@@ -8,6 +8,7 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 
+from constants_sdss import spectra_path
 from lib_processing_sdss import DataProcessing
 
 ################################################################################
@@ -25,13 +26,13 @@ gs = gs[gs.z > 0.01]
 gs.index = np.arange(len(gs))
 
 # Choose the top n_obs median SNR objects
-n_obs = 1_000
+n_obs = -1
 if n_obs != -1:
     gs = gs[:n_obs]
 
 ################################################################################
 # Data processing
-data_processing = DataProcessing(galaxies_df: gs, n_processes=60)
+data_processing = DataProcessing(galaxies_df= gs, n_processes=60)
 
 data_processing.get_fluxes_SN()
 ################################################################################
