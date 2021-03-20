@@ -35,17 +35,25 @@ if n_obs != -1:
 ################################################################################
 # Data processing
 data_processing = DataProcessing(galaxies_df= gs, n_processes=60)
+
 data_processing.get_fluxes_SN()
 ################################################################################
 # Getting array
 fnames = glob.glob(
-    f'{spectra_path}/interpolated_spectra/*interpolated.npy'
+    f'{spectra_path}/interpolated_spectra/*_interpolated.npy'
 )
+
 print(f'Number of files: {len(fnames)}')
+
 spectra = data_processing.spec_to_single_array(fnames=fnames[:n_obs])
+
 SN_sorted_spectra = data_processing.sort_spec_SN(spectra=spectra)
-print(SN_sorted_spectra[:20, -1])
-spectra , wave_master= data_processing.indefinite_values_handler(spectra=SN_sorted_spectra)
+
+print(SN_sorted_spectra[:20, -5:])
+
+spectra , wave_master = data_processing.indefinite_values_handler(
+    spectra=SN_sorted_spectra
+)
 ################################################################################
 
 tf = time.time()

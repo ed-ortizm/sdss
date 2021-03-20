@@ -23,7 +23,6 @@ class DataProcessing:
 
         self.galaxies_df = galaxies_df
         self.n_processes = n_processes
-        self.spectra = None
 
         self.raw_spectra_path = f'{spectra_path}/raw_spectra'
         if not os.path.exists(self.raw_spectra_path):
@@ -49,7 +48,7 @@ class DataProcessing:
 
         keep_flux_mask =  n_indef < spectra.shape[0]*discard_fraction
 
-        self.spectra = spectra[:, keep_flux_mask]
+        spectra = spectra[:, keep_flux_mask]
         print(f'spectra shape after keep_spec_mask: {spectra.shape}')
 
         wave = wave_master[keep_flux_mask]
@@ -62,39 +61,43 @@ class DataProcessing:
     #         flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
     #
     #     print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
-        return self.spectra, wave_master
+        return spectra, wave_master
 
     def sort_spec_SN(self, spectra: 'array'):
 
         SN_arg_sort = np.argsort(spectra[:, -1])
-        self.spectra = spectra[SN_arg_sort]
+        spectra = spectra[SN_arg_sort, :]
 
-        return self.spectra
+        return spectra
 
     def spec_to_single_array(self, fnames: 'list'):
 
-        n_spec = len(fnames)
-        self.spectra = np.empty((n_spec, n_waves+5))
+        n_spectra = len(fnames)
+
+        with pyfits.open(fname[0]) as hdul:
+            n_fluxes = hdul[1].data['flux'].size
+
+        spectra = np.empty((n_spectra, n_fluxes))
 
         for idx, fname in enumerate(fnames):
 
             print(f'Processing spectra N° {idx} --> {fname}', end='\r')
-            self.spectra[idx, :] = np.load(fname)
+            spectra[idx, :] = np.load(fname)
 
-        return self.spectra
+        return spectra
 
 
     def get_fluxes_SN(self):
 
-        print(f'Saving fluxes, spec-ID and SN to {self.raw_spectra_path}')
+        print(f'Saving raw and interpolated spectra')
 
         params = range(len(self.galaxies_df))
 
         with mp.Pool(processes=self.n_processes) as pool:
-            res = pool.map(self._get_flux_SN, params)
+            res = pool.map(self._get_spec, params)
             n_failed = sum(res)
 
-        print(f'Fluxes and SN saved in {self.raw_spectra_path}')
+        print(f'Spectra saved')
         print(f'Failed to save {n_failed}')
 
     def _get_flux_SN(self, idx_galaxy: int):
@@ -102,24 +105,27 @@ class DataProcessing:
         galaxy_fits_path, fname = self._galaxy_fits_path(idx_galaxy)
         fname = fname.split('.')[0]
         [plate, mjd, fiberid] = fname.split('-')[1:]
+        print(f'plate: {palte}, mjd: {mjd}, fiberid: {fiberid}')
 
         if not os.path.exists(galaxy_fits_path):
             print(f'{fname} not found')
             return 1
 
-        wave, flux, z_SN = self._rest_frame(idx_galaxy, galaxy_fits_path)
+        wave, flux, z, SN = self._rest_frame(idx_galaxy, galaxy_fits_path)
 
-        flux_interpolated = np.interp(wave_master, wave, flux, left=np.nan, right=np.nan)
+        flux_interpolated = np.interp(
+            wave_master, wave, flux, left=np.nan, right=np.nan
+        )
 
         np.save(f'{self.raw_spectra_path}/{fname}.npy',
             np.hstack(
-                (flux, int(plate), int(mjd), int(fiberid), z_SN)
+                (flux, int(plate), int(mjd), int(fiberid), z, SN)
             )
         )
 
         np.save(f'{self.interpolated_spectra_path}/{fname}_interpolated.npy',
             np.hstack(
-                (flux_interpolated, int(plate), int(mjd), int(fiberid), z_SN)
+                (flux_interpolated, int(plate), int(mjd), int(fiberid), z, SN)
             )
         )
 
@@ -139,7 +145,7 @@ class DataProcessing:
 
         SN = self.galaxies_df.iloc[idx_galaxy]['snMedian']
 
-        return wave, flux, np.array([z, SN])
+        return wave, flux, z, SN
 
     def _galaxy_fits_path(self, idx_galaxy: int):
 
@@ -161,32 +167,6 @@ class DataProcessing:
         run2d = f"{galaxy['run2d']}"
 
         return plate, mjd, fiberid, run2d
-
-    # def processing_spectra(self):
-    #
-    #     for idx, fname in enumerate(self.fnames[:self.SN_threshold]):
-    #
-    #         SN = fname.split('SN_')[-1].split('.')[0]
-    #         SN = float(SN)
-    #         self.SN_array[idx] = SN
-    #
-    #         print(f'Processing spectra N° {idx} --> {fname}', end='\r')
-    #         self.spectra[idx, :] = np.load(fname)
-    #
-    #     self._sort_SN()
-    #
-    #     return self.spectra
-    #
-    #
-    # def _sort_SN(self):
-    #
-    #     ids_sort_SN = np.argsort(self.SN_array)
-    #
-    #     self.spectra[:, :] = self.spectra[ids_sort_SN, :]
-    #
-    #
-    # def _indefinite_values_handler(self):
-    #     pass
 ################################################################################
 # def proc_spec(fnames):
 #
@@ -223,105 +203,6 @@ class DataProcessing:
 #
 #     np.save(f'spec_{N}.npy', spec)
 #     np.save(f'wave_master.npy', wave_master)
-#
-# def get_spectra(gs, dbPath):
-#     """
-#     Computes the spectra interpolating over a master grid of wavelengths
-#     Parameters
-#     ----------
-#     gs : Pandas DataFrame with info of the galaxies
-#     dbPath : String : Path to data base
-#
-#     Returns
-#     -------
-#     wave_master_grid : numpy array 1-D : The master wavelength grid
-#     flxs :  numpy array 2-D : Interpolated spectra over the grid
-#     """
-#
-#     print(f'Getting grid of wavelengths and spectra from {len(gs)} .fits files')
-#     # http://python.omics.wiki/multiprocessing_map/multiprocessing_partial_function_multiple_arguments
-#     f = partial(flx_rest_frame_i, gs, dbPath)
-#
-#     # close the pool (with) & do partial before
-#     with mp.Pool() as pool:
-#         pool.map(f, range(len(gs)))
-#
-#
-# #
-#     print('Job finished')
-#
-#
-# def flx_rest_frame_i(gs, dbPath, i):
-#     """
-#     Computes the min and max value in the wavelenght grid for the ith spectrum.
-#     Computes the interpolation functtion for the ith spectrum.
-#     Parameters
-#     ----------
-#     gs : Pandas DataFrame with info of the galaxies
-#     dbPath : String : Path to data base
-#     i : int : Index of .fits file in the DataFrame
-#     Returns
-#     -------
-#     min : float : minimum value if the wavelength grid for the ith spectrum
-#     max : float : maximun value if the wavelength grid for the ith spectrum
-#     flx_intp :  interp1d object : Interpolation function for the ith spectrum
-#     """
-#
-#     obj = gs.iloc[i]
-#     plate = obj['plate']
-#     mjd = obj['mjd']
-#     fiberid = obj['fiberid']
-#     run2d = obj['run2d']
-#     z = obj['z']
-#
-#     print(f'Processing spectrun N° {i}', end='\r')
-#     flx_rest_frame(plate, mjd, fiberid, run2d, z, dbPath)
-#
-#
-# def flx_rest_frame(plate, mjd, fiberid, run2d, z, dbPath):
-#     """
-#     Computes the min and max value in the wavelenght grid for the spectrum.
-#     Computes the interpolation functtion for the spectrum.
-#     Parameters
-#     ----------
-#     plate : int : plate number
-#     mjd : int : mjd of observation (days)
-#     fiberid : int : Fiber ID
-#     run2d : str : 2D Reduction version of spectrum
-#     z : float : redshift, replaced by z_noqso when available.
-#     (z_nqso --> Best redshift when excluding QSO fit in BOSS spectra (right redshift to use for galaxy targets))
-#     dbPath : String : Path to data base
-#     Returns
-#     -------
-#     wl_min : float : minimum value of the wavelength grid for the spectrum
-#     wl_max : float : maximun value of the wavelength grid for the spectrum
-#     flx_intp :  interp1d object : Interpolation function for the spectrum
-#
-#     """
-#     # Path to the .fits file of the target spectrum
-#     fname = f'spec-{plate:04}-{mjd}-{fiberid:04}.fits'
-#     SDSSpath = f'{science_arxive_server_path}\
-#         dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate:04}'
-#     dest = f'{SDSSpath}/{fname}'
-#
-#
-#     if not(os.path.exists(dest)):
-#         print(f'File {fname} not found!')
-#         return None
-#
-#     with pyfits.open(dest) as hdul:
-#         wl_rg = 10. ** (hdul[1].data['loglam'])
-#         flx = hdul[1].data['flux']
-#
-#
-#     # Deredshifting & min & max
-#     z_factor = 1./(1. + z)
-#     wl_rg *= z_factor
-#     flx = np.interp(wave_master, wl_rg, flx, left=np.nan, right=np.nan)
-#
-#     np.save(
-#         f'{spectra_path}/{fname.split(".")[0]}_wave_master.npy',
-#         flx)
 ################################################################################
 class DownloadData:
 
