@@ -43,7 +43,8 @@ fnames = glob.glob(
     )
 
 spectra = data_processing.spec_to_single_array(fnames=fnames)
-data_processing.sort_spec_SN(spectra=spectra)
+SN_sorted_spectra = data_processing.sort_spec_SN(spectra=spectra)
+print(SN_sorted_spectra[:20, -1])
 ################################################################################
 
 tf = time.time()

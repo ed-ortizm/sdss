@@ -17,111 +17,6 @@ from constants_sdss import n_waves, wave_master
 from constants_sdss import working_dir, science_arxive_server_path
 from constants_sdss import processed_spectra_path, spectra_path
 ################################################################################
-class DownloadData:
-
-    def __init__(self, files_data_frame, download_path, n_processes):
-        """
-        files_data_frame: Pandas DataFrame with all the imformation of the sdss
-        galaxies
-
-        download_path: (string) Path where the data will be downloaded
-        """
-        self.data_frame = files_data_frame
-        self.download_path = download_path
-        self.n_processes = n_processes
-
-    def get_files(self):
-
-        print(f'*** Getting {len(self.data_frame)} fits files ****')
-        start_time_download = time.time()
-
-        if not os.path.exists(self.download_path):
-            os.makedirs(self.download_path)
-
-        params = range(len(self.data_frame))
-
-        with mp.Pool(processes=self.n_processes) as pool:
-            res = pool.map(self._get_file, params)
-            n_failed = sum(res)
-
-        finish_time_download = time.time()
-
-        print(f'Done! Finished downloading .fits files...')
-        print(f'Failed to download {n_failed} files' )
-        print(
-            f'Download took {finish_time_download-start_time_download:.2f}[s]')
-
-
-    def _get_file(self, idx_data_frame):
-
-        object = self.data_frame.iloc[idx_data_frame]
-        plate, mjd, fiberid, run2d = self._file_identifier(object)
-
-        fname = f'spec-{plate}-{mjd}-{fiberid}.fits'
-
-        SDSSpath = f'sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate}'
-        folder_path = f'{self.download_path}/{SDSSpath}'
-
-        url =\
-        f'https://data.sdss.org/{SDSSpath}/{fname}'
-
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path, exist_ok=True)
-
-        # Try & Except a failed Download
-
-        try:
-            self._retrieve_url(url, folder_path, fname)
-            print(f'returning 0')
-            return 0
-
-        except Exception as e:
-
-            print(f'Failed : {url}')
-
-            print(f'returning 1')
-            print(f'{e}')
-            return 1
-
-    def _retrieve_url(self, url, folder_path, fname):
-
-        if not(os.path.isfile(f'{folder_path}/{fname}')):
-
-            print(f'Downloading {fname}')
-
-            urllib.request.urlretrieve(url, f'{folder_path}/{fname}')
-
-            file_size = os.path.getsize(f'{folder_path}/{fname}')
-
-            j = 0
-
-            while j < 10 and (file_size < 60000):
-
-                os.remove(f'{folder_path}/{fname}')
-                urllib.request.urlretrieve(url, f'{folder_path}/{fname}')
-                j += 1
-                time.sleep(1)
-
-            file_size = os.path.getsize(f'{folder_path}/{fname}')
-
-            if file_size < 60000:
-                print(f"Size of {fname}: {file_size}... Removing file!!")
-                os.remove(f'{folder_path}/{fname}')
-                raise Exception('Spectra wasn\'t found')
-
-        else:
-            print(f'{fname} already downloaded!!')
-
-
-    def _file_identifier(self, object):
-
-        plate = f"{object['plate']:04}"
-        mjd = f"{object['mjd']}"
-        fiberid = f"{object['fiberid']:04}"
-        run2d = f"{object['run2d']}"
-
-        return plate, mjd, fiberid, run2d
-################################################################################
 class DataProcessing:
 
     def __init__(self, galaxies_df, n_processes): #fnames: list, SN_threshold: float):
@@ -142,31 +37,33 @@ class DataProcessing:
         if not os.path.exists(self.processed_spectra_path):
             os.makedirs(self.processed_spectra_path, exist_ok=True)
 
-    # def indefinite_values_handler(self, spec: array):
-    #
-    #     n_indefinite = np.count_nonzero(~np.isfinite(spec))
-    #     print(f'Indfinite vals in the input array: {n_indefinite}')
-    #
-    #     print(f'Discarding spectra with more than 10% of indefininte values')
-    # # valunes in a given wl for al training set
-    #     wkeep = np.where(np.count_nonzero(~np.isfinite(spec), axis=0) < spec.shape[0] / 10)
-    # # Removing one dimensional axis since wkeep is a tuple
-    #     spec = np.squeeze(spec[:, wkeep])
-    #     wave_master = np.squeeze(spec[:, wkeep])
-    #
-    #     print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
-    #
-    # # Replacing indefinite values in a spectrum with its nan median
-    #     for flx in spec.T:
-    #         flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
-    #
-    #     print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
+    def indefinite_values_handler(self, spectra: 'np.array',
+        discard_fraction: 'float'=0.1):
+
+        n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
+        print(f'Indefinite vals in the input array: {np.sum(n_indef)}')
+
+    # valunes in a given wl for al training set
+        keep_spec_mask =  n_indef < spectra.shape[0]*discard_fraction
+    # Removing one dimensional axis since wkeep is a tuple
+        spectra = np.squeeze(spectra[:, keep_values])
+        wave_master = np.squeeze(spec[:, wkeep])
+
+        n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
+        print(f'[New] Indefinite vals in the input array: {np.sum(n_indef)}')
+
+    # Replacing indefinite values in a spectrum with its nan median
+        for flx in spec.T:
+            flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
+
+        print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
 
     def sort_spec_SN(self, spectra: 'array'):
 
         SN_arg_sort = np.argsort(spectra[:, -1])
+        slef.spectra = spectra[SN_arg_sort]
 
-        return spectra[SN_arg_sort]
+        return self.spectra
 
     def spec_to_single_array(self, fnames: 'list'):
 
@@ -215,13 +112,13 @@ class DataProcessing:
         return 0
 
     def _rest_frame(self, idx_galaxy, galaxy_fits_path):
+        """De-redshifting"""
 
         with pyfits.open(galaxy_fits_path) as hdul:
             wave = 10. ** (hdul[1].data['loglam'])
             flux = hdul[1].data['flux']
 
 
-        # Deredshifting
         z = self.galaxies_df.iloc[idx_galaxy]['z']
         z_factor = 1./(1. + z)
         wave *= z_factor
@@ -411,3 +308,108 @@ class DataProcessing:
 #     np.save(
 #         f'{spectra_path}/{fname.split(".")[0]}_wave_master.npy',
 #         flx)
+################################################################################
+class DownloadData:
+
+    def __init__(self, files_data_frame, download_path, n_processes):
+        """
+        files_data_frame: Pandas DataFrame with all the imformation of the sdss
+        galaxies
+
+        download_path: (string) Path where the data will be downloaded
+        """
+        self.data_frame = files_data_frame
+        self.download_path = download_path
+        self.n_processes = n_processes
+
+    def get_files(self):
+
+        print(f'*** Getting {len(self.data_frame)} fits files ****')
+        start_time_download = time.time()
+
+        if not os.path.exists(self.download_path):
+            os.makedirs(self.download_path)
+
+        params = range(len(self.data_frame))
+
+        with mp.Pool(processes=self.n_processes) as pool:
+            res = pool.map(self._get_file, params)
+            n_failed = sum(res)
+
+        finish_time_download = time.time()
+
+        print(f'Done! Finished downloading .fits files...')
+        print(f'Failed to download {n_failed} files' )
+        print(
+            f'Download took {finish_time_download-start_time_download:.2f}[s]')
+
+
+    def _get_file(self, idx_data_frame):
+
+        object = self.data_frame.iloc[idx_data_frame]
+        plate, mjd, fiberid, run2d = self._file_identifier(object)
+
+        fname = f'spec-{plate}-{mjd}-{fiberid}.fits'
+
+        SDSSpath = f'sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate}'
+        folder_path = f'{self.download_path}/{SDSSpath}'
+
+        url =\
+        f'https://data.sdss.org/{SDSSpath}/{fname}'
+
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path, exist_ok=True)
+
+        # Try & Except a failed Download
+
+        try:
+            self._retrieve_url(url, folder_path, fname)
+            print(f'returning 0')
+            return 0
+
+        except Exception as e:
+
+            print(f'Failed : {url}')
+
+            print(f'returning 1')
+            print(f'{e}')
+            return 1
+
+    def _retrieve_url(self, url, folder_path, fname):
+
+        if not(os.path.isfile(f'{folder_path}/{fname}')):
+
+            print(f'Downloading {fname}')
+
+            urllib.request.urlretrieve(url, f'{folder_path}/{fname}')
+
+            file_size = os.path.getsize(f'{folder_path}/{fname}')
+
+            j = 0
+
+            while j < 10 and (file_size < 60000):
+
+                os.remove(f'{folder_path}/{fname}')
+                urllib.request.urlretrieve(url, f'{folder_path}/{fname}')
+                j += 1
+                time.sleep(1)
+
+            file_size = os.path.getsize(f'{folder_path}/{fname}')
+
+            if file_size < 60000:
+                print(f"Size of {fname}: {file_size}... Removing file!!")
+                os.remove(f'{folder_path}/{fname}')
+                raise Exception('Spectra wasn\'t found')
+
+        else:
+            print(f'{fname} already downloaded!!')
+
+
+    def _file_identifier(self, object):
+
+        plate = f"{object['plate']:04}"
+        mjd = f"{object['mjd']}"
+        fiberid = f"{object['fiberid']:04}"
+        run2d = f"{object['run2d']}"
+
+        return plate, mjd, fiberid, run2d
