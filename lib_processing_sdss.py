@@ -36,6 +36,21 @@ class DataProcessing:
         if not os.path.exists(self.processed_spectra_path):
             os.makedirs(self.processed_spectra_path, exist_ok=True)
 
+    def missing_flux_replacement(self, spectra:'array', method:'str'='median'):
+
+        if method=='median':
+
+            mask_replacement = ~np.isfinite(spectra)
+            for idx, mask in enumerate(mask_replacement):
+                spectra[idx, mask] = np.nanmedian(spectra[idx, :])
+
+        elif method=='mean':
+
+            mask_replacement = ~np.isfinite(spectra)
+            for idx, mask in enumerate(mask_replacement):
+                spectra[idx, mask] = np.nanmean(spectra[idx, :])
+        return spectra
+
     def indefinite_values_handler(self, spectra: 'np.array',
         discard_fraction: 'float'=0.1):
         #global wave_master
@@ -55,10 +70,6 @@ class DataProcessing:
         n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
         print(f'Indefinite vals in the NEW array: {np.sum(n_indef)}')
 
-    # # Replacing indefinite values in a spectrum with its nan median
-    #     for flx in spec.T:
-    #         flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
-    #
         return spectra, wave
 
     def sort_spec_SN(self, spectra: 'array'):

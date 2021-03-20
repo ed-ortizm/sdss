@@ -64,6 +64,11 @@ spectra , wave = data_processing.indefinite_values_handler(
     spectra=SN_sorted_spectra
 )
 
+spectra = data_processing.missing_flux_replacement(spectra = spectra, method='median')
+
+n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
+print(f'Indefinite vals in the final array: {np.sum(n_indef)}')
+
 np.save(f'spectra_{n_obs}.npy', spectra)
 np.save(f'wave_master_processed.npy', wave)
 ################################################################################
