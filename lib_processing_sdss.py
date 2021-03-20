@@ -43,7 +43,7 @@ class DataProcessing:
         print(f'spectra shape before keep_spec_mask: {spectra.shape}')
 
         n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
-        print(n_indef[:10])
+        print('n_indef', type(n_indef), n_indef[:50])
         print(f'Indefinite vals in the input array: {np.sum(n_indef)}')
 
         keep_flux_mask =  n_indef < spectra.shape[0]*discard_fraction
@@ -65,7 +65,7 @@ class DataProcessing:
 
     def sort_spec_SN(self, spectra: 'array'):
 
-        SN_arg_sort = np.argsort(spectra[:, -1])
+        SN_arg_sort = np.argsort(-1*spectra[:, -1])
         spectra = spectra[SN_arg_sort, :]
 
         return spectra
