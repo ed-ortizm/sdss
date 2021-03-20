@@ -51,7 +51,7 @@ class DataProcessing:
         spectra = spectra[:, keep_flux_mask]
         print(f'spectra shape after keep_spec_mask: {spectra.shape}')
 
-        wave = wave_master[keep_flux_mask]
+        wave = wave_master[keep_flux_mask[: -5]]
 
         n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
         print(f'[New] Indefinite vals in the input array: {np.sum(n_indef)}')
@@ -73,9 +73,7 @@ class DataProcessing:
     def spec_to_single_array(self, fnames: 'list'):
 
         n_spectra = len(fnames)
-
-        with pyfits.open(fname[0]) as hdul:
-            n_fluxes = hdul[1].data['flux'].size
+        n_fluxes = np.load(fnames[0]).size
 
         spectra = np.empty((n_spectra, n_fluxes))
 
@@ -94,18 +92,18 @@ class DataProcessing:
         params = range(len(self.galaxies_df))
 
         with mp.Pool(processes=self.n_processes) as pool:
-            res = pool.map(self._get_spec, params)
+            res = pool.map(self._get_spectra, params)
             n_failed = sum(res)
 
         print(f'Spectra saved')
         print(f'Failed to save {n_failed}')
 
-    def _get_flux_SN(self, idx_galaxy: int):
+    def _get_spectra(self, idx_galaxy: int):
 
         galaxy_fits_path, fname = self._galaxy_fits_path(idx_galaxy)
         fname = fname.split('.')[0]
         [plate, mjd, fiberid] = fname.split('-')[1:]
-        print(f'plate: {palte}, mjd: {mjd}, fiberid: {fiberid}')
+        print(f'plate: {plate}, mjd: {mjd}, fiberid: {fiberid}')
 
         if not os.path.exists(galaxy_fits_path):
             print(f'{fname} not found')
