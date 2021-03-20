@@ -43,7 +43,6 @@ class DataProcessing:
         print(f'spectra shape before keep_spec_mask: {spectra.shape}')
 
         n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
-        print('n_indef', type(n_indef), n_indef[:50])
         print(f'Indefinite vals in the input array: {np.sum(n_indef)}')
 
         keep_flux_mask =  n_indef < spectra.shape[0]*discard_fraction
@@ -54,13 +53,12 @@ class DataProcessing:
         wave = wave_master[keep_flux_mask[: -5]]
 
         n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
-        print(f'[New] Indefinite vals in the input array: {np.sum(n_indef)}')
+        print(f'Indefinite vals in the NEW array: {np.sum(n_indef)}')
 
     # # Replacing indefinite values in a spectrum with its nan median
     #     for flx in spec.T:
     #         flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
     #
-    #     print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
         return spectra, wave_master
 
     def sort_spec_SN(self, spectra: 'array'):
@@ -79,11 +77,11 @@ class DataProcessing:
 
         for idx, fname in enumerate(fnames):
 
-            print(f'Processing spectra N° {idx} --> {fname}', end='\r')
+            print(f"Processing {idx:04}:{fname.split('/')[-1][:-5]}", end='\r')
+
             spectra[idx, :] = np.load(fname)
 
         return spectra
-
 
     def get_fluxes_SN(self):
 
@@ -95,15 +93,14 @@ class DataProcessing:
             res = pool.map(self._get_spectra, params)
             n_failed = sum(res)
 
-        print(f'Spectra saved')
-        print(f'Failed to save {n_failed}')
+        print(f'Spectra saved. Failed to save {n_failed}')
 
     def _get_spectra(self, idx_galaxy: int):
 
         galaxy_fits_path, fname = self._galaxy_fits_path(idx_galaxy)
         fname = fname.split('.')[0]
         [plate, mjd, fiberid] = fname.split('-')[1:]
-        print(f'plate: {plate}, mjd: {mjd}, fiberid: {fiberid}')
+        # print(f'plate: {plate}, mjd: {mjd}, fiberid: {fiberid}')
 
         if not os.path.exists(galaxy_fits_path):
             print(f'{fname} not found')
@@ -168,16 +165,13 @@ class DataProcessing:
 ################################################################################
 # def proc_spec(fnames):
 #
-#     print('Processing all spectra')
 #
 #     N = len(fnames)
 #     spec = np.empty((N, wave_master.size))
 #
 #     for idx, fname in enumerate(fnames[:N]):
-#         print(f'Processing spectra N° {idx+1} --> {fname}', end='\r')
 #         spec[idx, :] = np.load(fname)
 #
-#     print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
 #
 # # Discarding spectrum with more than 10% of indefininte
 # # valunes in a given wl for al training set
@@ -186,13 +180,11 @@ class DataProcessing:
 #     spec = np.squeeze(spec[:, wkeep])
 #     wave_master = np.squeeze(spec[:, wkeep])
 #
-#     print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
 #
 # # Replacing indefinite values in a spectrum with its nan median
 #     for flx in spec.T:
 #         flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
 #
-#     print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
 #
 # # Nomalize by the median and reduce noise with the standar deviation
 #     spec *= 1/np.median(spec, axis=1).reshape((spec.shape[0], 1))
@@ -257,14 +249,12 @@ class DownloadData:
 
         try:
             self._retrieve_url(url, folder_path, fname)
-            print(f'returning 0')
             return 0
 
         except Exception as e:
 
             print(f'Failed : {url}')
 
-            print(f'returning 1')
             print(f'{e}')
             return 1
 
@@ -272,7 +262,7 @@ class DownloadData:
 
         if not(os.path.isfile(f'{folder_path}/{fname}')):
 
-            print(f'Downloading {fname}')
+            print(f'Downloading {fname}', end='\r')
 
             urllib.request.urlretrieve(url, f'{folder_path}/{fname}')
 
@@ -292,10 +282,10 @@ class DownloadData:
             if file_size < 60000:
                 print(f"Size of {fname}: {file_size}... Removing file!!")
                 os.remove(f'{folder_path}/{fname}')
-                raise Exception('Spectra wasn\'t found')
+                raise Exception("Spectra wasn't found")
 
         else:
-            print(f'{fname} already downloaded!!')
+            print(f'{fname} already downloaded!!', end='\r')
 
 
     def _file_identifier(self, object):

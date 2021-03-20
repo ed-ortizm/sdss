@@ -48,19 +48,24 @@ if not local:
 fnames = glob.glob(
     f'{spectra_path}/interpolated_spectra/*_interpolated.npy'
 )
+if local:
+    n_obs = len(fnames)
 
-print(f'Number of files: {len(fnames)}')
+print(f'Number of files: {n_obs}')
 
+print(f'spec to single array')
 spectra = data_processing.spec_to_single_array(fnames=fnames[:n_obs])
 
+print(f'Sorting according to snMedian')
 SN_sorted_spectra = data_processing.sort_spec_SN(spectra=spectra)
 
-print('SN sorted spectra')
-print(SN_sorted_spectra[:50, -1])
-
+print(f'Handling indefinite values')
 spectra , wave_master = data_processing.indefinite_values_handler(
     spectra=SN_sorted_spectra
 )
+
+np.save(f'spectra_{n_obs}.npy', spectra)
+np.save(f'wave_master_processed.npy', wave_master)
 ################################################################################
 
 tf = time.time()
