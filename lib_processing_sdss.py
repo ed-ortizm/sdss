@@ -59,7 +59,7 @@ class DataProcessing:
     #     for flx in spec.T:
     #         flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
     #
-        return spectra, wave_master
+        return spectra, wave
 
     def sort_spec_SN(self, spectra: 'array'):
 

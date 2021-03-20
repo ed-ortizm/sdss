@@ -60,12 +60,12 @@ print(f'Sorting according to snMedian')
 SN_sorted_spectra = data_processing.sort_spec_SN(spectra=spectra)
 
 print(f'Handling indefinite values')
-spectra , wave_master = data_processing.indefinite_values_handler(
+spectra , wave = data_processing.indefinite_values_handler(
     spectra=SN_sorted_spectra
 )
 
 np.save(f'spectra_{n_obs}.npy', spectra)
-np.save(f'wave_master_processed.npy', wave_master)
+np.save(f'wave_master_processed.npy', wave)
 ################################################################################
 
 tf = time.time()
