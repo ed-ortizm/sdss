@@ -74,7 +74,7 @@ class DataProcessing:
     def spec_to_single_array(self, fnames: 'list'):
 
         n_spec = len(fnames)
-        self.spectra = np.empty((n_spec, n_waves))
+        self.spectra = np.empty((n_spec, n_waves+5))
 
         for idx, fname in enumerate(fnames):
 
