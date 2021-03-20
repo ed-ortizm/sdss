@@ -40,24 +40,28 @@ class DataProcessing:
     def indefinite_values_handler(self, spectra: 'np.array',
         discard_fraction: 'float'=0.1):
 
+        print(f'spectra shape before keep_spec_mask: {spectra.shape}')
+
         n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
+        print(n_indef[:10])
         print(f'Indefinite vals in the input array: {np.sum(n_indef)}')
 
-    # valunes in a given wl for al training set
-        keep_spec_mask =  n_indef < spectra.shape[0]*discard_fraction
-    # Removing one dimensional axis since wkeep is a tuple
-        spectra = np.squeeze(spectra[:, keep_values])
-        wave_master = np.squeeze(spec[:, wkeep])
+        keep_flux_mask =  n_indef < spectra.shape[0]*discard_fraction
+
+        spectra = spectra[:, keep_flux_mask])
+        print(f'spectra shape after keep_spec_mask: {spectra.shape}')
+
+        wave_master = spec[:, keep_flux_mask]
 
         n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
         print(f'[New] Indefinite vals in the input array: {np.sum(n_indef)}')
 
-    # Replacing indefinite values in a spectrum with its nan median
-        for flx in spec.T:
-            flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
-
-        print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
-
+    # # Replacing indefinite values in a spectrum with its nan median
+    #     for flx in spec.T:
+    #         flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
+    #
+    #     print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
+        return spectra, wave_master
     def sort_spec_SN(self, spectra: 'array'):
 
         SN_arg_sort = np.argsort(spectra[:, -1])
@@ -80,7 +84,7 @@ class DataProcessing:
 
     def get_fluxes_SN(self):
 
-        print(f'Saving fluxes and SN to {self.raw_spectra_path}')
+        print(f'Saving fluxes, spec-ID and SN to {self.raw_spectra_path}')
 
         params = range(len(self.galaxies_df))
 
@@ -95,6 +99,7 @@ class DataProcessing:
 
         galaxy_fits_path, fname = self._galaxy_fits_path(idx_galaxy)
         fname = fname.split('.')[0]
+        [plate, mjd, fiberid] = fname.split('-')[1:]
 
         if not os.path.exists(galaxy_fits_path):
             print(f'{fname} not found')
@@ -104,10 +109,17 @@ class DataProcessing:
 
         flux_interpolated = np.interp(wave_master, wave, flux, left=np.nan, right=np.nan)
 
-        np.save(f'{self.raw_spectra_path}/{fname}.npy', np.hstack((flux, z_SN)))
+        np.save(f'{self.raw_spectra_path}/{fname}.npy',
+            np.hstack(
+                (flux, int(plate), int(mjd), int(fiberid), z_SN)
+            )
+        )
 
         np.save(f'{self.interpolated_spectra_path}/{fname}_interpolated.npy',
-            np.hstack((flux_interpolated, z_SN)))
+            np.hstack(
+                (flux_interpolated, int(plate), int(mjd), int(fiberid), z_SN)
+            )
+        )
 
         return 0
 
