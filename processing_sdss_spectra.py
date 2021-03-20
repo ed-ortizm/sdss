@@ -45,6 +45,7 @@ fnames = glob.glob(
 spectra = data_processing.spec_to_single_array(fnames=fnames)
 SN_sorted_spectra = data_processing.sort_spec_SN(spectra=spectra)
 print(SN_sorted_spectra[:20, -1])
+spectra , wave_master= data_processing.indefinite_values_handler(spectra=SN_sorted_spectra)
 ################################################################################
 
 tf = time.time()

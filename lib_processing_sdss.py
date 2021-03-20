@@ -39,6 +39,7 @@ class DataProcessing:
 
     def indefinite_values_handler(self, spectra: 'np.array',
         discard_fraction: 'float'=0.1):
+        #global wave_master
 
         print(f'spectra shape before keep_spec_mask: {spectra.shape}')
 
@@ -48,10 +49,10 @@ class DataProcessing:
 
         keep_flux_mask =  n_indef < spectra.shape[0]*discard_fraction
 
-        spectra = spectra[:, keep_flux_mask])
+        self.spectra = spectra[:, keep_flux_mask]
         print(f'spectra shape after keep_spec_mask: {spectra.shape}')
 
-        wave_master = spec[:, keep_flux_mask]
+        wave = wave_master[keep_flux_mask]
 
         n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
         print(f'[New] Indefinite vals in the input array: {np.sum(n_indef)}')
@@ -61,11 +62,12 @@ class DataProcessing:
     #         flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
     #
     #     print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
-        return spectra, wave_master
+        return self.spectra, wave_master
+
     def sort_spec_SN(self, spectra: 'array'):
 
         SN_arg_sort = np.argsort(spectra[:, -1])
-        slef.spectra = spectra[SN_arg_sort]
+        self.spectra = spectra[SN_arg_sort]
 
         return self.spectra
 
