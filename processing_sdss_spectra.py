@@ -56,7 +56,7 @@ print(f'Number of files: {n_obs}')
 print(f'spec to single array')
 spectra = data_processing.spec_to_single_array(fnames=fnames[:n_obs])
 
-print(f'Sorting according to snMedian')
+print(f'Sorting according to snMedian\n')
 SN_sorted_spectra = data_processing.sort_spec_SN(spectra=spectra)
 ################################################################################
 

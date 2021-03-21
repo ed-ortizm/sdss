@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
-from scipy.interpolate import interp1d
 from sklearn import preprocessing
 
 from constants_sdss import n_waves, wave_master
@@ -143,25 +142,31 @@ class DataProcessing:
             print(f'{fname} not found')
             return 1
 
-        wave, flux, z, SN = self._rest_frame(idx_galaxy, galaxy_fits_path)
+        if os.path.exists(f'{self.interpolated_spectra_path}/{fname}.npy'):
 
-        flux_interpolated = np.interp(
-            wave_master, wave, flux, left=np.nan, right=np.nan
-        )
+            print(f'{fname} already processed', end='\r')
+            return 0
 
-        np.save(f'{self.raw_spectra_path}/{fname}.npy',
-            np.hstack(
-                (flux, int(plate), int(mjd), int(fiberid), z, SN)
+        else:
+
+            wave, flux, z, SN = self._rest_frame(idx_galaxy, galaxy_fits_path)
+            flux_interpolated = np.interp(
+                wave_master, wave, flux, left=np.nan, right=np.nan
             )
-        )
 
-        np.save(f'{self.interpolated_spectra_path}/{fname}_interpolated.npy',
-            np.hstack(
-                (flux_interpolated, int(plate), int(mjd), int(fiberid), z, SN)
+            np.save(f'{self.raw_spectra_path}/{fname}.npy',
+                np.hstack(
+                    (flux, int(plate), int(mjd), int(fiberid), z, SN)
+                )
             )
-        )
 
-        return 0
+            np.save(f'{self.interpolated_spectra_path}/{fname}_interpolated.npy',
+                np.hstack(
+                    (flux_interpolated, int(plate), int(mjd), int(fiberid), z, SN)
+                )
+            )
+
+            return 0
 
     def _rest_frame(self, idx_galaxy, galaxy_fits_path):
         """De-redshifting"""
