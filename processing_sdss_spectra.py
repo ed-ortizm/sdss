@@ -58,18 +58,29 @@ spectra = data_processing.spec_to_single_array(fnames=fnames[:n_obs])
 
 print(f'Sorting according to snMedian')
 SN_sorted_spectra = data_processing.sort_spec_SN(spectra=spectra)
+################################################################################
 
 print(f'Handling indefinite values')
+
 spectra , wave = data_processing.indefinite_values_handler(
     spectra=SN_sorted_spectra
 )
 
-spectra = data_processing.missing_flux_replacement(spectra = spectra, method='median')
+spectra = data_processing.missing_flux_replacement(spectra = spectra,
+    method='median'
+)
 
 n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
 print(f'Indefinite vals in the final array: {np.sum(n_indef)}')
+###############################################################################
+print(f'Normalizing data')
+normalization_methods = ['median', 'Z', 'min_max']
 
-np.save(f'spectra_{n_obs}.npy', spectra)
+for method in normalization_methods:
+    spectra = data_processing.normalize_spectra(spectra = spectra, method='median')
+###############################################################################
+    print(f'Saving data')
+    np.save(f'spectra_{n_obs}_{method}.npy', spectra)
 np.save(f'wave_master_processed.npy', wave)
 ################################################################################
 

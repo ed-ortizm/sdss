@@ -2,7 +2,7 @@ import os
 import glob
 import time
 import urllib
-
+import sys
 
 import astropy.io.fits as pyfits
 from functools import partial
@@ -12,6 +12,7 @@ import multiprocessing as mp
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
+from sklearn import preprocessing
 
 from constants_sdss import n_waves, wave_master
 from constants_sdss import working_dir, science_arxive_server_path
@@ -36,19 +37,31 @@ class DataProcessing:
         if not os.path.exists(self.processed_spectra_path):
             os.makedirs(self.processed_spectra_path, exist_ok=True)
 
-    def normalize_spectra(self, spectra:'array', method:'str'='median'):
+    def normalize_spectra(self, spectra:'array', method:'str'):
 
-        if method=='nedian':
+        if method=='median':
 
             spectra[:, :-5] *= 1/np.median(spectra[:, :-5], axis=1).reshape(
                 (spectra.shape[0], 1)
             )
-    # Nomalize by the median and reduce noise with the standar deviation
-        spectra *= 1/np.median(spec, axis=1).reshape((spec.shape[0], 1))
-    #    spec *= 1/np.std(spec, axis=1).reshape((spec.shape[0], 1))
+
+        elif method=='Z':
+
+            spectra[:, :-5] = preprocessing.scale(spectra[:, :-5])
+
+        elif method=='min_max':
+
+            spectra[:, :-5] = preprocessing.MinMaxScaler().fit_transform(
+                spectra[:, :-5]
+            )
+
+        else:
+            print(f'the only supported normalizations methods are:')
+            print(f'median, Z (standarization) and min max normalization')
+            sys.exit()
+
         return spectra
 
-        pass
     def missing_flux_replacement(self, spectra:'array', method:'str'='median'):
 
         if method=='median':
