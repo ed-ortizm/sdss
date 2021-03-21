@@ -36,6 +36,19 @@ class DataProcessing:
         if not os.path.exists(self.processed_spectra_path):
             os.makedirs(self.processed_spectra_path, exist_ok=True)
 
+    def normalize_spectra(self, spectra:'array', method:'str'='median'):
+
+        if method=='nedian':
+
+            spectra[:, :-5] *= 1/np.median(spectra[:, :-5], axis=1).reshape(
+                (spectra.shape[0], 1)
+            )
+    # Nomalize by the median and reduce noise with the standar deviation
+        spectra *= 1/np.median(spec, axis=1).reshape((spec.shape[0], 1))
+    #    spec *= 1/np.std(spec, axis=1).reshape((spec.shape[0], 1))
+        return spectra
+
+        pass
     def missing_flux_replacement(self, spectra:'array', method:'str'='median'):
 
         if method=='median':
@@ -174,36 +187,6 @@ class DataProcessing:
 
         return plate, mjd, fiberid, run2d
 ################################################################################
-# def proc_spec(fnames):
-#
-#
-#     N = len(fnames)
-#     spec = np.empty((N, wave_master.size))
-#
-#     for idx, fname in enumerate(fnames[:N]):
-#         spec[idx, :] = np.load(fname)
-#
-#
-# # Discarding spectrum with more than 10% of indefininte
-# # valunes in a given wl for al training set
-#     wkeep = np.where(np.count_nonzero(~np.isfinite(spec), axis=0) < spec.shape[0] / 10)
-# # Removing one dimensional axis since wkeep is a tuple
-#     spec = np.squeeze(spec[:, wkeep])
-#     wave_master = np.squeeze(spec[:, wkeep])
-#
-#
-# # Replacing indefinite values in a spectrum with its nan median
-#     for flx in spec.T:
-#         flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
-#
-#
-# # Nomalize by the median and reduce noise with the standar deviation
-#     spec *= 1/np.median(spec, axis=1).reshape((spec.shape[0], 1))
-# #    spec *= 1/np.std(spec, axis=1).reshape((spec.shape[0], 1))
-#
-#
-#     np.save(f'spec_{N}.npy', spec)
-#     np.save(f'wave_master.npy', wave_master)
 ################################################################################
 class DownloadData:
 
