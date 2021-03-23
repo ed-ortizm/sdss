@@ -77,11 +77,18 @@ print(f'Normalizing data')
 normalization_methods = ['median', 'Z', 'min_max']
 
 for method in normalization_methods:
-    spectra = data_processing.normalize_spectra(spectra = spectra, method='median')
+    spectra = data_processing.normalize_spectra(spectra = spectra,
+        method='median'
+    )
 ###############################################################################
     print(f'Saving data')
-    np.save(f'spectra_{n_obs}_{method}.npy', spectra)
-np.save(f'wave_master_processed.npy', wave)
+    np.save(f'{spectra_path}/processed_spectra/spectra_{n_obs}_{method}.npy',
+        spectra
+    )
+
+np.save(f'{spectra_path}/processed_spectra/wave_master_{n_obs}_processed.npy',
+    wave
+)
 ################################################################################
 
 tf = time.time()
