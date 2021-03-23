@@ -111,11 +111,13 @@ class DataProcessing:
 
         spectra = np.empty((n_spectra, n_fluxes))
 
-        for idx, fname in enumerate(fnames):
+        for idx, file_path in enumerate(fnames):
 
-            print(f"Processing {idx:04}:{fname.split('/')[-1][:-5]}", end='\r')
+            fname = file_path.split('/')[-1].split('_')[0]
 
-            spectra[idx, :] = np.load(fname)
+            print(f"Loading {fname} to single array", end='\r')
+
+            spectra[idx, :] = np.load(file_path)
 
         return spectra
 
