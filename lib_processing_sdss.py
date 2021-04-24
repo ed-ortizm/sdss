@@ -17,12 +17,34 @@ from constants_sdss import n_waves, wave_master
 from constants_sdss import working_dir, science_arxive_server_path
 from constants_sdss import processed_spectra_path, spectra_path
 ################################################################################
+################################################################################
+
+################################################################################
 class FitsPath():
 
     def __init__(self, galaxies_df, n_processes):
 
         self.galaxies_df = galaxies_df
         self.n_processes = n_processes
+
+    def decode_base36(self, sub_class:'str'):
+
+        return int(number, 36)
+
+
+    def encode_base36(self, sub_class:'int'):
+
+        alphabet, base36 = ['0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', '']
+
+        sub_class = int(sub_class)
+
+        while sub_class:
+            sub_class, i = divmod(sub_class, 36)
+            base36 = alphabet[i] + base36
+
+        return base36 or alphabet[0]
+
+
 
 
     def class_sub_class(self, fits_paths:'list'):
