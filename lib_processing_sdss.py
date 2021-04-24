@@ -17,9 +17,56 @@ from constants_sdss import n_waves, wave_master
 from constants_sdss import working_dir, science_arxive_server_path
 from constants_sdss import processed_spectra_path, spectra_path
 ################################################################################
+class FitsPath():
+
+    def __init__(self, galaxies_df, n_processes):
+
+        self.galaxies_df = galaxies_df
+        self.n_processes = n_processes
+
+
+    def get_all_paths(self):
+
+        params = range(len(self.galaxies_df))
+
+        with mp.Pool(processes=self.n_processes) as pool:
+            res = pool.map(self._get_path, params)
+
+
+    def _get_path(self, idx_galaxy:'int'):
+
+        galaxy_fits_path, fname = self._galaxy_fits_path(idx_galaxy)
+        # fname = fname.split('.')[0]
+        # [plate, mjd, fiberid] = fname.split('-')[1:]
+
+        return galaxy_fits_path
+
+    def _galaxy_fits_path(self, idx_galaxy: 'int'):
+
+        galaxy = self.galaxies_df.iloc[idx_galaxy]
+        plate, mjd, fiberid, run2d = self._galaxy_identifiers(galaxy)
+
+        fname = f'spec-{plate}-{mjd}-{fiberid}.fits'
+
+        SDSSpath = f'sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate}'
+        retrieve_path = f'{spectra_path}/{SDSSpath}'
+
+        return f'{retrieve_path}/{fname}', fname
+
+    def _galaxy_identifiers(self, galaxy):
+
+        plate = f"{galaxy['plate']:04}"
+        mjd = f"{galaxy['mjd']}"
+        fiberid = f"{galaxy['fiberid']:04}"
+        run2d = f"{galaxy['run2d']}"
+
+        return plate, mjd, fiberid, run2d
+
+################################################################################
 class DataProcessing:
 
-    def __init__(self, galaxies_df, n_processes): #fnames: list, SN_threshold: float):
+    def __init__(self, galaxies_df, n_processes):
+        #fnames: list, SN_threshold: float):
 
         self.galaxies_df = galaxies_df
         self.n_processes = n_processes
@@ -206,7 +253,6 @@ class DataProcessing:
         run2d = f"{galaxy['run2d']}"
 
         return plate, mjd, fiberid, run2d
-################################################################################
 ################################################################################
 class DownloadData:
 

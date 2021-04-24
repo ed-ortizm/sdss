@@ -1,4 +1,6 @@
 #! /usr/bin/env python3
+
+from argparse import ArgumentParser
 import glob
 import os
 import sys
@@ -11,12 +13,20 @@ import matplotlib.pyplot as plt
 
 from constants_sdss import spectra_path
 from lib_processing_sdss import DataProcessing
-
-################################################################################
-n_obs = int(sys.argv[1])
-local = sys.argv[2] == 'local'
 ################################################################################
 ti = time.time()
+################################################################################
+parser = ArgumentParser()
+
+parser.add_argument('--server', '-s', type=str)
+parser.add_argument('--n_obs', type=int)
+parser.add_argument('--normalization_type', '-n_type', type=str)
+
+script_arguments = parser.parse_args()
+################################################################################
+n_obs = script_arguments.n_obs
+normalization_type = script_arguments.normalization_type
+local = script_arguments.server == 'local'
 ################################################################################
 # Loading data DataFrame with galaxies info
 # SNR sorted data
@@ -41,6 +51,7 @@ if not local:
 # Data processing
 data_processing = DataProcessing(galaxies_df= gs, n_processes=60)
 
+# Create and save interpolated data in master wave
 if not local:
     data_processing.get_fluxes_SN()
 ################################################################################
@@ -74,11 +85,11 @@ n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
 print(f'Indefinite vals in the final array: {np.sum(n_indef)}')
 ###############################################################################
 print(f'Normalizing data')
-normalization_methods = ['median', 'Z', 'min_max']
+normalization_methods = ['median']#, 'Z', 'min_max']
 
 for method in normalization_methods:
     spectra = data_processing.normalize_spectra(spectra = spectra,
-        method='median'
+        method=method
     )
 ###############################################################################
     print(f'Saving data')
