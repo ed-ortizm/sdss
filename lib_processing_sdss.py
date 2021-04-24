@@ -43,6 +43,7 @@ class FitsPath():
         with mp.Pool(processes=self.n_processes) as pool:
             res = pool.map(self._get_path, params)
 
+        return res
 
     def _get_path(self, idx_galaxy:'int'):
 
