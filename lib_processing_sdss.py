@@ -25,6 +25,17 @@ class FitsPath():
         self.n_processes = n_processes
 
 
+    def class_sub_class(self, fits_paths:'list'):
+
+        for galaxy_fits_path in fits_paths:
+
+            with pyfits.open(galaxy_fits_path) as hdul:
+                classification = hdul[2].data['CLASS']
+                subclass = hdul[2].data['SUBCLASS']
+
+            print(f'Class: {classification},   subclass: {subclass}\n')
+
+
     def get_all_paths(self):
 
         params = range(len(self.galaxies_df))
