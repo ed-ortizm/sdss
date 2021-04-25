@@ -146,18 +146,18 @@ class DataProcessing:
 
         if method=='median':
 
-            spectra[:, :-7] *= 1/np.median(spectra[:, :-7], axis=1).reshape(
+            spectra[:, :-8] *= 1/np.median(spectra[:, :-8], axis=1).reshape(
                 (spectra.shape[0], 1)
             )
 
         elif method=='Z':
 
-            spectra[:, :-7] = preprocessing.scale(spectra[:, :-7])
+            spectra[:, :-8] = preprocessing.scale(spectra[:, :-8])
 
         elif method=='min_max':
 
-            spectra[:, :-7] = preprocessing.MinMaxScaler().fit_transform(
-                spectra[:, :-7]
+            spectra[:, :-8] = preprocessing.MinMaxScaler().fit_transform(
+                spectra[:, :-8]
             )
 
         else:
@@ -196,7 +196,7 @@ class DataProcessing:
         spectra = spectra[:, keep_flux_mask]
         print(f'spectra shape after keep_spec_mask: {spectra.shape}')
 
-        wave = wave_master[keep_flux_mask[: -7]]
+        wave = wave_master[keep_flux_mask[: -8]]
 
         n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
         print(f'Indefinite vals in the NEW array: {np.sum(n_indef)}')
@@ -241,7 +241,7 @@ class DataProcessing:
 
     def _get_spectra(self, idx_galaxy: int):
 
-        galaxy_fits_path, fname = self._galaxy_fits_path(idx_galaxy)
+        galaxy_fits_path, fname, run2d = self._galaxy_fits_path(idx_galaxy)
         fname = fname.split('.')[0]
         [plate, mjd, fiberid] = fname.split('-')[1:]
 
@@ -264,12 +264,12 @@ class DataProcessing:
 
             np.save(f'{self.raw_spectra_path}/{fname}.npy',
                 np.hstack(
-                    (flux, int(plate), int(mjd), int(fiberid),
+                    (flux, int(plate), int(mjd), int(fiberid), run2d
                     classification, sub_class, z, SN)))
 
             np.save(f'{self.interpolated_spectra_path}/{fname}_interpolated.npy',
                 np.hstack(
-                    (flux, int(plate), int(mjd), int(fiberid),
+                    (flux, int(plate), int(mjd), int(fiberid), run2d
                     classification, sub_class, z, SN)))
 
             return 0
@@ -292,7 +292,7 @@ class DataProcessing:
 
         classification = self.decode_base36(classification)
         sub_class = self.decode_base36(sub_class)
-        
+
         return wave, flux, z, SN, classification, sub_class
 
     def _galaxy_fits_path(self, idx_galaxy: int):
@@ -305,7 +305,8 @@ class DataProcessing:
         SDSSpath = f'sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate}'
         retrieve_path = f'{spectra_path}/{SDSSpath}'
 
-        return f'{retrieve_path}/{fname}', fname
+        run2d = self.decode_base36(run2d)
+        return f'{retrieve_path}/{fname}', fname, run2d
 
     def _galaxy_identifiers(self, galaxy):
 
