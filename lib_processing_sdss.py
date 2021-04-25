@@ -17,47 +17,53 @@ from constants_sdss import n_waves, wave_master
 from constants_sdss import working_dir, science_arxive_server_path
 from constants_sdss import processed_spectra_path, spectra_path
 ################################################################################
-################################################################################
+############################################################################
 
 ################################################################################
-class FitsPath():
-
+class FitsPath:
+    ############################################################################
     def __init__(self, galaxies_df, n_processes):
 
         self.galaxies_df = galaxies_df
         self.n_processes = n_processes
-
+    ############################################################################
     def decode_base36(self, sub_class:'str'):
 
-        return int(number, 36)
+        if ' ' in sub_class:
+            sub_class = sub_class.replace(' ', '')
 
+        elif sub_class == '':
+            sub_class = 'EMPCLS'
 
+        return int(sub_class, 36)
+    ############################################################################
     def encode_base36(self, sub_class:'int'):
 
         alphabet, base36 = ['0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', '']
 
-        sub_class = int(sub_class)
+        sub_class = abs(int(sub_class))
 
         while sub_class:
             sub_class, i = divmod(sub_class, 36)
             base36 = alphabet[i] + base36
 
         return base36 or alphabet[0]
-
-
-
-
+    ############################################################################
     def class_sub_class(self, fits_paths:'list'):
 
-        for galaxy_fits_path in fits_paths:
+        with mp.Pool(processes=self.n_processes) as pool:
+            res = pool.map(self._class_sub_class, fits_paths)
 
-            with pyfits.open(galaxy_fits_path) as hdul:
-                classification = hdul[2].data['CLASS']
-                subclass = hdul[2].data['SUBCLASS']
+        return res
+    ############################################################################
+    def _class_sub_class(self, fits_path:'str'):
 
-            print(f'Class: {classification},   subclass: {subclass}\n')
+        with pyfits.open(fits_path) as hdul:
+            classification = hdul[2].data['CLASS']
+            sub_class = hdul[2].data['SUBCLASS']
 
-
+        return [classification, sub_class]
+    ############################################################################
     def get_all_paths(self):
 
         params = range(len(self.galaxies_df))
@@ -66,15 +72,13 @@ class FitsPath():
             res = pool.map(self._get_path, params)
 
         return res
-
+    ############################################################################
     def _get_path(self, idx_galaxy:'int'):
 
         galaxy_fits_path, fname = self._galaxy_fits_path(idx_galaxy)
-        # fname = fname.split('.')[0]
-        # [plate, mjd, fiberid] = fname.split('-')[1:]
 
         return galaxy_fits_path
-
+    ############################################################################
     def _galaxy_fits_path(self, idx_galaxy: 'int'):
 
         galaxy = self.galaxies_df.iloc[idx_galaxy]
@@ -86,7 +90,7 @@ class FitsPath():
         retrieve_path = f'{spectra_path}/{SDSSpath}'
 
         return f'{retrieve_path}/{fname}', fname
-
+    ############################################################################
     def _galaxy_identifiers(self, galaxy):
 
         plate = f"{galaxy['plate']:04}"
@@ -95,7 +99,6 @@ class FitsPath():
         run2d = f"{galaxy['run2d']}"
 
         return plate, mjd, fiberid, run2d
-
 ################################################################################
 class DataProcessing:
 
@@ -116,23 +119,45 @@ class DataProcessing:
         self.processed_spectra_path = f'{spectra_path}/processed_spectra'
         if not os.path.exists(self.processed_spectra_path):
             os.makedirs(self.processed_spectra_path, exist_ok=True)
+    ############################################################################
+    def decode_base36(self, sub_class:'str'):
 
+        if ' ' in sub_class:
+            sub_class = sub_class.replace(' ', '')
+
+        elif sub_class == '':
+            sub_class = 'EMPCLS'
+
+        return int(sub_class, 36)
+    ############################################################################
+    def encode_base36(self, sub_class:'int'):
+
+        alphabet, base36 = ['0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', '']
+
+        sub_class = abs(int(sub_class))
+
+        while sub_class:
+            sub_class, i = divmod(sub_class, 36)
+            base36 = alphabet[i] + base36
+
+        return base36 or alphabet[0]
+    ############################################################################
     def normalize_spectra(self, spectra:'array', method:'str'):
 
         if method=='median':
 
-            spectra[:, :-5] *= 1/np.median(spectra[:, :-5], axis=1).reshape(
+            spectra[:, :-7] *= 1/np.median(spectra[:, :-7], axis=1).reshape(
                 (spectra.shape[0], 1)
             )
 
         elif method=='Z':
 
-            spectra[:, :-5] = preprocessing.scale(spectra[:, :-5])
+            spectra[:, :-7] = preprocessing.scale(spectra[:, :-7])
 
         elif method=='min_max':
 
-            spectra[:, :-5] = preprocessing.MinMaxScaler().fit_transform(
-                spectra[:, :-5]
+            spectra[:, :-7] = preprocessing.MinMaxScaler().fit_transform(
+                spectra[:, :-7]
             )
 
         else:
@@ -157,8 +182,8 @@ class DataProcessing:
                 spectra[idx, mask] = np.nanmean(spectra[idx, :])
         return spectra
 
-    def indefinite_values_handler(self, spectra: 'np.array',
-        discard_fraction: 'float'=0.1):
+    def indefinite_values_handler(self, spectra:'np.array',
+        discard_fraction:'float'=0.1):
         #global wave_master
 
         print(f'spectra shape before keep_spec_mask: {spectra.shape}')
@@ -171,7 +196,7 @@ class DataProcessing:
         spectra = spectra[:, keep_flux_mask]
         print(f'spectra shape after keep_spec_mask: {spectra.shape}')
 
-        wave = wave_master[keep_flux_mask[: -5]]
+        wave = wave_master[keep_flux_mask[: -7]]
 
         n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
         print(f'Indefinite vals in the NEW array: {np.sum(n_indef)}')
@@ -219,7 +244,6 @@ class DataProcessing:
         galaxy_fits_path, fname = self._galaxy_fits_path(idx_galaxy)
         fname = fname.split('.')[0]
         [plate, mjd, fiberid] = fname.split('-')[1:]
-        # print(f'plate: {plate}, mjd: {mjd}, fiberid: {fiberid}')
 
         if not os.path.exists(galaxy_fits_path):
             print(f'{fname} not found')
@@ -232,22 +256,21 @@ class DataProcessing:
 
         else:
 
-            wave, flux, z, SN = self._rest_frame(idx_galaxy, galaxy_fits_path)
-            flux_interpolated = np.interp(
-                wave_master, wave, flux, left=np.nan, right=np.nan
-            )
+            wave, flux, z, SN, classification, sub_class = self._rest_frame(
+            idx_galaxy, galaxy_fits_path)
+
+            flux_interpolated = np.interp(wave_master, wave, flux,
+                left=np.nan, right=np.nan)
 
             np.save(f'{self.raw_spectra_path}/{fname}.npy',
                 np.hstack(
-                    (flux, int(plate), int(mjd), int(fiberid), z, SN)
-                )
-            )
+                    (flux, int(plate), int(mjd), int(fiberid),
+                    classification, sub_class, z, SN)))
 
             np.save(f'{self.interpolated_spectra_path}/{fname}_interpolated.npy',
                 np.hstack(
-                    (flux_interpolated, int(plate), int(mjd), int(fiberid), z, SN)
-                )
-            )
+                    (flux, int(plate), int(mjd), int(fiberid),
+                    classification, sub_class, z, SN)))
 
             return 0
 
@@ -257,6 +280,8 @@ class DataProcessing:
         with pyfits.open(galaxy_fits_path) as hdul:
             wave = 10. ** (hdul[1].data['loglam'])
             flux = hdul[1].data['flux']
+            classification = hdul[2].data['CLASS']
+            sub_class = hdul[2].data['SUBCLASS']
 
 
         z = self.galaxies_df.iloc[idx_galaxy]['z']
@@ -265,7 +290,10 @@ class DataProcessing:
 
         SN = self.galaxies_df.iloc[idx_galaxy]['snMedian']
 
-        return wave, flux, z, SN
+        classification = self.decode_base36(classification)
+        sub_class = self.decode_base36(sub_class)
+        
+        return wave, flux, z, SN, classification, sub_class
 
     def _galaxy_fits_path(self, idx_galaxy: int):
 
