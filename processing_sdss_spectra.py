@@ -82,7 +82,7 @@ n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
 print(f'Indefinite vals in the final array: {np.sum(n_indef)}')
 ###############################################################################
 print(f'Normalizing data')
-normalization_methods = ['median']#, 'Z', 'min_max']
+normalization_methods = ['median'] #, 'Z', 'min_max']
 
 for method in normalization_methods:
 

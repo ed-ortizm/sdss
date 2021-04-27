@@ -29,11 +29,33 @@ class FitsPath:
     ############################################################################
     def decode_base36(self, sub_class:'str'):
 
+        star_forming = 'STARFORMING'
+        broad_line = 'BROADLINE'
+        star_burst = 'STARBURST'
+        galaxy = 'GALAXY'
+        print(f'class in: {sub_class}')
+
+        if star_forming in sub_class:
+            sub_class = sub_class.replace(star_forming, 'SF')
+            #print(f'class out: {sub_class}')
+
+        if broad_line in sub_class:
+            sub_class = sub_class.replace(broad_line, 'BL')
+            #print(f'class out: {sub_class}')
+
+        if star_burst in sub_class:
+            sub_class = sub_class.replace(star_burst, 'SB')
+            print(f'class out: {sub_class}')
+
+        if galaxy in sub_class:
+            sub_class = sub_class.replace(galaxy, 'G')
+            #print(f'class out: {sub_class}')
+
         if ' ' in sub_class:
             sub_class = sub_class.replace(' ', '')
 
         elif sub_class == '':
-            sub_class = 'EMPCLS'
+            sub_class = 'EC'
 
         return int(sub_class, 36)
     ############################################################################
@@ -62,7 +84,7 @@ class FitsPath:
             classification = hdul[2].data['CLASS']
             sub_class = hdul[2].data['SUBCLASS']
 
-        return [classification, sub_class]
+        return sub_class #[classification, sub_class]
     ############################################################################
     def get_all_paths(self):
 
@@ -122,11 +144,38 @@ class DataProcessing:
     ############################################################################
     def decode_base36(self, sub_class:'str'):
 
+        star_forming = 'STARFORMING'
+        broad_line = 'BROADLINE'
+        star_burst = 'STARBURST'
+        galaxy = 'GALAXY'
+        v5130 = 'v5_13_0'
+        print(f'class in: {sub_class}')
+
+        if star_forming in sub_class:
+            sub_class = sub_class.replace(star_forming, 'SF')
+            #print(f'class out: {sub_class}')
+
+        if broad_line in sub_class:
+            sub_class = sub_class.replace(broad_line, 'BL')
+            #print(f'class out: {sub_class}')
+
+        if star_burst in sub_class:
+            sub_class = sub_class.replace(star_burst, 'SB')
+            #print(f'class out: {sub_class}')
+
+        if galaxy in sub_class:
+            sub_class = sub_class.replace(galaxy, 'G')
+            #print(f'class out: {sub_class}')
+
+        if v5130 in sub_class:
+            sub_class = sub_class.replace(v5130, '5130')
+            #print(f'class out: {sub_class}')
+
         if ' ' in sub_class:
             sub_class = sub_class.replace(' ', '')
 
-        elif sub_class == '':
-            sub_class = 'EMPCLS'
+        if sub_class == '':
+            sub_class = 'EC'
 
         return int(sub_class, 36)
     ############################################################################
@@ -217,12 +266,14 @@ class DataProcessing:
 
         spectra = np.empty((n_spectra, n_fluxes))
 
+        print(spectra.shape)
+
         for idx, file_path in enumerate(fnames):
 
             fname = file_path.split('/')[-1].split('_')[0]
 
             print(f"Loading {fname} to single array", end='\r')
-
+            #print(f"{idx}, Loading {fname} to single array")
             spectra[idx, :] = np.load(file_path)
 
         return spectra
@@ -239,7 +290,7 @@ class DataProcessing:
 
         print(f'Spectra saved. Failed to save {n_failed}')
 
-    def _get_spectra(self, idx_galaxy: int):
+    def _get_spectra(self, idx_galaxy:'int'):
 
         galaxy_fits_path, fname, run2d = self._galaxy_fits_path(idx_galaxy)
         fname = fname.split('.')[0]
@@ -249,7 +300,7 @@ class DataProcessing:
             print(f'{fname} not found')
             return 1
 
-        if os.path.exists(f'{self.interpolated_spectra_path}/{fname}.npy'):
+        if os.path.exists(f'{self.interpolated_spectra_path}/{fname}_interpolated.npy'):
 
             print(f'{fname} already processed', end='\r')
             return 0
@@ -264,13 +315,15 @@ class DataProcessing:
 
             np.save(f'{self.raw_spectra_path}/{fname}.npy',
                 np.hstack(
-                    (flux, int(plate), int(mjd), int(fiberid), run2d
+                    (flux, int(plate), int(mjd), int(fiberid), int(run2d),
                     classification, sub_class, z, SN)))
 
+            spectrum_plus = np.hstack(
+                    (flux_interpolated, int(plate), int(mjd), int(fiberid), int(run2d),
+                    classification, sub_class, z, SN))
+
             np.save(f'{self.interpolated_spectra_path}/{fname}_interpolated.npy',
-                np.hstack(
-                    (flux, int(plate), int(mjd), int(fiberid), run2d
-                    classification, sub_class, z, SN)))
+                spectrum_plus)
 
             return 0
 
@@ -280,16 +333,14 @@ class DataProcessing:
         with pyfits.open(galaxy_fits_path) as hdul:
             wave = 10. ** (hdul[1].data['loglam'])
             flux = hdul[1].data['flux']
-            classification = hdul[2].data['CLASS']
-            sub_class = hdul[2].data['SUBCLASS']
-
+            classification = hdul[2].data['CLASS'][0]
+            sub_class = hdul[2].data['SUBCLASS'][0]
 
         z = self.galaxies_df.iloc[idx_galaxy]['z']
         z_factor = 1./(1. + z)
         wave *= z_factor
 
         SN = self.galaxies_df.iloc[idx_galaxy]['snMedian']
-
         classification = self.decode_base36(classification)
         sub_class = self.decode_base36(sub_class)
 
