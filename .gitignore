@@ -1,3 +1,4 @@
+*.txt
 # Serialized data
 *.dill
 *.pk

@@ -17,7 +17,7 @@ from constants_sdss import n_waves, wave_master
 from constants_sdss import working_dir, science_arxive_server_path
 from constants_sdss import processed_spectra_path, spectra_path
 ################################################################################
-# helper_function
+############################################################################
 
 ################################################################################
 class FitsPath:
@@ -28,6 +28,28 @@ class FitsPath:
         self.n_processes = n_processes
     ############################################################################
     def decode_base36(self, sub_class:'str'):
+
+        star_forming = 'STARFORMING'
+        broad_line = 'BROADLINE'
+        star_burst = 'STARBURST'
+        galaxy = 'GALAXY'
+        print(f'class in: {sub_class}')
+
+        if star_forming in sub_class:
+            sub_class = sub_class.replace(star_forming, 'SF')
+            #print(f'class out: {sub_class}')
+
+        if broad_line in sub_class:
+            sub_class = sub_class.replace(broad_line, 'BL')
+            #print(f'class out: {sub_class}')
+
+        if star_burst in sub_class:
+            sub_class = sub_class.replace(star_burst, 'SB')
+            print(f'class out: {sub_class}')
+
+        if galaxy in sub_class:
+            sub_class = sub_class.replace(galaxy, 'G')
+            #print(f'class out: {sub_class}')
 
         if ' ' in sub_class:
             sub_class = sub_class.replace(' ', '')
@@ -73,15 +95,15 @@ class FitsPath:
 
         return res
     ############################################################################
-    def _get_path(self, galaxy_index:'int'):
+    def _get_path(self, idx_galaxy:'int'):
 
-        galaxy_fits_path, fname = self._galaxy_fits_path(galaxy_index)
+        galaxy_fits_path, fname = self._galaxy_fits_path(idx_galaxy)
 
         return galaxy_fits_path
     ############################################################################
-    def _galaxy_fits_path(self, galaxy_index:'int'):
+    def _galaxy_fits_path(self, idx_galaxy: 'int'):
 
-        galaxy = self.galaxies_df.iloc[galaxy_index]
+        galaxy = self.galaxies_df.iloc[idx_galaxy]
         plate, mjd, fiberid, run2d = self._galaxy_identifiers(galaxy)
 
         fname = f'spec-{plate}-{mjd}-{fiberid}.fits'
@@ -92,126 +114,6 @@ class FitsPath:
         return f'{retrieve_path}/{fname}', fname
     ############################################################################
     def _galaxy_identifiers(self, galaxy):
-
-        plate = f"{galaxy['plate']:04}"
-        mjd = f"{galaxy['mjd']}"
-        fiberid = f"{galaxy['fiberid']:04}"
-        run2d = f"{galaxy['run2d']}"
-
-        return plate, mjd, fiberid, run2d
-################################################################################
-class RawDataProcessing:
-
-    def __init__(self, galaxies_df:'pd.df',
-        data_directory:'str', output_directory:'str',
-        number_processes:'int'):
-    """
-    galaxies_df : data frame containing meta data from sdss spectra
-    data_directory : sdss raw data's directory
-    output_directory : redshift corrected spectra's and meta data directory
-    number_processes : number of processes to use with mp.Pool
-
-    """
-
-        self.df = galaxies_df
-        self.number_processes = number_processes
-
-        self.data_directory = data_directory
-        if not os.path.exists(self.data_output_directory):
-            print(f'Path: {self.data_output_directory} does not exist!')
-
-        self.data_output_directory = output_directory
-        if not os.path.exists(self.data_output_directory):
-            os.makedirs(self.data_output_directory, exist_ok=True)
-    ############################################################################
-    def get_raw_spectra(self):
-
-        print(f'Saving raw redshift corrected spectra and meta-data!')
-
-        galaxy_indexes = range(self.df.shape[0])
-
-        with mp.Pool(processes=self.number_processes) as pool:
-            results = pool.map(self._get_spectra, galaxy_indexes)
-            number_failed = sum(results)
-
-        print(f'Spectra saved. Failed to save {number_failed}')
-
-    def _get_spectra(self, galaxy_index:'int'):
-
-        sdss_directory, spectra_name, run2d = self._galaxy_localization(
-            galaxy_index)
-
-        [plate, mjd, fiberid] = spectra_name.split('-')[1:]
-
-        galaxy_fits_location = f'{sdss_directory}/{spectra_name}.fits'
-
-        if not os.path.exists(galaxy_fits_location):
-
-            print(f'{spectra_name}.fits file not found!')
-
-            return 1
-
-        else:
-
-            [wave, flux, z, SN,
-                classification, sub_class] = self._rest_frame(galaxy_index,
-                                                 galaxy_fits_location)
-
-# Here is where I have to add the classes structure for the data
-
-# np.save(f'{self.output_directory}/{fname}.npy',
-                # np.hstack(
-                    # (flux, int(plate), int(mjd), int(fiberid), run2d,
-                    # classification, sub_class, z, SN)))
-
-            return 0
-
-    def _rest_frame(self, galaxy_index, galaxy_fits_location):
-        """De-redshifting"""
-
-        with pyfits.open(galaxy_fits_location) as hdul:
-            wave = 10. ** (hdul[1].data['loglam'])
-            flux = hdul[1].data['flux']
-            classification = hdul[2].data['CLASS']
-            sub_class = hdul[2].data['SUBCLASS']
-
-
-        z = self.df.iloc[galaxy_index]['z']
-        z_factor = 1./(1. + z)
-        wave *= z_factor
-
-        SN = self.df.iloc[galaxy_index]['snMedian']
-
-        return wave, flux, z, SN, classification, sub_class
-
-    def _galaxy_fits_path(self, galaxy_index:'int'):
-
-        galaxy = self.df.iloc[galaxy_index]
-        plate, mjd, fiberid, run2d = self.galaxy_identifiers(galaxy)
-
-        spectra_name = f'spec-{plate}-{mjd}-{fiberid}'
-
-        sdss_directory = (f'{self.data_directory}/sas/dr16/sdss/spectro/redux'
-            f'/{run2d}/spectra/lite/{plate}'
-
-        return sdss_directory, spectra_name, run2d
-    ############################################################################
-    def galaxy_identifiers(self, galaxy:'df.row'):
-        """
-        INPUT PARAMETERS
-
-        galaxy : pandas DataFrame row with at least the keywords:
-            'plate', 'mjd', 'fiberid' and 'run2d'
-
-        """
-
-        """
-        RETURN
-
-        str values for the keywords: 'plate', 'mjd', 'fiberid' and 'run2d'
-            contains in the DataFrame row pass as parameter to the function
-
-        """
 
         plate = f"{galaxy['plate']:04}"
         mjd = f"{galaxy['mjd']}"
@@ -241,6 +143,33 @@ class DataProcessing:
             os.makedirs(self.processed_spectra_path, exist_ok=True)
     ############################################################################
     def decode_base36(self, sub_class:'str'):
+
+        star_forming = 'STARFORMING'
+        broad_line = 'BROADLINE'
+        star_burst = 'STARBURST'
+        galaxy = 'GALAXY'
+        v5130 = 'v5_13_0'
+        print(f'class in: {sub_class}')
+
+        if star_forming in sub_class:
+            sub_class = sub_class.replace(star_forming, 'SF')
+            #print(f'class out: {sub_class}')
+
+        if broad_line in sub_class:
+            sub_class = sub_class.replace(broad_line, 'BL')
+            #print(f'class out: {sub_class}')
+
+        if star_burst in sub_class:
+            sub_class = sub_class.replace(star_burst, 'SB')
+            #print(f'class out: {sub_class}')
+
+        if galaxy in sub_class:
+            sub_class = sub_class.replace(galaxy, 'G')
+            #print(f'class out: {sub_class}')
+
+        if v5130 in sub_class:
+            sub_class = sub_class.replace(v5130, '5130')
+            #print(f'class out: {sub_class}')
 
         if ' ' in sub_class:
             sub_class = sub_class.replace(' ', '')
@@ -337,12 +266,14 @@ class DataProcessing:
 
         spectra = np.empty((n_spectra, n_fluxes))
 
+        print(spectra.shape)
+
         for idx, file_path in enumerate(fnames):
 
             fname = file_path.split('/')[-1].split('_')[0]
 
             print(f"Loading {fname} to single array", end='\r')
-
+            #print(f"{idx}, Loading {fname} to single array")
             spectra[idx, :] = np.load(file_path)
 
         return spectra
@@ -359,7 +290,7 @@ class DataProcessing:
 
         print(f'Spectra saved. Failed to save {n_failed}')
 
-    def _get_spectra(self, idx_galaxy: int):
+    def _get_spectra(self, idx_galaxy:'int'):
 
         galaxy_fits_path, fname, run2d = self._galaxy_fits_path(idx_galaxy)
         fname = fname.split('.')[0]
@@ -369,7 +300,7 @@ class DataProcessing:
             print(f'{fname} not found')
             return 1
 
-        if os.path.exists(f'{self.interpolated_spectra_path}/{fname}.npy'):
+        if os.path.exists(f'{self.interpolated_spectra_path}/{fname}_interpolated.npy'):
 
             print(f'{fname} already processed', end='\r')
             return 0
@@ -384,13 +315,15 @@ class DataProcessing:
 
             np.save(f'{self.raw_spectra_path}/{fname}.npy',
                 np.hstack(
-                    (flux, int(plate), int(mjd), int(fiberid), run2d
+                    (flux, int(plate), int(mjd), int(fiberid), int(run2d),
                     classification, sub_class, z, SN)))
 
+            spectrum_plus = np.hstack(
+                    (flux_interpolated, int(plate), int(mjd), int(fiberid), int(run2d),
+                    classification, sub_class, z, SN))
+
             np.save(f'{self.interpolated_spectra_path}/{fname}_interpolated.npy',
-                np.hstack(
-                    (flux, int(plate), int(mjd), int(fiberid), run2d
-                    classification, sub_class, z, SN)))
+                spectrum_plus)
 
             return 0
 
@@ -400,16 +333,14 @@ class DataProcessing:
         with pyfits.open(galaxy_fits_path) as hdul:
             wave = 10. ** (hdul[1].data['loglam'])
             flux = hdul[1].data['flux']
-            classification = hdul[2].data['CLASS']
-            sub_class = hdul[2].data['SUBCLASS']
-
+            classification = hdul[2].data['CLASS'][0]
+            sub_class = hdul[2].data['SUBCLASS'][0]
 
         z = self.galaxies_df.iloc[idx_galaxy]['z']
         z_factor = 1./(1. + z)
         wave *= z_factor
 
         SN = self.galaxies_df.iloc[idx_galaxy]['snMedian']
-
         classification = self.decode_base36(classification)
         sub_class = self.decode_base36(sub_class)
 

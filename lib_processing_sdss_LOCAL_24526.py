@@ -33,7 +33,7 @@ class FitsPath:
             sub_class = sub_class.replace(' ', '')
 
         elif sub_class == '':
-            sub_class = 'EC'
+            sub_class = 'EMPCLS'
 
         return int(sub_class, 36)
     ############################################################################
@@ -62,7 +62,7 @@ class FitsPath:
             classification = hdul[2].data['CLASS']
             sub_class = hdul[2].data['SUBCLASS']
 
-        return sub_class #[classification, sub_class]
+        return [classification, sub_class]
     ############################################################################
     def get_all_paths(self):
 
@@ -245,8 +245,8 @@ class DataProcessing:
         if ' ' in sub_class:
             sub_class = sub_class.replace(' ', '')
 
-        if sub_class == '':
-            sub_class = 'EC'
+        elif sub_class == '':
+            sub_class = 'EMPCLS'
 
         return int(sub_class, 36)
     ############################################################################
@@ -384,7 +384,7 @@ class DataProcessing:
 
             np.save(f'{self.raw_spectra_path}/{fname}.npy',
                 np.hstack(
-                    (flux, int(plate), int(mjd), int(fiberid), run2d
+                    (flux, int(plate), int(mjd), int(fiberid), run2d,
                     classification, sub_class, z, SN)))
 
             np.save(f'{self.interpolated_spectra_path}/{fname}_interpolated.npy',
@@ -418,7 +418,7 @@ class DataProcessing:
     def _galaxy_fits_path(self, idx_galaxy: int):
 
         galaxy = self.galaxies_df.iloc[idx_galaxy]
-        plate, mjd, fiberid, run2d = self._galaxy_identifiers(galaxy)
+        plate, mjd, fiberid, run2d = galaxy_identifiers(galaxy)
 
         fname = f'spec-{plate}-{mjd}-{fiberid}.fits'
 
@@ -428,14 +428,6 @@ class DataProcessing:
         run2d = self.decode_base36(run2d)
         return f'{retrieve_path}/{fname}', fname, run2d
 
-    def _galaxy_identifiers(self, galaxy):
-
-        plate = f"{galaxy['plate']:04}"
-        mjd = f"{galaxy['mjd']}"
-        fiberid = f"{galaxy['fiberid']:04}"
-        run2d = f"{galaxy['run2d']}"
-
-        return plate, mjd, fiberid, run2d
 ################################################################################
 class DownloadData:
 
