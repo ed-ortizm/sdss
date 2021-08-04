@@ -121,8 +121,16 @@ class RawDataProcessing:
             print(f'Path: {self.data_output_directory} does not exist!')
 
         self.data_output_directory = output_directory
+        self.rest_frame_directory = f"{output_directory}/rest_frame"
         if not os.path.exists(self.data_output_directory):
-            os.makedirs(self.data_output_directory, exist_ok=True)
+            os.makedirs(self.data_output_directory)
+            os.makedirs(f"{self.rest_frame_directory}")
+
+
+        self.meta_data_frame = pd.DataFrame(
+            columns=['spectra name', 'run2d',
+                'sdss class', 'sdss sub-class',
+                'z', 'snr'])
     ############################################################################
     def get_raw_spectra(self):
 
@@ -148,7 +156,6 @@ class RawDataProcessing:
         if not os.path.exists(galaxy_fits_location):
 
             print(f'{spectra_name}.fits file not found!')
-
             return 1
 
         else:
@@ -157,12 +164,12 @@ class RawDataProcessing:
                 classification, sub_class] = self._rest_frame(galaxy_index,
                                                  galaxy_fits_location)
 
-# Here is where I have to add the classes structure for the data
+            np.save(f"{self.rest_frame_directory}/{spectra_name}.npy",
+                np.vstack((wave, flux)))
 
-# np.save(f'{self.output_directory}/{fname}.npy',
-                # np.hstack(
-                    # (flux, int(plate), int(mjd), int(fiberid), run2d,
-                    # classification, sub_class, z, SN)))
+            self.meta_data_frame.loc[galaxy_index] = [spectra_name, run2d,
+                classification, sub_class,
+                z, snr])
 
             return 0
 
