@@ -11,7 +11,7 @@ from lib_processing_sdss import RawDataProcessing
 # local = script_arguments.server == 'local'
 ################################################################################
 parser = ConfigParser(interpolation=ExtendedInterpolation())
-parser.read('raw_spectra_processing.ini')
+parser.read('raw_configuration.ini')
 # relevant directory
 data_directory = parser.get('directories', 'data_directory')
 output_directory = parser.get('directories', 'output_directory')

@@ -13,9 +13,9 @@ import numpy as np
 import pandas as pd
 from sklearn import preprocessing
 
-from constants_sdss import n_waves, wave_master
-from constants_sdss import working_dir, science_arxive_server_path
-from constants_sdss import processed_spectra_path, spectra_path
+from constants_sdss import number_waves, wave_master
+#from constants_sdss import working_dir, science_arxive_server_path
+#from constants_sdss import processed_spectra_path, spectra_path
 ################################################################################
 # helper_function
 
@@ -105,13 +105,13 @@ class RawDataProcessing:
     def __init__(self, galaxies_df:'pd.df',
         data_directory:'str', output_directory:'str',
         number_processes:'int'):
-    """
-    galaxies_df : data frame containing meta data from sdss spectra
-    data_directory : sdss raw data's directory
-    output_directory : redshift corrected spectra's and meta data directory
-    number_processes : number of processes to use with mp.Pool
+        """
+        galaxies_df : data frame containing meta data from sdss spectra
+        data_directory : sdss raw data's directory
+        output_directory : redshift corrected spectra's and meta data directory
+        number_processes : number of processes to use with mp.Pool
 
-    """
+        """
 
         self.df = galaxies_df
         self.number_processes = number_processes
@@ -169,7 +169,7 @@ class RawDataProcessing:
 
             self.meta_data_frame.loc[galaxy_index] = [spectra_name, run2d,
                 classification, sub_class,
-                z, snr])
+                z, snr]
 
             return 0
 
@@ -199,7 +199,7 @@ class RawDataProcessing:
         spectra_name = f'spec-{plate}-{mjd}-{fiberid}'
 
         sdss_directory = (f'{self.data_directory}/sas/dr16/sdss/spectro/redux'
-            f'/{run2d}/spectra/lite/{plate}'
+            f'/{run2d}/spectra/lite/{plate}')
 
         return sdss_directory, spectra_name, run2d
     ############################################################################
@@ -391,12 +391,12 @@ class DataProcessing:
 
             np.save(f'{self.raw_spectra_path}/{fname}.npy',
                 np.hstack(
-                    (flux, int(plate), int(mjd), int(fiberid), run2d
+                    (flux, int(plate), int(mjd), int(fiberid), run2d,
                     classification, sub_class, z, SN)))
 
             np.save(f'{self.interpolated_spectra_path}/{fname}_interpolated.npy',
                 np.hstack(
-                    (flux, int(plate), int(mjd), int(fiberid), run2d
+                    (flux, int(plate), int(mjd), int(fiberid), run2d,
                     classification, sub_class, z, SN)))
 
             return 0
