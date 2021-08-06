@@ -1,7 +1,10 @@
 #! /usr/bin/env python3
 
-from argparse import ArgumentParser
+#from argparse import ArgumentParser
 from configparser import ConfigParser, ExtendedInterpolation
+
+import numpy as np
+import pandas as pd
 
 from lib_processing_sdss import RawDataProcessing
 ################################################################################
@@ -20,6 +23,7 @@ number_spectra = parser.getint('script parameters', 'number_spectra')
 number_processes = parser.getint('script parameters', 'number_processes')
 ################################################################################
 # Data processing
+print(f'{data_directory}')
 gs = pd.read_csv(f'{data_directory}/gals_DR16.csv')
 
 # Use z_noqso if possible

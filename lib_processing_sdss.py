@@ -117,11 +117,12 @@ class RawDataProcessing:
         self.number_processes = number_processes
 
         self.data_directory = data_directory
-        if not os.path.exists(self.data_output_directory):
+        if not os.path.exists(self.data_directory):
             print(f'Path: {self.data_output_directory} does not exist!')
 
         self.data_output_directory = output_directory
         self.rest_frame_directory = f"{output_directory}/rest_frame"
+
         if not os.path.exists(self.data_output_directory):
             os.makedirs(self.data_output_directory)
             os.makedirs(f"{self.rest_frame_directory}")
@@ -160,7 +161,7 @@ class RawDataProcessing:
 
         else:
 
-            [wave, flux, z, SN,
+            [wave, flux, z, signal_noise_ratio,
                 classification, sub_class] = self._rest_frame(galaxy_index,
                                                  galaxy_fits_location)
 
@@ -169,7 +170,7 @@ class RawDataProcessing:
 
             self.meta_data_frame.loc[galaxy_index] = [spectra_name, run2d,
                 classification, sub_class,
-                z, snr]
+                z, signal_noise_ratio]
 
             return 0
 
@@ -191,7 +192,7 @@ class RawDataProcessing:
 
         return wave, flux, z, SN, classification, sub_class
 
-    def _galaxy_fits_path(self, galaxy_index:'int'):
+    def _galaxy_localization(self, galaxy_index:'int'):
 
         galaxy = self.df.iloc[galaxy_index]
         plate, mjd, fiberid, run2d = self.galaxy_identifiers(galaxy)
