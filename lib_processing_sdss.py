@@ -128,10 +128,7 @@ class RawDataProcessing:
             os.makedirs(f"{self.rest_frame_directory}")
 
 
-        self.meta_data_frame = pd.DataFrame(
-            columns=['spectra name', 'run2d',
-                'sdss class', 'sdss sub-class',
-                'z', 'snr'])
+        self.meta_data_frame = None
     ############################################################################
     def get_raw_spectra(self):
 
@@ -141,9 +138,14 @@ class RawDataProcessing:
 
         with mp.Pool(processes=self.number_processes) as pool:
             results = pool.map(self._get_spectra, galaxy_indexes)
-            number_failed = sum(results)
-
-        print(f'Spectra saved. Failed to save {number_failed}')
+#            number_failed = sum(results)
+        
+        self.meta_data_frame = pd.DataFrame(
+            results,
+            columns=['spectra name', 'run2d',
+                'sdss class', 'sdss sub-class',
+                'z', 'snr'])
+       # print(f'Spectra saved. Failed to save {number_failed}')
 
     def _get_spectra(self, galaxy_index:'int'):
 
@@ -156,8 +158,13 @@ class RawDataProcessing:
 
         if not os.path.exists(galaxy_fits_location):
 
-            print(f'{spectra_name}.fits file not found!')
-            return 1
+            print(f'{spectra_name}.fits file not found')
+
+            meta_data = [spectra_name, run2d,
+                np.nan, np.nan,
+                np.nan, np.nan]
+
+            return meta_data
 
         else:
 
@@ -168,11 +175,17 @@ class RawDataProcessing:
             np.save(f"{self.rest_frame_directory}/{spectra_name}.npy",
                 np.vstack((wave, flux)))
 
-            self.meta_data_frame.loc[galaxy_index] = [spectra_name, run2d,
+#            self.meta_data_frame.loc[galaxy_index] = [spectra_name, run2d,
+#                classification, sub_class,
+#                z, signal_noise_ratio]
+
+            meta_data = [spectra_name, run2d,
                 classification, sub_class,
                 z, signal_noise_ratio]
 
-            return 0
+          #  print(self.meta_data_frame)
+
+            return meta_data
 
     def _rest_frame(self, galaxy_index, galaxy_fits_location):
         """De-redshifting"""
@@ -180,8 +193,8 @@ class RawDataProcessing:
         with pyfits.open(galaxy_fits_location) as hdul:
             wave = 10. ** (hdul[1].data['loglam'])
             flux = hdul[1].data['flux']
-            classification = hdul[2].data['CLASS']
-            sub_class = hdul[2].data['SUBCLASS']
+            classification = hdul[2].data['CLASS'][0]
+            sub_class = hdul[2].data['SUBCLASS'][0]
 
 
         z = self.df.iloc[galaxy_index]['z']
