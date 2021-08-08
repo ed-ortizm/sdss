@@ -44,5 +44,6 @@ data_processing = RawDataProcessing(galaxies_df=gs,
 data_processing.get_raw_spectra()
 ################################################################################
 # saving data frame with meta data of the raw a spectra in the rest frame
+print(data_processing.meta_data_frame.head())
 data_processing.meta_data_frame.to_csv(
     path_or_buf=f'{output_directory}/meta_data_frame.csv')
