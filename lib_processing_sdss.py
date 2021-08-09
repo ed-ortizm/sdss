@@ -106,17 +106,22 @@ class RawDataProcessing:
         data_directory:'str', output_directory:'str',
         number_processes:'int'):
         """
+        INPUT
+
         galaxies_df : data frame containing meta data from sdss spectra
         data_directory : sdss raw data's directory
         output_directory : redshift corrected spectra's and meta data directory
         number_processes : number of processes to use with mp.Pool
 
+        OUTPUT
+        RawDataProcessing object
         """
 
         self.df = galaxies_df
         self.number_processes = number_processes
 
         self.data_directory = data_directory
+
         if not os.path.exists(self.data_directory):
             print(f'Path: {self.data_output_directory} does not exist!')
 
@@ -131,6 +136,15 @@ class RawDataProcessing:
         self.meta_data_frame = None
     ############################################################################
     def get_raw_spectra(self):
+        """
+        Save data frame with all meta data
+
+        INPUTS
+            None
+
+        OUTPUT
+            None
+        """
 
         print(f'Saving raw redshift corrected spectra and meta-data!')
 
@@ -138,16 +152,28 @@ class RawDataProcessing:
 
         with mp.Pool(processes=self.number_processes) as pool:
             results = pool.map(self._get_spectra, galaxy_indexes)
-#            number_failed = sum(results)
-        
+
         self.meta_data_frame = pd.DataFrame(
             results,
-            columns=['spectra name', 'run2d',
-                'sdss class', 'sdss sub-class',
-                'z', 'snr'])
-       # print(f'Spectra saved. Failed to save {number_failed}')
+            columns=['name', 'z', 'snr', 'run2d', 'sub-class', 'class'])
 
     def _get_spectra(self, galaxy_index:'int'):
+        """
+        Gets a row of meta data
+
+        INPUT
+            galaxy_index: index of a galaxy in that galaxy that the frame
+            passed to the constructor of the class
+
+        OUTPUT
+            meta data list, intended to be a row in the meta_data_frame:
+                meta_data_frame: [name: galaxy name,
+                z: redshift,
+                snr: signal to noise ratio,
+                run2d,
+                sub-class: sdss classification,
+                class: sdss classification]
+        """
 
         sdss_directory, spectra_name, run2d = self._galaxy_localization(
             galaxy_index)
@@ -160,9 +186,7 @@ class RawDataProcessing:
 
             print(f'{spectra_name}.fits file not found')
 
-            meta_data = [spectra_name, run2d,
-                np.nan, np.nan,
-                np.nan, np.nan]
+            meta_data = [spectra_name, np.nan, np.nan, run2d, np.nan, np.nan]
 
             return meta_data
 
@@ -175,20 +199,29 @@ class RawDataProcessing:
             np.save(f"{self.rest_frame_directory}/{spectra_name}.npy",
                 np.vstack((wave, flux)))
 
-#            self.meta_data_frame.loc[galaxy_index] = [spectra_name, run2d,
-#                classification, sub_class,
-#                z, signal_noise_ratio]
-
-            meta_data = [spectra_name, run2d,
-                classification, sub_class,
-                z, signal_noise_ratio]
-
-          #  print(self.meta_data_frame)
+            meta_data = [spectra_name, z, signal_noise_ratio, run2d,
+                classification, sub_class]
 
             return meta_data
 
-    def _rest_frame(self, galaxy_index, galaxy_fits_location):
-        """De-redshifting"""
+    def _rest_frame(self, galaxy_index:'int', galaxy_fits_location:'str'):
+        """
+        De-redshifting
+
+        INPUT
+            galaxy_index: index of the galaxy in the input data frame
+                passed to the constructor
+            galaxy_fits_location: directory location of the fits file
+
+         OUTPUT
+            return wave, flux, z, signal_noise_ratio, classification, sub_class
+                wave: de-redshifted wave length
+                flux: flux
+                z: redshift
+                signal_noise_ratio: signal to noise ratio
+                classification: sdss pipeline classification
+                sub_class: sdss subclass pipeline classification
+        """
 
         with pyfits.open(galaxy_fits_location) as hdul:
             wave = 10. ** (hdul[1].data['loglam'])
@@ -201,11 +234,23 @@ class RawDataProcessing:
         z_factor = 1./(1. + z)
         wave *= z_factor
 
-        SN = self.df.iloc[galaxy_index]['snMedian']
+        signal_noise_ratio = self.df.iloc[galaxy_index]['snMedian']
 
-        return wave, flux, z, SN, classification, sub_class
+        return wave, flux, z, signal_noise_ratio, classification, sub_class
 
     def _galaxy_localization(self, galaxy_index:'int'):
+        """
+        INPUTS
+            galaxy_index: index of the galaxy in the input data frame
+                passed to the constructor
+
+        OUTPUTS
+            return sdss_directory, spectra_name, run2d
+
+                sdss_directory: directory location of the spectra fits file
+                spectra_name: f'spec-{plate}-{mjd}-{fiberid}'
+                run2d: PENDING
+        """
 
         galaxy = self.df.iloc[galaxy_index]
         plate, mjd, fiberid, run2d = self.galaxy_identifiers(galaxy)
@@ -219,18 +264,17 @@ class RawDataProcessing:
     ############################################################################
     def galaxy_identifiers(self, galaxy:'df.row'):
         """
-        INPUT PARAMETERS
+        INPUT
+            galaxy : pd.row from the galaxy data frame passed to
+                the constructor of the class
 
-        galaxy : pandas DataFrame row with at least the keywords:
-            'plate', 'mjd', 'fiberid' and 'run2d'
+        OUTPUT
+            return plate, mjd, fiberid, run2d
 
-        """
-
-        """
-        RETURN
-
-        str values for the keywords: 'plate', 'mjd', 'fiberid' and 'run2d'
-            contains in the DataFrame row pass as parameter to the function
+                plate: self explanatory
+                mjd: date
+                fiberid: self explanatory
+                run2d: PENDING
 
         """
 
