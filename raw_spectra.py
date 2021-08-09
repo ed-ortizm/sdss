@@ -6,7 +6,7 @@ from configparser import ConfigParser, ExtendedInterpolation
 import numpy as np
 import pandas as pd
 
-from lib_processing_sdss import RawDataProcessing
+from lib_processing_sdss import RawData
 ################################################################################
 # parser = ArgumentParser()
 # parser.add_argument('--server', '-s', type=str)
@@ -14,7 +14,7 @@ from lib_processing_sdss import RawDataProcessing
 # local = script_arguments.server == 'local'
 ################################################################################
 parser = ConfigParser(interpolation=ExtendedInterpolation())
-parser.read('raw_configuration.ini')
+parser.read('config.ini')
 # relevant directory
 data_directory = parser.get('directories', 'data_directory')
 output_directory = parser.get('directories', 'output_directory')
@@ -36,7 +36,7 @@ gs.index = np.arange(len(gs))
 if number_spectra != -1:
     gs = gs[:number_spectra]
 ################################################################################
-data_processing = RawDataProcessing(galaxies_df=gs,
+data_processing = RawData(galaxies_df=gs,
     data_directory=data_directory, output_directory=output_directory,
     number_processes=number_processes)
 ################################################################################

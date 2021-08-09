@@ -100,7 +100,117 @@ class FitsPath:
 
         return plate, mjd, fiberid, run2d
 ################################################################################
-class RawDataProcessing:
+class DataProcessing:
+
+    def __init__(self, galaxies_frame:'pd.df',number_processes:'int'):
+        """
+        INPUTS
+
+        OUTPUT
+        """
+        self.df = galaxies_frame
+        self.number_processes = number_processes
+    ############################################################################
+    def interpolate_spectra(self, wave_master: 'np.array',
+        data_directory:'str', output_directory:'str'):
+        """
+        Interpolate rest frame spectra from data directory according to
+        wave master  and save it to output directory
+
+        INPUTS
+            wave_master: 1 dimensional array containing the common grid
+                to use with all spectra
+            data_directory:
+            output_directory:
+
+        OUTPUT
+        """
+        print(f'Interpolate spectra...')
+# use a partial from itertools for interpolate function
+        galaxy_indexes = range(self.df.shape[0])
+
+        with mp.Pool(processes=self.number_processes) as pool:
+            results = pool.map(self._interpolate, galaxy_indexes)
+            number_failed = sum(results)
+
+        print(f'Spectra saved. Failed to save {number_failed}')
+
+    def _interpolate(self, galaxy_index:'str'):
+        """
+        Function to interpolate single spectrum to wav master
+
+        INPUT
+            galaxy_index: index to locate given galaxy in the meta data frame
+
+        OUTPUT
+        """
+
+        spectrum = np.load()
+
+    def normalize_spectra(self, spectra:'np.array'):
+        """"""
+
+        # spectra[:, :] *= 1/np.median(spectra[:, :], axis=1).reshape(
+        #         (spectra.shape[0], 1))
+
+       #  return spectra
+       pass
+
+    def missing_flux_replacement(self, spectra:'array', method:'str'='median'):
+
+        if method=='median':
+
+            mask_replacement = ~np.isfinite(spectra)
+            for idx, mask in enumerate(mask_replacement):
+                spectra[idx, mask] = np.nanmedian(spectra[idx, :])
+
+        elif method=='mean':
+
+            mask_replacement = ~np.isfinite(spectra)
+            for idx, mask in enumerate(mask_replacement):
+                spectra[idx, mask] = np.nanmean(spectra[idx, :])
+
+        return spectra
+
+    def indefinite_values_handler(self, spectra:'np.array',
+        discard_fraction:'float'=0.1):
+        #global wave_master
+
+        print(f'spectra shape before keep_spec_mask: {spectra.shape}')
+
+        n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
+        print(f'Indefinite vals in the input array: {np.sum(n_indef)}')
+
+        keep_flux_mask =  n_indef < spectra.shape[0]*discard_fraction
+
+        spectra = spectra[:, keep_flux_mask]
+        print(f'spectra shape after keep_spec_mask: {spectra.shape}')
+
+        wave = wave_master[keep_flux_mask[: -8]]
+
+        n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
+        print(f'Indefinite vals in the NEW array: {np.sum(n_indef)}')
+
+        return spectra, wave
+
+    def spec_to_single_array(self, fnames: 'list'):
+
+        n_spectra = len(fnames)
+        n_fluxes = np.load(fnames[0]).size
+
+        spectra = np.empty((n_spectra, n_fluxes))
+
+        for idx, file_path in enumerate(fnames):
+
+            fname = file_path.split('/')[-1].split('_')[0]
+
+            print(f"Loading {fname} to single array", end='\r')
+
+            spectra[idx, :] = np.load(file_path)
+
+        return spectra
+################################################################################
+class RawData:
 
     def __init__(self, galaxies_df:'pd.df',
         data_directory:'str', output_directory:'str',
@@ -277,223 +387,6 @@ class RawDataProcessing:
                 run2d: PENDING
 
         """
-
-        plate = f"{galaxy['plate']:04}"
-        mjd = f"{galaxy['mjd']}"
-        fiberid = f"{galaxy['fiberid']:04}"
-        run2d = f"{galaxy['run2d']}"
-
-        return plate, mjd, fiberid, run2d
-################################################################################
-class DataProcessing:
-
-    def __init__(self, galaxies_df, n_processes):
-        #fnames: list, SN_threshold: float):
-
-        self.galaxies_df = galaxies_df
-        self.n_processes = n_processes
-
-        self.raw_spectra_path = f'{spectra_path}/raw_spectra'
-        if not os.path.exists(self.raw_spectra_path):
-            os.makedirs(self.raw_spectra_path, exist_ok=True)
-
-        self.interpolated_spectra_path = f'{spectra_path}/interpolated_spectra'
-        if not os.path.exists(self.interpolated_spectra_path):
-            os.makedirs(self.interpolated_spectra_path, exist_ok=True)
-
-        self.processed_spectra_path = f'{spectra_path}/processed_spectra'
-        if not os.path.exists(self.processed_spectra_path):
-            os.makedirs(self.processed_spectra_path, exist_ok=True)
-    ############################################################################
-    def decode_base36(self, sub_class:'str'):
-
-        if ' ' in sub_class:
-            sub_class = sub_class.replace(' ', '')
-
-        if sub_class == '':
-            sub_class = 'EC'
-
-        return int(sub_class, 36)
-    ############################################################################
-    def encode_base36(self, sub_class:'int'):
-
-        alphabet, base36 = ['0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', '']
-
-        sub_class = abs(int(sub_class))
-
-        while sub_class:
-            sub_class, i = divmod(sub_class, 36)
-            base36 = alphabet[i] + base36
-
-        return base36 or alphabet[0]
-    ############################################################################
-    def normalize_spectra(self, spectra:'array', method:'str'):
-
-        if method=='median':
-
-            spectra[:, :-8] *= 1/np.median(spectra[:, :-8], axis=1).reshape(
-                (spectra.shape[0], 1)
-            )
-
-        elif method=='Z':
-
-            spectra[:, :-8] = preprocessing.scale(spectra[:, :-8])
-
-        elif method=='min_max':
-
-            spectra[:, :-8] = preprocessing.MinMaxScaler().fit_transform(
-                spectra[:, :-8]
-            )
-
-        else:
-            print(f'the only supported normalizations methods are:')
-            print(f'median, Z (standarization) and min max normalization')
-            sys.exit()
-
-        return spectra
-
-    def missing_flux_replacement(self, spectra:'array', method:'str'='median'):
-
-        if method=='median':
-
-            mask_replacement = ~np.isfinite(spectra)
-            for idx, mask in enumerate(mask_replacement):
-                spectra[idx, mask] = np.nanmedian(spectra[idx, :])
-
-        elif method=='mean':
-
-            mask_replacement = ~np.isfinite(spectra)
-            for idx, mask in enumerate(mask_replacement):
-                spectra[idx, mask] = np.nanmean(spectra[idx, :])
-        return spectra
-
-    def indefinite_values_handler(self, spectra:'np.array',
-        discard_fraction:'float'=0.1):
-        #global wave_master
-
-        print(f'spectra shape before keep_spec_mask: {spectra.shape}')
-
-        n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
-        print(f'Indefinite vals in the input array: {np.sum(n_indef)}')
-
-        keep_flux_mask =  n_indef < spectra.shape[0]*discard_fraction
-
-        spectra = spectra[:, keep_flux_mask]
-        print(f'spectra shape after keep_spec_mask: {spectra.shape}')
-
-        wave = wave_master[keep_flux_mask[: -8]]
-
-        n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
-        print(f'Indefinite vals in the NEW array: {np.sum(n_indef)}')
-
-        return spectra, wave
-
-    def sort_spec_SN(self, spectra: 'array'):
-
-        SN_arg_sort = np.argsort(-1*spectra[:, -1])
-        spectra = spectra[SN_arg_sort, :]
-
-        return spectra
-
-    def spec_to_single_array(self, fnames: 'list'):
-
-        n_spectra = len(fnames)
-        n_fluxes = np.load(fnames[0]).size
-
-        spectra = np.empty((n_spectra, n_fluxes))
-
-        for idx, file_path in enumerate(fnames):
-
-            fname = file_path.split('/')[-1].split('_')[0]
-
-            print(f"Loading {fname} to single array", end='\r')
-
-            spectra[idx, :] = np.load(file_path)
-
-        return spectra
-
-    def get_fluxes_SN(self):
-
-        print(f'Saving raw and interpolated spectra')
-
-        params = range(len(self.galaxies_df))
-
-        with mp.Pool(processes=self.n_processes) as pool:
-            res = pool.map(self._get_spectra, params)
-            n_failed = sum(res)
-
-        print(f'Spectra saved. Failed to save {n_failed}')
-
-    def _get_spectra(self, idx_galaxy: int):
-
-        galaxy_fits_path, fname, run2d = self._galaxy_fits_path(idx_galaxy)
-        fname = fname.split('.')[0]
-        [plate, mjd, fiberid] = fname.split('-')[1:]
-
-        if not os.path.exists(galaxy_fits_path):
-            print(f'{fname} not found')
-            return 1
-
-        if os.path.exists(f'{self.interpolated_spectra_path}/{fname}.npy'):
-
-            print(f'{fname} already processed', end='\r')
-            return 0
-
-        else:
-
-            wave, flux, z, SN, classification, sub_class = self._rest_frame(
-            idx_galaxy, galaxy_fits_path)
-
-            flux_interpolated = np.interp(wave_master, wave, flux,
-                left=np.nan, right=np.nan)
-
-            np.save(f'{self.raw_spectra_path}/{fname}.npy',
-                np.hstack(
-                    (flux, int(plate), int(mjd), int(fiberid), run2d,
-                    classification, sub_class, z, SN)))
-
-            np.save(f'{self.interpolated_spectra_path}/{fname}_interpolated.npy',
-                np.hstack(
-                    (flux, int(plate), int(mjd), int(fiberid), run2d,
-                    classification, sub_class, z, SN)))
-
-            return 0
-
-    def _rest_frame(self, idx_galaxy, galaxy_fits_path):
-        """De-redshifting"""
-
-        with pyfits.open(galaxy_fits_path) as hdul:
-            wave = 10. ** (hdul[1].data['loglam'])
-            flux = hdul[1].data['flux']
-            classification = hdul[2].data['CLASS']
-            sub_class = hdul[2].data['SUBCLASS']
-
-
-        z = self.galaxies_df.iloc[idx_galaxy]['z']
-        z_factor = 1./(1. + z)
-        wave *= z_factor
-
-        SN = self.galaxies_df.iloc[idx_galaxy]['snMedian']
-
-        classification = self.decode_base36(classification)
-        sub_class = self.decode_base36(sub_class)
-
-        return wave, flux, z, SN, classification, sub_class
-
-    def _galaxy_fits_path(self, idx_galaxy: int):
-
-        galaxy = self.galaxies_df.iloc[idx_galaxy]
-        plate, mjd, fiberid, run2d = self._galaxy_identifiers(galaxy)
-
-        fname = f'spec-{plate}-{mjd}-{fiberid}.fits'
-
-        SDSSpath = f'sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate}'
-        retrieve_path = f'{spectra_path}/{SDSSpath}'
-
-        run2d = self.decode_base36(run2d)
-        return f'{retrieve_path}/{fname}', fname, run2d
-
-    def _galaxy_identifiers(self, galaxy):
 
         plate = f"{galaxy['plate']:04}"
         mjd = f"{galaxy['mjd']}"

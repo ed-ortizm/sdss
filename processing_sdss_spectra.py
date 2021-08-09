@@ -1,55 +1,34 @@
 #! /usr/bin/env python3
 
-from argparse import ArgumentParser
-import glob
-import os
-import sys
+from configparser import ConfigParser, ExtendedInterpolation
 import time
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib
-import matplotlib.pyplot as plt
 
-from constants_sdss import spectra_path
 from lib_processing_sdss import DataProcessing
 ################################################################################
 ti = time.time()
 ################################################################################
-parser = ArgumentParser()
-
-parser.add_argument('--server', '-s', type=str)
-parser.add_argument('--n_obs', type=int)
-parser.add_argument('--normalization_type', '-n_type', type=str)
-
-script_arguments = parser.parse_args()
-################################################################################
-n_obs = script_arguments.n_obs
-normalization_type = script_arguments.normalization_type
-local = script_arguments.server == 'local'
+parser = ConfigParser(interpolation=ExtendedInterpolation())
+parser.read('process.ini')
+# relevant directory
+data_directory = parser.get('directories', 'data_directory')
+    ############################################################################
+meta_data_file = parser.get('files', 'meta_data')
+    ############################################################################
+number_spectra = parser.getint('script parameters', 'number_spectra')
+number_processes = parser.getint('script parameters', 'number_processes')
+    ############################################################################
+output_directory = parser.get('directories', 'output_directory')
 ################################################################################
 # Loading data DataFrame with galaxies info
-# SNR sorted data
-if local:
-    gs = pd.read_csv(f'{spectra_path}/gals_DR16_1000.csv')
-else:
-    gs = pd.read_csv(f'{spectra_path}/gals_DR16.csv')
-
-# Use z_noqso if possible
-gs.z = np.where(gs.z_noqso.ne(0), gs.z_noqso, gs.z)
-
-# Remove galaxies with redshift z<=0.01
-gs = gs[gs.z > 0.01]
-gs.index = np.arange(len(gs))
-
-# Choose the top n_obs median SNR objects
-if not local:
-    if n_obs != -1:
-        gs = gs[:n_obs]
-
+galaxies_frame = pd.read_csv(f'{data_directory}/{meta_data_file}')
 ################################################################################
 # Data processing
-data_processing = DataProcessing(galaxies_df= gs, n_processes=60)
+data_processing = DataProcessing(galaxies_frame=galaxies_frame,
+    number_processes=number_processes)
 
 # Create and save interpolated data in master wave
 if not local:
@@ -59,9 +38,6 @@ if not local:
 fnames = glob.glob(
     f'{spectra_path}/interpolated_spectra/*_interpolated.npy'
 )
-if local:
-    n_obs = len(fnames)
-
 print(f'Number of files: {n_obs}')
 
 print(f'spec to single array')
