@@ -1,11 +1,10 @@
+from functools import partial
 import os
-import glob
+import sys
 import time
 import urllib
-import sys
 
 import astropy.io.fits as pyfits
-from functools import partial
 import matplotlib
 import matplotlib.pyplot as plt
 import multiprocessing as mp
@@ -100,7 +99,7 @@ class FitsPath:
 
         return plate, mjd, fiberid, run2d
 ################################################################################
-class DataProcessing:
+class DataProcess:
 
     def __init__(self, galaxies_frame:'pd.df',number_processes:'int'):
         """
@@ -108,11 +107,12 @@ class DataProcessing:
 
         OUTPUT
         """
-        self.df = galaxies_frame
+        self.frame = galaxies_frame
         self.number_processes = number_processes
     ############################################################################
-    def interpolate_spectra(self, wave_master: 'np.array',
-        data_directory:'str', output_directory:'str'):
+    def interpolate(self, wave_master: 'np.array',
+            data_directory:'str', output_directory:'str',
+            number_spectra:'int'=False):
         """
         Interpolate rest frame spectra from data directory according to
         wave master  and save it to output directory
@@ -122,33 +122,43 @@ class DataProcessing:
                 to use with all spectra
             data_directory:
             output_directory:
+            number_spectra: number of spectra to process when testing
 
         OUTPUT
         """
         print(f'Interpolate spectra...')
 # use a partial from itertools for interpolate function
-        galaxy_indexes = range(self.df.shape[0])
+        if number_spectra:
+            galaxy_names = self.frame.name[:number_spectra]
+        else:
+            galaxy_names = self.frame.name[:]
+
+        interpolator = partial(self.interpolate_single,
+                        wave_master=wave_master,
+                        data_directory=data_directory,
+                        output_directory=output_directory)
 
         with mp.Pool(processes=self.number_processes) as pool:
-            results = pool.map(self._interpolate, galaxy_indexes)
+            results = pool.map(interpolator, galaxy_names)
             number_failed = sum(results)
 
         print(f'Spectra saved. Failed to save {number_failed}')
 
-    def _interpolate(self, galaxy_index:'str'):
+    def interpolate_single(self, galaxy_name:'str', wave_master: 'np.array',
+        data_directory:'str', output_directory:'str'):
         """
         Function to interpolate single spectrum to wav master
 
         INPUT
-            galaxy_index: index to locate given galaxy in the meta data frame
+            galaxy_name: name of sdss galaxy in the meta data frame
 
         OUTPUT
         """
-
-        spectrum = np.load()
+        return 1
+        # spectrum = np.load()
 
     def normalize_spectra(self, spectra:'np.array'):
-        """"""
+        # """"""
 
         # spectra[:, :] *= 1/np.median(spectra[:, :], axis=1).reshape(
         #         (spectra.shape[0], 1))

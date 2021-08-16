@@ -1,29 +1,24 @@
 #! /usr/bin/env python3
-
-#from argparse import ArgumentParser
 from configparser import ConfigParser, ExtendedInterpolation
+import time
 
 import numpy as np
 import pandas as pd
 
 from lib_processing_sdss import RawData
 ################################################################################
-# parser = ArgumentParser()
-# parser.add_argument('--server', '-s', type=str)
-# script_arguments = parser.parse_args()
-# local = script_arguments.server == 'local'
+t0 = time.time()
 ################################################################################
 parser = ConfigParser(interpolation=ExtendedInterpolation())
 parser.read('config.ini')
 # relevant directory
-data_directory = parser.get('directories', 'data_directory')
-output_directory = parser.get('directories', 'output_directory')
+data_directory = parser.get('directories', 'data')
+output_directory = parser.get('directories', 'output')
 
-number_spectra = parser.getint('script parameters', 'number_spectra')
-number_processes = parser.getint('script parameters', 'number_processes')
+number_spectra = parser.getint('parameters', 'number_spectra')
+number_processes = parser.getint('parameters', 'number_processes')
 ################################################################################
 # Data processing
-print(f'{data_directory}')
 gs = pd.read_csv(f'{data_directory}/gals_DR16.csv')
 
 # Use z_noqso if possible
@@ -44,7 +39,8 @@ data_processing = RawData(galaxies_df=gs,
 data_processing.get_raw_spectra()
 ################################################################################
 # saving data frame with meta data of the raw a spectra in the rest frame
-print(data_processing.meta_data_frame)
-
 data_processing.meta_data_frame.to_csv(
-    path_or_buf=f'{output_directory}/meta_data_frame.csv')
+    path_or_buf=f'{output_directory}/meta_data_frame.csv', index=False)
+################################################################################
+t1 = time.time()
+print(f"Run time: {t1-t0}")
