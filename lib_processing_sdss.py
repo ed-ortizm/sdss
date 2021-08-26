@@ -103,9 +103,13 @@ class DataProcess:
 
     def __init__(self, galaxies_frame:'pd.df',number_processes:'int'):
         """
+        Class to process rest frame spectra
         INPUTS
-
+            galaxy_frame: meta data of sdss galaxies, such as name,
+                signal to noise ratio and z
+            number_processes: number of jobs when processing a bulk of a spectra
         OUTPUT
+            check how to document the constructor of a class
         """
         self.frame = galaxies_frame
         self.number_processes = number_processes
@@ -125,6 +129,8 @@ class DataProcess:
             number_spectra: number of spectra to process when testing
 
         OUTPUT
+            mp.pool list with integers telling whether the process was successful or not.
+            Interpolate spectra will be saved in output directory
         """
         print(f'Interpolate spectra...')
 # use a partial from itertools for interpolate function
@@ -151,8 +157,12 @@ class DataProcess:
 
         INPUT
             galaxy_name: name of sdss galaxy in the meta data frame
-
+            wave_master: 1 dimensional array containing the common grid
+                to use with all spectra
+            data_directory:
+            output_directory:
         OUTPUT
+            interpolated spectrum as a numpy array
         """
         return 1
         # spectrum = np.load()
