@@ -5,7 +5,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from lib_processing_sdss import DataProcess
+from src import data
 ################################################################################
 t0 = time.time()
 ################################################################################
@@ -31,7 +31,7 @@ wave_master = np.linspace(wave_master_lower, wave_master_upper, wave_master)
 galaxies_frame = pd.read_csv(f'{data_directory}/{meta_data_file}')
 
 # Data processing
-data_process = DataProcess(
+data_process = data.DataProcess(
     galaxies_frame=galaxies_frame,
     number_processes=number_processes)
 

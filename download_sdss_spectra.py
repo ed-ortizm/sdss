@@ -1,11 +1,11 @@
-#! /usr/bin/env python3.9
+#! /usr/bin/env python3
 import time
 
 import numpy as np
 import pandas as pd
 
 from constants_sdss import spectra_path
-from lib_processing_sdss import DownloadData
+from src import download
 ################################################################################
 ti = time.time()
 ################################################################################
@@ -26,7 +26,7 @@ if n_obs != -1:
 
 # Data Download
 
-download_spectra = DownloadData(
+download_spectra = download.DownloadData(
     files_data_frame=gs, download_path=spectra_path, n_processes=60)
 
 download_spectra.get_files()

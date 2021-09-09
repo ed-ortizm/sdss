@@ -5,7 +5,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from lib_processing_sdss import RawData
+from src import data
 ################################################################################
 t0 = time.time()
 ################################################################################
@@ -31,7 +31,7 @@ gs.index = np.arange(len(gs))
 if number_spectra != -1:
     gs = gs[:number_spectra]
 ################################################################################
-data_processing = RawData(galaxies_df=gs,
+data_processing = data.RawData(galaxies_df=gs,
     data_directory=data_directory, output_directory=output_directory,
     number_processes=number_processes)
 ################################################################################
