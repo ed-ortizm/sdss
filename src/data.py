@@ -7,7 +7,7 @@ import pandas as pd
 ################################################################################
 def get_grid(
     parser:'ConfigtParser obj'
-    )->'(int, np.array)':
+    )->'np.array':
     """
     Computes the master grid for the interpolation of the spectra
 
@@ -17,7 +17,7 @@ def get_grid(
         for this computation read from the .ini file
 
     RETURN
-        number_waves, wave_grid:
+        wave_grid:
     """
     number_waves = parser.getint('constants', 'wave_master')
     master_lower = parser.getint('constants', 'master_lower')
@@ -29,7 +29,7 @@ def get_grid(
         number_waves
         )
 
-    return number_waves, wave_grid
+    return wave_grid
 ################################################################################
 class DataProcess:
 

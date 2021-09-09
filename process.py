@@ -12,27 +12,29 @@ t0 = time.time()
 parser = ConfigParser(interpolation=ExtendedInterpolation())
 parser.read('process.ini')
 ################################################################################
-# relevant directory and files
+# # Data processing
+# Loading data DataFrame with galaxies info
 data_directory = parser.get('directories', 'data')
 meta_data_file = parser.get('files', 'meta_data')
+
+galaxies_frame = pd.read_csv(f'{data_directory}/{meta_data_file}')
+################################################################
+number_processes = parser.get('parameters', 'processes')
+
+data_process = data.DataProcess(
+    galaxies_frame=galaxies_frame,
+    number_processes=number_processes)
+################################################################
+# interpolate spectra
+wave_grid = data.get_grid(parser)
 output_directory = parser.get('directories', 'output')
-    ############################################################################
-number_waves, wave_grid = data.get_grid(parser)
-print(number_waves, wave_grid)
-################################################################################
-# Loading data DataFrame with galaxies info
-# galaxies_frame = pd.read_csv(f'{data_directory}/{meta_data_file}')
-#
-# # Data processing
-# data_process = data.DataProcess(
-#     galaxies_frame=galaxies_frame,
-#     number_processes=number_processes)
-#
-# # interpolate spectra
-# # spectra_name = galaxy_frame.name[:]
-# data_process.interpolate(wave_master=wave_master,
-#                         data_directory=data_directory,
-#                         output_directory=output_directory)
+data_process.interpolate(
+    wave_master=wave_grid,
+    data_directory=data_directory,
+    output_directory=output_directory
+    )
+################################################################
+# spectra_name = galaxy_frame.name[:]
 # # ################################################################################
 # # # Getting array
 # # fnames = glob.glob(
