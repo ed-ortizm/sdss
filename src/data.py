@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import os
 ####################################################################
 import astropy.io.fits as pyfits
 import numpy as np
