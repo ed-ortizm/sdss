@@ -4,6 +4,9 @@ import astropy.io.fits as pyfits
 import numpy as np
 import pandas as pd
 ################################################################################
+def master_grid(parser:'ConfigtParser obj'):
+    pass
+################################################################################
 class DataProcess:
 
     def __init__(self, galaxies_frame:'pd.df',number_processes:'int'):
