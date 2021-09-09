@@ -5,8 +5,19 @@ import astropy.io.fits as pyfits
 import numpy as np
 import pandas as pd
 ################################################################################
-def master_grid(parser:'ConfigtParser obj'):
-    pass
+def get_grid(parser:'ConfigtParser obj'):
+    # wavelength master array
+    number_waves = parser.getint('constants', 'wave_master')
+    master_lower = parser.getint('constants', 'master_lower')
+    master_upper = parser.getint('constants', 'master_upper')
+
+    wave_grid = np.linspace(
+        master_lower,
+        master_upper,
+        number_waves
+        )
+
+    return number_waves, wave_grid
 ################################################################################
 class DataProcess:
 
