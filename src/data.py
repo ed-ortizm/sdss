@@ -5,8 +5,20 @@ import astropy.io.fits as pyfits
 import numpy as np
 import pandas as pd
 ################################################################################
-def get_grid(parser:'ConfigtParser obj'):
-    # wavelength master array
+def get_grid(
+    parser:'ConfigtParser obj'
+    )->'(int, np.array)':
+    """
+    Computes the master grid for the interpolation of the spectra
+
+    ARGUMENTS
+
+        parser: ConfigurationParser object that contains information
+        for this computation read from the .ini file
+
+    RETURN
+        number_waves, wave_grid:
+    """
     number_waves = parser.getint('constants', 'wave_master')
     master_lower = parser.getint('constants', 'master_lower')
     master_upper = parser.getint('constants', 'master_upper')
