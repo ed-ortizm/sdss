@@ -19,7 +19,7 @@ meta_data_file = parser.get('files', 'meta_data')
 
 galaxies_frame = pd.read_csv(f'{data_directory}/{meta_data_file}')
 ################################################################
-number_processes = parser.get('parameters', 'processes')
+number_processes = parser.getint('parameters', 'processes')
 
 data_process = data.DataProcess(
     galaxies_frame=galaxies_frame,
