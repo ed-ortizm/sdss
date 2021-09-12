@@ -34,7 +34,10 @@ def get_grid(
 ################################################################################
 class DataProcess:
 
-    def __init__(self, galaxies_frame:'pd.df',number_processes:'int'):
+    def __init__(self,
+        galaxies_frame:'pd.df',
+        number_processes:'int'
+        ):
         """
         Class to process rest frame spectra
         INPUTS
@@ -46,6 +49,10 @@ class DataProcess:
         """
         self.frame = galaxies_frame
         self.number_processes = number_processes
+        self.fluxes = None
+
+        # Single interpolated array,
+        # count pythonic number of files in data diretory
     ############################################################################
     def interpolate(self,
         wave_master:'np.array',
@@ -69,11 +76,14 @@ class DataProcess:
             Interpolate spectra will be saved in output directory
         """
         print(f'Interpolate spectra...')
+
         # use a partial from itertools for interpolate function
         if number_spectra:
-            galaxy_names = self.frame.name[:number_spectra]
+            index_galaxies = range(number_spectra)
         else:
-            galaxy_names = self.frame.name[:]
+            index_galaxies = range(self.frame.shape[0])
+
+        self.fluxes = np.empty(len(index_galaxies), wave_master.size)
 
         interpolator = partial(
             self.interpolate_single,
@@ -83,13 +93,15 @@ class DataProcess:
             )
 
         with mp.Pool(processes=self.number_processes) as pool:
-            results = pool.map(interpolator, galaxy_names)
+            results = pool.map(interpolator, index_galaxies)
             number_failed = sum(results)
 
         print(f'Spectra saved. Failed to save {number_failed}')
 
+        # np.save() save here in train dir self.fluxes and new metadataframe as well
+
     def interpolate_single(self,
-        galaxy_name:'str',
+        galaxy_index:'int',
         wave_master:'np.array',
         data_directory:'str',
         output_directory:'str'
@@ -98,7 +110,7 @@ class DataProcess:
         Function to interpolate single spectrum to wav master
 
         INPUT
-            galaxy_name: name of sdss galaxy in the meta data frame
+            galaxy_name: index of galaxy in the meta data frame
             wave_master: 1 dimensional array containing the common grid
                 to use with all spectra
             data_directory:
@@ -106,7 +118,7 @@ class DataProcess:
         OUTPUT
             interpolated spectrum as a numpy array
         """
-
+        galaxy_name = self.frame.name[galaxy_index]
         spectrum_direction = f'{data_directory}/rest_frame/{galaxy_name}.npy'
 
         if os.path.exists(spectrum_direction):
@@ -119,20 +131,16 @@ class DataProcess:
 
             return 1
 
-        flux = np.interp(
+        self.fluxes[galaxy_index, :] = np.interp(
             wave_master,
             spectrum[0], # wave
             spectrum[1], # flux
             left=np.nan,
             right=np.nan
             )
-
-        flux_direction = f'{output_directory}/{galaxy_name}.npy'
-
-        np.save(flux_direction, flux)
-
+        # flux_direction = f'{output_directory}/{galaxy_name}.npy'
+        # np.save(flux_direction, flux)
         return 0
-        # spectrum = np.load()
 
     def normalize_spectra(self, spectra:'np.array'):
         # """"""
