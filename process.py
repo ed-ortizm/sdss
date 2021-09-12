@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 from configparser import ConfigParser, ExtendedInterpolation
+import os
 import time
 ####################################################################
 import numpy as np
@@ -23,11 +24,16 @@ number_processes = parser.getint('parameters', 'processes')
 
 data_process = data.DataProcess(
     galaxies_frame=galaxies_frame,
-    number_processes=number_processes)
+    number_processes=number_processes
+    )
 ################################################################
 # interpolate spectra
 wave_grid = data.get_grid(parser)
 output_directory = parser.get('directories', 'output')
+
+if not os.path.exists(output_directory):
+    os.makedirs(output_directory)
+    
 data_process.interpolate(
     wave_master=wave_grid,
     data_directory=data_directory,

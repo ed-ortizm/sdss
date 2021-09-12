@@ -47,9 +47,12 @@ class DataProcess:
         self.frame = galaxies_frame
         self.number_processes = number_processes
     ############################################################################
-    def interpolate(self, wave_master: 'np.array',
-            data_directory:'str', output_directory:'str',
-            number_spectra:'int'=False):
+    def interpolate(self,
+        wave_master:'np.array',
+        data_directory:'str',
+        output_directory:'str',
+        number_spectra:'int'=False
+        ):
         """
         Interpolate rest frame spectra from data directory according to
         wave master  and save it to output directory
@@ -72,10 +75,12 @@ class DataProcess:
         else:
             galaxy_names = self.frame.name[:]
 
-        interpolator = partial(self.interpolate_single,
-                        wave_master=wave_master,
-                        data_directory=data_directory,
-                        output_directory=output_directory)
+        interpolator = partial(
+            self.interpolate_single,
+            wave_master=wave_master,
+            data_directory=data_directory,
+            output_directory=output_directory
+            )
 
         with mp.Pool(processes=self.number_processes) as pool:
             results = pool.map(interpolator, galaxy_names)
@@ -83,8 +88,12 @@ class DataProcess:
 
         print(f'Spectra saved. Failed to save {number_failed}')
 
-    def interpolate_single(self, galaxy_name:'str', wave_master: 'np.array',
-        data_directory:'str', output_directory:'str'):
+    def interpolate_single(self,
+        galaxy_name:'str',
+        wave_master:'np.array',
+        data_directory:'str',
+        output_directory:'str'
+        ):
         """
         Function to interpolate single spectrum to wav master
 
@@ -97,7 +106,32 @@ class DataProcess:
         OUTPUT
             interpolated spectrum as a numpy array
         """
-        return 1
+
+        spectrum_direction = f'{data_directory}/rest_frame/{galaxy_name}.npy'
+
+        if os.path.exists(spectrum_direction):
+
+            spectrum = np.load(spectrum_direction)
+
+        else:
+
+            print(f'There is no file: {galaxy_name}')
+
+            return 1
+
+        flux = np.interp(
+            wave_master,
+            spectrum[0], # wave
+            spectrum[1], # flux
+            left=np.nan,
+            right=np.nan
+            )
+
+        flux_direction = f'{output_directory}/{galaxy_name}.npy'
+
+        np.save(flux_direction, flux)
+
+        return 0
         # spectrum = np.load()
 
     def normalize_spectra(self, spectra:'np.array'):
