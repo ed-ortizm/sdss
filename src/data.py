@@ -81,9 +81,10 @@ class DataProcess:
         if number_spectra:
             index_galaxies = range(number_spectra)
         else:
-            index_galaxies = range(self.frame.shape[0])
+            number_spectra = self.frame.shape[0]
+            index_galaxies = range(number_spectra)
 
-        self.fluxes = np.empty(len(index_galaxies), wave_master.size)
+        self.fluxes = np.empty((number_spectra, wave_master.size))
 
         interpolator = partial(
             self.interpolate_single,
@@ -98,7 +99,19 @@ class DataProcess:
 
         print(f'Spectra saved. Failed to save {number_failed}')
 
-        # np.save() save here in train dir self.fluxes and new metadataframe as well
+        output_directory = f'{output_directory}/train_{number_spectra}'
+
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+
+        np.save(f'{output_directory}/fluxes.npy', self.fluxes)
+
+        self.frame.to_csv(
+            f'{output_directory}/meta_data.csv',
+            index=False
+            )
+
+        # new metadataframe as well
 
     def interpolate_single(self,
         galaxy_index:'int',
