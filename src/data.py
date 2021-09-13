@@ -77,22 +77,27 @@ class DataProcess:
         """
         print(f'Interpolate spectra...')
 
-        index_galaxies = range(number_spectra)
 
-        self.fluxes = np.ones((number_spectra, wave_master.size)) * 2
+        # remember_to_modify_number_spectra
+        fluxes = np.ones((number_spectra, wave_master.size))
 
-        interpolator = partial(
-            self.interpolate_single,
-            wave_master=wave_master,
-            data_directory=data_directory,
-            output_directory=output_directory
-            )
+        galaxy_names = self.frame.name
+        spectrum_direction = f'{data_directory}/rest_frame'
 
-        with mp.Pool(processes=self.number_processes) as pool:
-            results = pool.map(interpolator, index_galaxies)
-            number_failed = sum(results)
+        for idx, galaxy_name in enumerate(galaxy_names):
 
-        print(f'Spectra saved. Failed to save {number_failed}')
+            spectrum = np.load(f'{spectrum_direction}/{galaxy_name}.npy')
+
+            flux = np.interp(
+                wave_master,
+                spectrum[0], # wave
+                spectrum[1], # flux
+                left=np.nan,
+                right=np.nan
+                )
+
+            fluxes[idx, :] = flux[:]
+
 
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
@@ -102,67 +107,40 @@ class DataProcess:
             index=False
             )
 
-        # np.save(f'{output_directory}/fluxes_interp.npy', self.fluxes)
-        # print(self.fluxes)
-        # return self.fluxes
+        np.save(f'{output_directory}/fluxes_interp.npy', fluxes)
+
+        return fluxes
+        # check share arrays
+        # index_galaxies = range(number_spectra)
+        #
+        # self.fluxes = np.ones((number_spectra, wave_master.size)) * 2
+        #
+        # interpolator = partial(
+        #     self.interpolate_single,
+        #     wave_master=wave_master,
+        #     data_directory=data_directory,
+        #     output_directory=output_directory
+        #     )
+        #
+        # with mp.Pool(processes=self.number_processes) as pool:
+        #     results = pool.map(interpolator, index_galaxies)
+        #     number_failed = sum(results)
+        #
+        # print(f'Spectra saved. Failed to save {number_failed}')
+        #
+        # if not os.path.exists(output_directory):
+        #     os.makedirs(output_directory)
+        #
+        # self.frame.to_csv(
+        #     f'{output_directory}/meta_data.csv',
+        #     index=False
+        #     )
     ############################################################################
-    def interpolate_single(self,
-        galaxy_index:'int',
-        wave_master:'np.array',
-        data_directory:'str',
-        output_directory:'str'
-        ):
-        """
-        Function to interpolate single spectrum to wav master
-
-        INPUT
-            galaxy_name: index of galaxy in the meta data frame
-            wave_master: 1 dimensional array containing the common grid
-                to use with all spectra
-            data_directory:
-            output_directory:
-        OUTPUT
-            interpolated spectrum as a numpy array
-        """
-        galaxy_name = self.frame.name[galaxy_index]
-        spectrum_direction = f'{data_directory}/rest_frame/{galaxy_name}.npy'
-
-        if os.path.exists(spectrum_direction):
-
-            spectrum = np.load(spectrum_direction)
-
-        else:
-
-            print(f'There is no file: {galaxy_name}')
-
-            return 1
-
-        flux = np.interp(
-            wave_master,
-            spectrum[0], # wave
-            spectrum[1], # flux
-            left=np.nan,
-            right=np.nan
-            )
-
-        # self.fluxes[galaxy_index, :] = flux_interp[:]
-        # print(galaxy_index, self.fluxes[galaxy_index])
-        flux_directory = f'{output_directory}/interp'
-
-        if not os.path.exists(flux_directory):
-            os.makedirs(flux_directory)
-
-        np.save(f'{flux_directory}/{galaxy_name}.npy', flux)
-
-        return 0
-
     def normalize_spectra(self, spectra:'np.array'):
         """Spectra has no missing values"""
 
         normalization_array = np.median(spectra, axis=1)
         normalization_array = normalization_array.reshape((-1, 1))
-
-        print(normalization_array.shape, spectra.shape)
 
         spectra[:, :] *= 1/normalization_array
 
@@ -215,6 +193,56 @@ class DataProcess:
         print(f'Indefinite vals in the NEW array: {np.sum(n_indef)}')
 
         return spectra, wave
+    ############################################################################
+    def interpolate_single(self,
+        galaxy_index:'int',
+        wave_master:'np.array',
+        data_directory:'str',
+        output_directory:'str'
+        ):
+        """
+        Function to interpolate single spectrum to wav master
+
+        INPUT
+            galaxy_name: index of galaxy in the meta data frame
+            wave_master: 1 dimensional array containing the common grid
+                to use with all spectra
+            data_directory:
+            output_directory:
+        OUTPUT
+            interpolated spectrum as a numpy array
+        """
+        galaxy_name = self.frame.name[galaxy_index]
+        spectrum_direction = f'{data_directory}/rest_frame/{galaxy_name}.npy'
+
+        if os.path.exists(spectrum_direction):
+
+            spectrum = np.load(spectrum_direction)
+
+        else:
+
+            print(f'There is no file: {galaxy_name}')
+
+            return 1
+
+        flux = np.interp(
+            wave_master,
+            spectrum[0], # wave
+            spectrum[1], # flux
+            left=np.nan,
+            right=np.nan
+            )
+
+        # self.fluxes[galaxy_index, :] = flux_interp[:]
+        # print(galaxy_index, self.fluxes[galaxy_index])
+        flux_directory = f'{output_directory}/interp'
+
+        if not os.path.exists(flux_directory):
+            os.makedirs(flux_directory)
+
+        np.save(f'{flux_directory}/{galaxy_name}.npy', flux)
+
+        return 0
     ############################################################################
     def spec_to_single_array(self, fnames: 'list'):
 
