@@ -41,15 +41,19 @@ spectra = data_process.interpolate(
     )
 ################################################################
 print(f'Handling indefinite values')
-# #
-# check possible chenges in data frame with next line
-spectra , wave = data_process.indefinite_values_handler(
+
+drop = parser.getfloat('parameters', 'drop')
+
+spectra , wave = data_process.drop_indefinite_values(
     spectra=spectra,
-    wave_master=wave_grid
+    wave_master=wave_grid,
+    drop=drop
     )
-# #
-# # spectra = data_processing.missing_flux_replacement(spectra=spectra,
-# #     method='median')
+
+spectra = data_process.missing_flux_replacement(
+    spectra=spectra,
+    method='median'
+    )
 # #
 # # n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
 # # print(f'Indefinite vals in the final array: {np.sum(n_indef)}')

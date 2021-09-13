@@ -104,11 +104,6 @@ class DataProcess:
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
 
-        # np.save(
-        #     f'{output_directory}/fluxes_interpreted.npy',
-        #     self.fluxes
-        #     )
-
         self.frame.to_csv(
             f'{output_directory}/meta_data.csv',
             index=False
@@ -167,11 +162,16 @@ class DataProcess:
        #  return spectra
        pass
 
-    def missing_flux_replacement(self, spectra:'array', method:'str'='median'):
-
+    def missing_flux_replacement(self,
+        spectra:'array',
+        method:'str'='median'
+        ):
+        """"""
+        ########################################################################
         if method=='median':
 
             mask_replacement = ~np.isfinite(spectra)
+
             for idx, mask in enumerate(mask_replacement):
                 spectra[idx, mask] = np.nanmedian(spectra[idx, :])
 
@@ -182,22 +182,23 @@ class DataProcess:
                 spectra[idx, mask] = np.nanmean(spectra[idx, :])
 
         return spectra
-
-    def indefinite_values_handler(self,
+    ############################################################################
+    def drop_indefinite_values(self,
         spectra:'np.array',
         wave_master:'np.array',
-        discard_fraction:'float'=0.1
+        drop:'float'=0.1
         ):
         """
         spectra: train
         discard_fraction:'float'=0.1
         """
+        ########################################################################
         print(f'spectra shape before keep_spec_mask: {spectra.shape}')
 
         n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
         print(f'Indefinite vals in the input array: {np.sum(n_indef)}')
 
-        keep_flux_mask =  n_indef < spectra.shape[0]*discard_fraction
+        keep_flux_mask =  n_indef < spectra.shape[0]*drop
 
         spectra = spectra[:, keep_flux_mask]
         print(f'spectra shape after keep_spec_mask: {spectra.shape}')
