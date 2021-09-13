@@ -42,53 +42,54 @@ if not os.path.exists(output_directory):
     os.makedirs(output_directory)
 
 
-if os.path.exists(f'{output_directory}/fluxes_interp.npy'):
+data_process.interpolate(
+    wave_master=wave_grid,
+    data_directory=data_directory,
+    output_directory=output_directory,
+    number_spectra=number_spectra
+    )
 
-    spectra = np.load(f'{output_directory}/fluxes_interp.npy')
-
-else:
-
-    spectra = data_process.interpolate(
-        wave_master=wave_grid,
-        data_directory=data_directory,
-        output_directory=output_directory,
-        number_spectra=number_spectra
-        )
+# if not os.path.exists(f'{output_directory}/fluxes_interp.npy'):
+#
+#     spectra = np.load(f'{output_directory}/fluxes_interp.npy')
+#
+# else:
+#
+#     spectra = data_process.interpolate(
+#         wave_master=wave_grid,
+#         data_directory=data_directory,
+#         output_directory=output_directory,
+#         number_spectra=number_spectra
+#         )
+#     print(spectra)
 ################################################################
 print(f'Handling indefinite values')
 
 drop = parser.getfloat('parameters', 'drop')
 
-spectra , wave = data_process.drop_indefinite_values(
-    spectra=spectra,
-    wave_master=wave_grid,
-    drop=drop
-    )
+# print(spectra)
 
-spectra = data_process.missing_flux_replacement(
-    spectra=spectra,
-    method='median'
-    )
-# #
-# # n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
-# # print(f'Indefinite vals in the final array: {np.sum(n_indef)}')
-# # ###############################################################################
+# spectra , wave = data_process.drop_indefinite_values(
+#     spectra=spectra,
+#     wave_master=wave_grid,
+#     drop=drop
+#     )
+#
+# # print(spectra)
+# spectra = data_process.missing_flux_replacement(
+#     spectra=spectra,
+#     method='median'
+#     )
+# print(spectra)
+################################################################################
 # print(f'Normalizing data')
 #
+# spectra = data_process.normalize_spectra(spectra=spectra)
 #
-#
-# spectra = data_process.normalize_spectra(
-#     spectra=spectra,
-#     method=method
-#     )
-# ############################################################################
 # print(f'Saving data')
-# #
-# np.save(f'{spectra_path}/processed_spectra/spectra_{n_obs}_{method}.npy',
-#     spectra)
-# # ################################################################################
-# # np.save(f'{spectra_path}/processed_spectra/wave_master_{n_obs}_processed.npy',
-# #     wave)
-# ################################################################################
+#
+# np.save(f'{output_directory}/fluxes.npy', spectra)
+# np.save(f'{output_directory}/wave.npy', wave)
+################################################################################
 t1 = time.time()
 print(f'Running time: {t1-t0:.2f} [s]')

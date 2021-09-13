@@ -49,7 +49,7 @@ class DataProcess:
         """
         self.frame = galaxies_frame
         self.number_processes = number_processes
-        self.fluxes = None
+        # self.fluxes = None
 
         # Single interpolated array,
         # count pythonic number of files in data diretory
@@ -79,7 +79,7 @@ class DataProcess:
 
         index_galaxies = range(number_spectra)
 
-        self.fluxes = np.empty((number_spectra, wave_master.size))
+        self.fluxes = np.ones((number_spectra, wave_master.size)) * 2
 
         interpolator = partial(
             self.interpolate_single,
@@ -102,9 +102,9 @@ class DataProcess:
             index=False
             )
 
-        np.save(f'{output_directory}/fluxes_interp.npy', self.fluxes)
-
-        return self.fluxes
+        # np.save(f'{output_directory}/fluxes_interp.npy', self.fluxes)
+        # print(self.fluxes)
+        # return self.fluxes
     ############################################################################
     def interpolate_single(self,
         galaxy_index:'int',
@@ -137,26 +137,37 @@ class DataProcess:
 
             return 1
 
-        self.fluxes[galaxy_index, :] = np.interp(
+        flux = np.interp(
             wave_master,
             spectrum[0], # wave
             spectrum[1], # flux
             left=np.nan,
             right=np.nan
             )
-        # flux_direction = f'{output_directory}/{galaxy_name}.npy'
-        # np.save(flux_direction, flux)
+
+        # self.fluxes[galaxy_index, :] = flux_interp[:]
+        # print(galaxy_index, self.fluxes[galaxy_index])
+        flux_directory = f'{output_directory}/interp'
+
+        if not os.path.exists(flux_directory):
+            os.makedirs(flux_directory)
+
+        np.save(f'{flux_directory}/{galaxy_name}.npy', flux)
+
         return 0
 
     def normalize_spectra(self, spectra:'np.array'):
-        # """"""
+        """Spectra has no missing values"""
 
-        # spectra[:, :] *= 1/np.median(spectra[:, :], axis=1).reshape(
-        #         (spectra.shape[0], 1))
+        normalization_array = np.median(spectra, axis=1)
+        normalization_array = normalization_array.reshape((-1, 1))
 
-       #  return spectra
-       pass
+        print(normalization_array.shape, spectra.shape)
 
+        spectra[:, :] *= 1/normalization_array
+
+        return spectra
+    ############################################################################
     def missing_flux_replacement(self,
         spectra:'array',
         method:'str'='median'
