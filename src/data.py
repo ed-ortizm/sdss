@@ -58,7 +58,7 @@ class DataProcess:
         wave_master:'np.array',
         data_directory:'str',
         output_directory:'str',
-        number_spectra:'int'=False
+        number_spectra:'int'=-1
         ):
         """
         Interpolate rest frame spectra from data directory according to
@@ -77,12 +77,7 @@ class DataProcess:
         """
         print(f'Interpolate spectra...')
 
-        # use a partial from itertools for interpolate function
-        if number_spectra:
-            index_galaxies = range(number_spectra)
-        else:
-            number_spectra = self.frame.shape[0]
-            index_galaxies = range(number_spectra)
+        index_galaxies = range(number_spectra)
 
         self.fluxes = np.empty((number_spectra, wave_master.size))
 
@@ -99,8 +94,6 @@ class DataProcess:
 
         print(f'Spectra saved. Failed to save {number_failed}')
 
-        output_directory = f'{output_directory}/train_{number_spectra}'
-
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
 
@@ -108,6 +101,8 @@ class DataProcess:
             f'{output_directory}/meta_data.csv',
             index=False
             )
+
+        np.save(f'{output_directory}/fluxes_interp.npy', self.fluxes)
 
         return self.fluxes
     ############################################################################

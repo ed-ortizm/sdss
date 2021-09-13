@@ -29,16 +29,31 @@ data_process = data.DataProcess(
 ################################################################
 # interpolate spectra
 wave_grid = data.get_grid(parser)
+
+number_spectra = parser.getint('parameters', 'spectra')
+
+if number_spectra == -1:
+    number_spectra = galaxies_frame.shape[0]
+
 output_directory = parser.get('directories', 'output')
+output_directory = f'{output_directory}_{number_spectra}'
 
 if not os.path.exists(output_directory):
     os.makedirs(output_directory)
 
-spectra = data_process.interpolate(
-    wave_master=wave_grid,
-    data_directory=data_directory,
-    output_directory=output_directory
-    )
+
+if os.path.exists(f'{output_directory}/fluxes_interp.npy'):
+
+    spectra = np.load(f'{output_directory}/fluxes_interp.npy')
+
+else:
+
+    spectra = data_process.interpolate(
+        wave_master=wave_grid,
+        data_directory=data_directory,
+        output_directory=output_directory,
+        number_spectra=number_spectra
+        )
 ################################################################
 print(f'Handling indefinite values')
 
@@ -58,17 +73,19 @@ spectra = data_process.missing_flux_replacement(
 # # n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
 # # print(f'Indefinite vals in the final array: {np.sum(n_indef)}')
 # # ###############################################################################
-# # print(f'Normalizing data')
-# # normalization_methods = ['median'] #, 'Z', 'min_max']
+# print(f'Normalizing data')
+#
+#
+#
+# spectra = data_process.normalize_spectra(
+#     spectra=spectra,
+#     method=method
+#     )
+# ############################################################################
+# print(f'Saving data')
 # #
-# # for method in normalization_methods:
-# #
-# #     spectra = data_processing.normalize_spectra(spectra=spectra, method=method)
-# #     ############################################################################
-# #     print(f'Saving data')
-# #
-# #     np.save(f'{spectra_path}/processed_spectra/spectra_{n_obs}_{method}.npy',
-# #         spectra)
+# np.save(f'{spectra_path}/processed_spectra/spectra_{n_obs}_{method}.npy',
+#     spectra)
 # # ################################################################################
 # # np.save(f'{spectra_path}/processed_spectra/wave_master_{n_obs}_processed.npy',
 # #     wave)
