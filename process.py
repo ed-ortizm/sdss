@@ -33,31 +33,20 @@ output_directory = parser.get('directories', 'output')
 
 if not os.path.exists(output_directory):
     os.makedirs(output_directory)
-    
-data_process.interpolate(
+
+spectra = data_process.interpolate(
     wave_master=wave_grid,
     data_directory=data_directory,
     output_directory=output_directory
     )
 ################################################################
-# spectra_name = galaxy_frame.name[:]
-# # ################################################################################
-# # # Getting array
-# # fnames = glob.glob(
-# #     f'{spectra_path}/interpolated_spectra/*_interpolated.npy'
-# # )
-# # print(f'Number of files: {n_obs}')
+print(f'Handling indefinite values')
 # #
-# # print(f'spec to single array')
-# # spectra = data_processing.spec_to_single_array(fnames=fnames[:n_obs])
-# #
-# # # print(f'Sorting according to snMedian\n')
-# # # SN_sorted_spectra = data_processing.sort_spec_SN(spectra=spectra)
-# # ################################################################################
-# #
-# # print(f'Handling indefinite values')
-# #
-# # spectra , wave = data_processing.indefinite_values_handler(spectra=spectra)
+# check possible chenges in data frame with next line
+spectra , wave = data_process.indefinite_values_handler(
+    spectra=spectra,
+    wave_master=wave_grid
+    )
 # #
 # # spectra = data_processing.missing_flux_replacement(spectra=spectra,
 # #     method='median')

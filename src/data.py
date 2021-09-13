@@ -104,15 +104,18 @@ class DataProcess:
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
 
-        np.save(f'{output_directory}/fluxes.npy', self.fluxes)
+        # np.save(
+        #     f'{output_directory}/fluxes_interpreted.npy',
+        #     self.fluxes
+        #     )
 
         self.frame.to_csv(
             f'{output_directory}/meta_data.csv',
             index=False
             )
 
-        # new metadataframe as well
-
+        return self.fluxes
+    ############################################################################
     def interpolate_single(self,
         galaxy_index:'int',
         wave_master:'np.array',
@@ -180,10 +183,15 @@ class DataProcess:
 
         return spectra
 
-    def indefinite_values_handler(self, spectra:'np.array',
-        discard_fraction:'float'=0.1):
-        #global wave_master
-
+    def indefinite_values_handler(self,
+        spectra:'np.array',
+        wave_master:'np.array',
+        discard_fraction:'float'=0.1
+        ):
+        """
+        spectra: train
+        discard_fraction:'float'=0.1
+        """
         print(f'spectra shape before keep_spec_mask: {spectra.shape}')
 
         n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
@@ -194,13 +202,13 @@ class DataProcess:
         spectra = spectra[:, keep_flux_mask]
         print(f'spectra shape after keep_spec_mask: {spectra.shape}')
 
-        wave = wave_master[keep_flux_mask[: -8]]
+        wave = wave_master[keep_flux_mask]
 
         n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
         print(f'Indefinite vals in the NEW array: {np.sum(n_indef)}')
 
         return spectra, wave
-
+    ############################################################################
     def spec_to_single_array(self, fnames: 'list'):
 
         n_spectra = len(fnames)
