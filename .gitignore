@@ -1,3 +1,4 @@
+*.insyncdl
 *.txt
 # Serialized data
 *.dill
