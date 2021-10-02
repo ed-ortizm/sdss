@@ -27,8 +27,6 @@ def get_grid(parser: "ConfigtParser obj") -> "np.array":
     wave_grid = np.linspace(master_lower, master_upper, number_waves)
 
     return wave_grid
-
-
 ################################################################################
 class DataProcess:
     def __init__(self, galaxies_frame: "pd.df", number_processes: "int"):
@@ -54,7 +52,6 @@ class DataProcess:
         wave_master: "np.array",
         data_directory: "str",
         output_directory: "str",
-        number_spectra: "int" = -1,
     ):
         """
         Interpolate rest frame spectra from data directory according to
@@ -65,7 +62,6 @@ class DataProcess:
                 to use with all spectra
             data_directory:
             output_directory:
-            number_spectra: number of spectra to process when testing
 
         OUTPUT
             mp.pool list with integers telling whether the process was successful or not.
@@ -73,8 +69,8 @@ class DataProcess:
         """
         print(f"Interpolate spectra...")
 
-        # remember_to_modify_number_spectra
-        fluxes = np.ones((number_spectra, wave_master.size))
+        number_spectra = self.frame.shape[0]
+        fluxes = np.empty((number_spectra, wave_master.size))
 
         galaxy_names = self.frame.name
         spectrum_direction = f"{data_directory}/rest_frame"
@@ -101,32 +97,6 @@ class DataProcess:
         np.save(f"{output_directory}/fluxes_interp.npy", fluxes)
 
         return fluxes
-        # check share arrays
-        # index_galaxies = range(number_spectra)
-        #
-        # self.fluxes = np.ones((number_spectra, wave_master.size)) * 2
-        #
-        # interpolator = partial(
-        #     self.interpolate_single,
-        #     wave_master=wave_master,
-        #     data_directory=data_directory,
-        #     output_directory=output_directory
-        #     )
-        #
-        # with mp.Pool(processes=self.number_processes) as pool:
-        #     results = pool.map(interpolator, index_galaxies)
-        #     number_failed = sum(results)
-        #
-        # print(f'Spectra saved. Failed to save {number_failed}')
-        #
-        # if not os.path.exists(output_directory):
-        #     os.makedirs(output_directory)
-        #
-        # self.frame.to_csv(
-        #     f'{output_directory}/meta_data.csv',
-        #     index=False
-        #     )
-
     ############################################################################
     def normalize_spectra(self, spectra: "np.array"):
         """Spectra has no missing values"""

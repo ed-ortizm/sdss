@@ -35,16 +35,14 @@ data_process = data.DataProcess(
 # interpolate spectra
 wave_grid = data.get_grid(parser)
 
-number_spectra = parser.getint("parameters", "spectra")
-
-if number_spectra == -1:
-    number_spectra = galaxies_frame.shape[0]
 
 output_directory = parser.get("directories", "output")
-output_directory = f"{output_directory}_{number_spectra}"
 
 if not os.path.exists(output_directory):
     os.makedirs(output_directory)
+
+################################################################
+################################################################
 
 if not os.path.exists(f"{output_directory}/fluxes_interp.npy"):
 
@@ -56,7 +54,6 @@ else:
         wave_master=wave_grid,
         data_directory=data_directory,
         output_directory=output_directory,
-        number_spectra=number_spectra,
     )
 ################################################################
 print(f"Handling indefinite values")
