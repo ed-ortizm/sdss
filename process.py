@@ -44,7 +44,7 @@ if not os.path.exists(output_directory):
 ################################################################
 ################################################################
 
-if not os.path.exists(f"{output_directory}/fluxes_interp.npy"):
+if os.path.exists(f"{output_directory}/fluxes_interp.npy"):
 
     spectra = np.load(f"{output_directory}/fluxes_interp.npy")
 
