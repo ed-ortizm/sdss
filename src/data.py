@@ -1,3 +1,4 @@
+import ctypes
 from functools import partial
 import multiprocessing as mp
 import os
@@ -7,6 +8,24 @@ import astropy.io.fits as pyfits
 import numpy as np
 import pandas as pd
 
+
+
+def main():
+    nrows = 5
+    ncols = 5
+    shape = (nrows, ncols)
+
+    shared_array = mp.Array(ctypes.c_double, nrows * ncols, lock=False)
+    arr = to_numpy_array(shared_array, shape)
+    print(arr)
+    print('-' * 80)
+
+    x_y_values = [(x, y) for x in range(nrows) for y in range(ncols)]
+
+    pool = mp.Pool(initializer=init_worker, initargs=(shared_array, shape))
+    pool.starmap(worker_fun, x_y_values)
+
+    print(arr)
 ################################################################################
 class DataProcess:
     def __init__(
@@ -28,6 +47,68 @@ class DataProcess:
         self.frame = galaxies_frame
         self.number_processes = number_processes
         self.grid = self._get_grid(grid_parameters)
+
+        # shared array
+        self.fluxes = None
+
+    ###########################################################################
+    def interpolate_parallel(self,
+        data_directory: "str",
+        output_directory: "str"
+        ):
+
+        print(f"Interpolate parallel...")
+
+        number_spectra = self.frame.shape[0]
+        number_fluxes = self.grid.size
+        shape = (number_spectra, number_fluxes)
+
+        shared_array = mp.Array(
+                                ctypes.c_double,
+                                number_spectra * number_fluxes,
+                                lock=False
+        )
+
+        self.fluxes = self._to_numpy_array(share_array, shape)
+
+        galaxy_names = self.frame.name
+
+        spectra_directory = f"{data_directory}/rest_frame"
+        self._check_directory(spectra_directory)
+
+        with mp.Pool(
+            processes=2
+            initializer=self._init_worker,
+            initargs=(shared_array, shape)
+            ) as pool:
+
+            pool.map()
+
+
+        # for idx, galaxy_name in enumerate(galaxy_names):
+
+       #      flux = self._interpolate(galaxy_name, spectra_directory)
+        #     fluxes[idx, :] = flux[:]
+
+        self._check_directory(output_directory)
+        self.frame.to_csv(f"{output_directory}/meta_data.csv", index=False)
+        np.save(f"{output_directory}/fluxes_interp.npy", fluxes)
+
+        return fluxes
+    ###########################################################################
+    def _to_numpy_array(self,shared_array, shape):
+        '''Create a numpy array backed by a shared memory Array.'''
+        array = np.ctypeslib.as_array(shared_array)
+        return array.reshape(shape)
+
+
+    def _init_worker(self, shared_array, shape):
+        '''
+        Initialize worker for processing: Create the numpy array from the
+        shared memory Array for each process in the pool.
+        '''
+        # global self.array
+        self.fluxes = to_numpy_array(shared_array, shape)
 
     ###########################################################################
     def _check_directory(self, directory: "str", exit: "bool" = False):
@@ -89,7 +170,7 @@ class DataProcess:
         fluxes = np.empty((number_spectra, self.grid.size))
 
         galaxy_names = self.frame.name
-        
+
         spectra_directory = f"{data_directory}/rest_frame"
         self._check_directory(spectra_directory)
 
@@ -103,7 +184,6 @@ class DataProcess:
         np.save(f"{output_directory}/fluxes_interp.npy", fluxes)
 
         return fluxes
-
     ###########################################################################
     def _interpolate(self, galaxy_name, spectra_directory):
 
