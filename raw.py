@@ -49,8 +49,7 @@ data_processing.get_raw_spectra()
 meta_data_location = parser.get("files", "meta_data")
 
 data_processing.meta_data_frame.to_csv(
-    path_or_buf=meta_data_location,
-    index=False
+    path_or_buf=meta_data_location, index=False
 )
 ################################################################################
 t1 = time.time()

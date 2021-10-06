@@ -9,11 +9,12 @@ import pandas as pd
 
 ################################################################################
 class DataProcess:
-    def __init__(self,
+    def __init__(
+        self,
         galaxies_frame: "pd.df",
         number_processes: "int",
         grid_parameters: "dict",
-        ):
+    ):
         """
         Class to process rest frame spectra
         PARAMETERS
@@ -27,8 +28,9 @@ class DataProcess:
         self.frame = galaxies_frame
         self.number_processes = number_processes
         self.grid = self._get_grid(grid_parameters)
+
     ###########################################################################
-    def _check_directory(self, directory: "str", exit: "bool"=False):
+    def _check_directory(self, directory: "str", exit: "bool" = False):
         """
         Check if a directory exists, if not it creates it or
         exits depending on the value of exit
@@ -42,6 +44,7 @@ class DataProcess:
                 sys.exit()
 
             os.makedirs(directory)
+
     ###########################################################################
     def _get_grid(self, grid_parameters: "dict") -> "np.array":
         """
@@ -65,12 +68,9 @@ class DataProcess:
         grid = np.linspace(lower, upper, number_waves)
 
         return grid
+
     ###########################################################################
-    def interpolate(
-        self,
-        data_directory: "str",
-        output_directory: "str",
-    ):
+    def interpolate(self, data_directory: "str", output_directory: "str"):
         """
         Interpolate rest frame spectra from data directory according to
         wave master  and save it to output directory
@@ -113,6 +113,7 @@ class DataProcess:
         np.save(f"{output_directory}/fluxes_interp.npy", fluxes)
 
         return fluxes
+
     ############################################################################
     def normalize(self, spectra: "np.array"):
         """Spectra has no missing values"""
@@ -125,9 +126,7 @@ class DataProcess:
         return spectra
 
     ############################################################################
-    def replace_missing_flux(
-        self, spectra: "array", method: "str" = "median"
-        ):
+    def replace_missing_flux(self, spectra: "array", method: "str" = "median"):
         """"""
         ########################################################################
         if method == "median":
@@ -146,10 +145,7 @@ class DataProcess:
         return spectra
 
     ############################################################################
-    def drop_indefinite_values(self,
-        spectra: "np.array",
-        drop: "float" = 0.1
-        ):
+    def drop_indefinite_values(self, spectra: "np.array", drop: "float" = 0.1):
         """
         spectra: train
         discard_fraction:'float'=0.1
@@ -171,7 +167,10 @@ class DataProcess:
         print(f"Indefinite vals in the NEW array: {np.sum(n_indef)}")
 
         return spectra, wave
+
     ###########################################################################
+
+
 ###############################################################################
 class RawData:
     def __init__(
@@ -224,14 +223,14 @@ class RawData:
         self.meta_data_frame = pd.DataFrame(
             results,
             columns=[
-                        "galaxy_index",
-                        "name",
-                        "z",
-                        "snr",
-                        "run2d",
-                        "sub-class",
-                        "class"
-                    ],
+                "galaxy_index",
+                "name",
+                "z",
+                "snr",
+                "run2d",
+                "sub-class",
+                "class",
+            ],
         )
 
     def _get_spectra(self, galaxy_index: "int"):
@@ -254,13 +253,11 @@ class RawData:
                 ]
         """
 
-        [
-            sdss_directory,
-            spectra_name,
-            run2d
-        ] = self._galaxy_localization(galaxy_index)
+        [sdss_directory, spectra_name, run2d] = self._galaxy_localization(
+            galaxy_index
+        )
 
-        print(f"Process {spectra_name} --> N:{galaxy_index}",end="\r")
+        print(f"Process {spectra_name} --> N:{galaxy_index}", end="\r")
 
         [plate, mjd, fiberid] = spectra_name.split("-")[1:]
 
@@ -271,14 +268,14 @@ class RawData:
             print(f"[{galaxy_index}] NOT FOUND: {galaxy_fits_location}")
 
             meta_data = [
-                            galaxy_index, # INDEX IN THE CURATED DATAFRAME
-                            spectra_name,
-                            np.nan,
-                            np.nan,
-                            run2d,
-                            np.nan,
-                            np.nan
-                        ]
+                galaxy_index,  # INDEX IN THE CURATED DATAFRAME
+                spectra_name,
+                np.nan,
+                np.nan,
+                run2d,
+                np.nan,
+                np.nan,
+            ]
 
             return meta_data
 
@@ -394,7 +391,7 @@ class RawData:
         return plate, mjd, fiberid, run2d
 
     ###########################################################################
-    def _check_directory(self, directory: "str", exit: "bool"=False):
+    def _check_directory(self, directory: "str", exit: "bool" = False):
         """
         Check if a directory exists, if not it creates it or
         exits depending on the value of exit
@@ -408,4 +405,6 @@ class RawData:
                 sys.exit()
 
             os.makedirs(directory)
+
+
 ###############################################################################

@@ -33,7 +33,7 @@ grid_parameters = dict(parser.items("grid"))
 data_process = data.DataProcess(
     galaxies_frame=galaxies_frame,
     number_processes=number_processes,
-    grid_parameters = grid_parameters
+    grid_parameters=grid_parameters,
 )
 ################################################################
 # interpolate spectra
@@ -51,8 +51,7 @@ output_directory = parser.get("directories", "output")
 #         output_directory=output_directory,
 #     )
 spectra = data_process.interpolate(
-    data_directory=data_directory,
-    output_directory=output_directory,
+    data_directory=data_directory, output_directory=output_directory
 )
 ################################################################
 print(f"Handle indefinite values")
@@ -60,16 +59,12 @@ print(f"Handle indefinite values")
 drop_fraction = parser.getfloat("parameters", "drop")
 
 spectra, wave = data_process.drop_indefinite_values(
-    spectra=spectra,
-    drop=drop_fraction
+    spectra=spectra, drop=drop_fraction
 )
 
 print(f"Replace missing flux")
 
-spectra = data_process.replace_missing_flux(
-    spectra=spectra,
-    method="median"
-)
+spectra = data_process.replace_missing_flux(spectra=spectra, method="median")
 ################################################################################
 print(f"Normalize data")
 
