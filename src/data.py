@@ -89,6 +89,7 @@ class DataProcess:
         fluxes = np.empty((number_spectra, self.grid.size))
 
         galaxy_names = self.frame.name
+        
         spectra_directory = f"{data_directory}/rest_frame"
         self._check_directory(spectra_directory)
 
@@ -98,9 +99,7 @@ class DataProcess:
             fluxes[idx, :] = flux[:]
 
         self._check_directory(output_directory)
-
         self.frame.to_csv(f"{output_directory}/meta_data.csv", index=False)
-
         np.save(f"{output_directory}/fluxes_interp.npy", fluxes)
 
         return fluxes
