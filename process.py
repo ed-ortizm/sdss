@@ -37,11 +37,7 @@ data_process = data.DataProcess(
 )
 ################################################################
 # interpolate spectra
-
 output_directory = parser.get("directories", "output")
-
-if not os.path.exists(output_directory):
-    os.makedirs(output_directory)
 
 ################################################################
 # if os.path.exists(f"{output_directory}/fluxes_interp.npy"):
@@ -59,26 +55,28 @@ spectra = data_process.interpolate(
     output_directory=output_directory,
 )
 ################################################################
-print(f"Handling indefinite values")
+print(f"Handle indefinite values")
 
-drop = parser.getfloat("parameters", "drop")
+drop_fraction = parser.getfloat("parameters", "drop")
 
 spectra, wave = data_process.drop_indefinite_values(
     spectra=spectra,
-    drop=drop
+    drop=drop_fraction
 )
 
-spectra = data_process.missing_flux_replacement(
+print(f"Replace missing flux")
+
+spectra = data_process.replace_missing_flux(
     spectra=spectra,
     method="median"
 )
 ################################################################################
-print(f"Normalizing data")
-#
-spectra = data_process.normalize_spectra(spectra=spectra)
-#
-print(f"Saving data")
-#
+print(f"Normalize data")
+
+spectra = data_process.normalize(spectra=spectra)
+
+print(f"Save data")
+
 np.save(f"{output_directory}/fluxes.npy", spectra)
 np.save(f"{output_directory}/wave.npy", wave)
 ################################################################################

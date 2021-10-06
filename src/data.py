@@ -93,6 +93,7 @@ class DataProcess:
 
         for idx, galaxy_name in enumerate(galaxy_names):
 
+            print(f"Process {galaxy_name}", end="\r")
             spectrum = np.load(f"{spectrum_direction}/{galaxy_name}.npy")
 
             flux = np.interp(
@@ -113,7 +114,7 @@ class DataProcess:
 
         return fluxes
     ############################################################################
-    def normalize_spectra(self, spectra: "np.array"):
+    def normalize(self, spectra: "np.array"):
         """Spectra has no missing values"""
 
         normalization_array = np.median(spectra, axis=1)
@@ -124,9 +125,9 @@ class DataProcess:
         return spectra
 
     ############################################################################
-    def missing_flux_replacement(
+    def replace_missing_flux(
         self, spectra: "array", method: "str" = "median"
-    ):
+        ):
         """"""
         ########################################################################
         if method == "median":
@@ -171,22 +172,6 @@ class DataProcess:
 
         return spectra, wave
     ###########################################################################
-    def spec_to_single_array(self, fnames: "list"):
-
-        n_spectra = len(fnames)
-        n_fluxes = np.load(fnames[0]).size
-
-        spectra = np.empty((n_spectra, n_fluxes))
-
-        for idx, file_path in enumerate(fnames):
-
-            fname = file_path.split("/")[-1].split("_")[0]
-
-            print(f"Loading {fname} to single array", end="\r")
-
-            spectra[idx, :] = np.load(file_path)
-
-        return spectra
 ###############################################################################
 class RawData:
     def __init__(
