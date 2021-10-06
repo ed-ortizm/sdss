@@ -89,21 +89,12 @@ class DataProcess:
         fluxes = np.empty((number_spectra, self.grid.size))
 
         galaxy_names = self.frame.name
-        spectrum_direction = f"{data_directory}/rest_frame"
+        spectra_directory = f"{data_directory}/rest_frame"
+        self._check_directory(spectra_directory)
 
         for idx, galaxy_name in enumerate(galaxy_names):
 
-            print(f"Process {galaxy_name}", end="\r")
-            spectrum = np.load(f"{spectrum_direction}/{galaxy_name}.npy")
-
-            flux = np.interp(
-                self.grid,
-                spectrum[0],  # wave
-                spectrum[1],  # flux
-                left=np.nan,
-                right=np.nan,
-            )
-
+            flux = self._interpolate(galaxy_name, spectra_directory)
             fluxes[idx, :] = flux[:]
 
         self._check_directory(output_directory)
@@ -114,7 +105,23 @@ class DataProcess:
 
         return fluxes
 
-    ############################################################################
+    ###########################################################################
+    def _interpolate(self, galaxy_name, spectra_directory):
+
+        print(f"Interpolate {galaxy_name}", end="\r")
+
+        spectrum = np.load(f"{spectra_directory}/{galaxy_name}.npy")
+
+        flux = np.interp(
+            self.grid,
+            spectrum[0],  # wave
+            spectrum[1],  # flux
+            left=np.nan,
+            right=np.nan,
+        )
+
+        return flux
+    ###########################################################################
     def normalize(self, spectra: "np.array"):
         """Spectra has no missing values"""
 
