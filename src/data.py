@@ -69,32 +69,31 @@ class DataProcess:
                                 lock=False
         )
 
-        self.fluxes = self._to_numpy_array(share_array, shape)
+        self.fluxes = self._to_numpy_array(shared_array, shape)
 
         galaxy_names = self.frame.name
 
         spectra_directory = f"{data_directory}/rest_frame"
         self._check_directory(spectra_directory)
 
+        worker_function = partial(
+                                    self._interpolate,
+                                    spectra_directory=spectra_directory
+                                )
         with mp.Pool(
-            processes=2
+            processes=self.number_processes,
             initializer=self._init_worker,
             initargs=(shared_array, shape)
             ) as pool:
 
-            pool.map()
+            pool.map(worker_function, galaxy_names)
 
-
-        # for idx, galaxy_name in enumerate(galaxy_names):
-
-       #      flux = self._interpolate(galaxy_name, spectra_directory)
-        #     fluxes[idx, :] = flux[:]
 
         self._check_directory(output_directory)
         self.frame.to_csv(f"{output_directory}/meta_data.csv", index=False)
-        np.save(f"{output_directory}/fluxes_interp.npy", fluxes)
+        np.save(f"{output_directory}/fluxes_interp.npy", self.fluxes)
 
-        return fluxes
+        return self.fluxes
     ###########################################################################
     def _to_numpy_array(self,shared_array, shape):
         '''Create a numpy array backed by a shared memory Array.'''
@@ -108,7 +107,7 @@ class DataProcess:
         shared memory Array for each process in the pool.
         '''
         # global self.array
-        self.fluxes = to_numpy_array(shared_array, shape)
+        self.fluxes = self._to_numpy_array(shared_array, shape)
 
     ###########################################################################
     def _check_directory(self, directory: "str", exit: "bool" = False):
