@@ -8,28 +8,12 @@ import numpy as np
 import pandas as pd
 
 ################################################################################
-def get_grid(parser: "ConfigtParser obj") -> "np.array":
-    """
-    Computes the master grid for the interpolation of the spectra
-
-    ARGUMENTS
-
-        parser: ConfigurationParser object that contains information
-        for this computation read from the .ini file
-
-    RETURN
-        wave_grid:
-    """
-    number_waves = parser.getint("constants", "wave_master")
-    master_lower = parser.getint("constants", "master_lower")
-    master_upper = parser.getint("constants", "master_upper")
-
-    wave_grid = np.linspace(master_lower, master_upper, number_waves)
-
-    return wave_grid
-################################################################################
 class DataProcess:
-    def __init__(self, galaxies_frame: "pd.df", number_processes: "int"):
+    def __init__(self,
+        galaxies_frame: "pd.df",
+        number_processes: "int",
+        grid_parameters: "dict",
+        ):
         """
         Class to process rest frame spectra
         PARAMETERS
@@ -39,17 +23,51 @@ class DataProcess:
         OUTPUT
             check how to document the constructor of a class
         """
+
         self.frame = galaxies_frame
         self.number_processes = number_processes
-        # self.fluxes = None
+        self.grid = self._get_grid(grid_parameters)
+    ###########################################################################
+    def _check_directory(self, directory: "str", exit: "bool"=False):
+        """
+        Check if a directory exists, if not it creates it or
+        exits depending on the value of exit
+        """
 
-        # Single interpolated array,
-        # count pythonic number of files in data diretory
+        if not os.path.exists(directory):
 
-    ############################################################################
+            if exit:
+                print(f"Directory {diretory} NOT FOUND")
+                print("Code cannot execute")
+                sys.exit()
+
+            os.makedirs(directory)
+    ###########################################################################
+    def _get_grid(self, grid_parameters: "dict") -> "np.array":
+        """
+        Computes the master grid for the interpolation of the spectra
+
+        ARGUMENTS
+
+        grid_parameters: dictionary with structure
+        {
+        "number_waves": "number fluxes in the grid",
+        "lower": "lower bound in the grid",
+        "upper": "upper bound in the grid"
+        }
+        RETURN
+        wave_grid: numpy array with the grid
+        """
+        number_waves = int(grid_parameters["number_waves"])
+        lower = float(grid_parameters["lower"])
+        upper = float(grid_parameters["upper"])
+
+        grid = np.linspace(lower, upper, number_waves)
+
+        return grid
+    ###########################################################################
     def interpolate(
         self,
-        wave_master: "np.array",
         data_directory: "str",
         output_directory: "str",
     ):
@@ -58,8 +76,6 @@ class DataProcess:
         wave master  and save it to output directory
 
         PARAMETERS
-            wave_master: 1 dimensional array containing the common grid
-                to use with all spectra
             data_directory:
             output_directory:
 
@@ -70,7 +86,7 @@ class DataProcess:
         print(f"Interpolate spectra...")
 
         number_spectra = self.frame.shape[0]
-        fluxes = np.empty((number_spectra, wave_master.size))
+        fluxes = np.empty((number_spectra, self.grid.size))
 
         galaxy_names = self.frame.name
         spectrum_direction = f"{data_directory}/rest_frame"
@@ -80,7 +96,7 @@ class DataProcess:
             spectrum = np.load(f"{spectrum_direction}/{galaxy_name}.npy")
 
             flux = np.interp(
-                wave_master,
+                self.grid,
                 spectrum[0],  # wave
                 spectrum[1],  # flux
                 left=np.nan,
@@ -89,8 +105,7 @@ class DataProcess:
 
             fluxes[idx, :] = flux[:]
 
-        if not os.path.exists(output_directory):
-            os.makedirs(output_directory)
+        self._check_directory(output_directory)
 
         self.frame.to_csv(f"{output_directory}/meta_data.csv", index=False)
 
@@ -130,9 +145,10 @@ class DataProcess:
         return spectra
 
     ############################################################################
-    def drop_indefinite_values(
-        self, spectra: "np.array", wave_master: "np.array", drop: "float" = 0.1
-    ):
+    def drop_indefinite_values(self,
+        spectra: "np.array",
+        drop: "float" = 0.1
+        ):
         """
         spectra: train
         discard_fraction:'float'=0.1
@@ -148,66 +164,13 @@ class DataProcess:
         spectra = spectra[:, keep_flux_mask]
         print(f"spectra shape after keep_spec_mask: {spectra.shape}")
 
-        wave = wave_master[keep_flux_mask]
+        wave = self.grid[keep_flux_mask]
 
         n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
         print(f"Indefinite vals in the NEW array: {np.sum(n_indef)}")
 
         return spectra, wave
-
-    ############################################################################
-    def interpolate_single(
-        self,
-        galaxy_index: "int",
-        wave_master: "np.array",
-        data_directory: "str",
-        output_directory: "str",
-    ):
-        """
-        Function to interpolate single spectrum to wav master
-
-        PARAMETER
-            galaxy_name: index of galaxy in the meta data frame
-            wave_master: 1 dimensional array containing the common grid
-                to use with all spectra
-            data_directory:
-            output_directory:
-        OUTPUT
-            interpolated spectrum as a numpy array
-        """
-        galaxy_name = self.frame.name[galaxy_index]
-        spectrum_direction = f"{data_directory}/rest_frame/{galaxy_name}.npy"
-
-        if os.path.exists(spectrum_direction):
-
-            spectrum = np.load(spectrum_direction)
-
-        else:
-
-            print(f"There is no file: {galaxy_name}")
-
-            return 1
-
-        flux = np.interp(
-            wave_master,
-            spectrum[0],  # wave
-            spectrum[1],  # flux
-            left=np.nan,
-            right=np.nan,
-        )
-
-        # self.fluxes[galaxy_index, :] = flux_interp[:]
-        # print(galaxy_index, self.fluxes[galaxy_index])
-        flux_directory = f"{output_directory}/interp"
-
-        if not os.path.exists(flux_directory):
-            os.makedirs(flux_directory)
-
-        np.save(f"{flux_directory}/{galaxy_name}.npy", flux)
-
-        return 0
-
-    ############################################################################
+    ###########################################################################
     def spec_to_single_array(self, fnames: "list"):
 
         n_spectra = len(fnames)
@@ -224,9 +187,7 @@ class DataProcess:
             spectra[idx, :] = np.load(file_path)
 
         return spectra
-
-
-################################################################################
+###############################################################################
 class RawData:
     def __init__(
         self,
@@ -423,7 +384,7 @@ class RawData:
 
         return [sdss_directory, spectra_name, run2d]
 
-    ############################################################################
+    ###########################################################################
     def _galaxy_identifiers(self, galaxy: "df.row"):
         """
         PARAMETER
@@ -447,7 +408,7 @@ class RawData:
 
         return plate, mjd, fiberid, run2d
 
-###############################################################################
+    ###########################################################################
     def _check_directory(self, directory: "str", exit: "bool"=False):
         """
         Check if a directory exists, if not it creates it or

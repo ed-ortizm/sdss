@@ -28,13 +28,15 @@ galaxies_frame = pd.read_csv(f"{data_directory}/{meta_data_file}")
 ################################################################
 number_processes = parser.getint("parameters", "processes")
 
+grid_parameters = dict(parser.items("grid"))
+
 data_process = data.DataProcess(
-    galaxies_frame=galaxies_frame, number_processes=number_processes
+    galaxies_frame=galaxies_frame,
+    number_processes=number_processes,
+    grid_parameters = grid_parameters
 )
 ################################################################
 # interpolate spectra
-wave_grid = data.get_grid(parser)
-
 
 output_directory = parser.get("directories", "output")
 
@@ -42,30 +44,33 @@ if not os.path.exists(output_directory):
     os.makedirs(output_directory)
 
 ################################################################
-################################################################
-
-if os.path.exists(f"{output_directory}/fluxes_interp.npy"):
-
-    spectra = np.load(f"{output_directory}/fluxes_interp.npy")
-
-else:
-
-    spectra = data_process.interpolate(
-        wave_master=wave_grid,
-        data_directory=data_directory,
-        output_directory=output_directory,
-    )
+# if os.path.exists(f"{output_directory}/fluxes_interp.npy"):
+#
+#     spectra = np.load(f"{output_directory}/fluxes_interp.npy")
+#
+# else:
+#
+#     spectra = data_process.interpolate(
+#         data_directory=data_directory,
+#         output_directory=output_directory,
+#     )
+spectra = data_process.interpolate(
+    data_directory=data_directory,
+    output_directory=output_directory,
+)
 ################################################################
 print(f"Handling indefinite values")
 
 drop = parser.getfloat("parameters", "drop")
 
 spectra, wave = data_process.drop_indefinite_values(
-    spectra=spectra, wave_master=wave_grid, drop=drop
+    spectra=spectra,
+    drop=drop
 )
 
 spectra = data_process.missing_flux_replacement(
-    spectra=spectra, method="median"
+    spectra=spectra,
+    method="median"
 )
 ################################################################################
 print(f"Normalizing data")
