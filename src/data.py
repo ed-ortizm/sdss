@@ -48,7 +48,6 @@ class DataProcess:
         self.number_processes = number_processes
         self.grid = self._get_grid(grid_parameters)
 
-        # shared array
         self.fluxes = None
 
     ###########################################################################
@@ -72,6 +71,14 @@ class DataProcess:
             global fluxes
             fluxes = to_numpy_array(shared_array, shape)
         ######################################################################
+        spectra_directory = f"{data_directory}/rest_frame"
+        self._check_directory(spectra_directory)
+
+        worker_function = partial(
+        self._interpolate_parallel,
+        spectra_directory=spectra_directory
+        )
+        ######################################################################
         print(f"Interpolate parallel...")
 
         number_spectra = self.frame.shape[0]
@@ -84,41 +91,21 @@ class DataProcess:
                                 lock=False
         )
 
-        # self.fluxes = self._to_numpy_array(shared_array, shape)
         fluxes = to_numpy_array(shared_array, shape)
 
-        # galaxy_names = self.frame.name
         galaxy_indexes = self.frame.index
 
-        spectra_directory = f"{data_directory}/rest_frame"
-        self._check_directory(spectra_directory)
-
-        # def worker_fun(galaxy_index):
-        #     '''worker function'''
-        #     flux = self._interpolate_parallel(galaxy_index, spectra_directory)
-        #     fluxes[galaxy_index, :] = flux[:]
-
-        worker_function = partial(
-                                    self._interpolate_parallel,
-                                    spectra_directory=spectra_directory
-                                )
         with mp.Pool(
             processes=self.number_processes,
-            # initializer=self._init_worker,
             initializer=init_worker,
-            initargs=(shared_array, shape)
-            ) as pool:
+            initargs=(shared_array, shape)) as pool:
 
             pool.map(worker_function, galaxy_indexes)
-            # pool.map(worker_fun, galaxy_indexes)
-
 
         self._check_directory(output_directory)
         self.frame.to_csv(f"{output_directory}/meta_data.csv", index=False)
-        # np.save(f"{output_directory}/fluxes_interp.npy", self.fluxes)
         np.save(f"{output_directory}/fluxes_interp.npy", fluxes)
 
-        # return self.fluxes
         return fluxes
     ###########################################################################
     def _interpolate_parallel(self, galaxy_index, spectra_directory):
@@ -136,24 +123,7 @@ class DataProcess:
             right=np.nan,
         )
 
-        # self.fluxes[galaxy_index, :] = flux[:]
-        # return flux
         fluxes[galaxy_index, :] = flux[:]
-    ###########################################################################
-    def _to_numpy_array(self,shared_array, shape):
-        '''Create a numpy array backed by a shared memory Array.'''
-        self.fluxes = np.ctypeslib.as_array(shared_array)
-        return self.fluxes.reshape(shape)
-
-
-    def _init_worker(self, shared_array, shape):
-        '''
-        Initialize worker for processing: Create the numpy array from the
-        shared memory Array for each process in the pool.
-        '''
-        # global self.fluxes
-        self.fluxes = self._to_numpy_array(shared_array, shape)
-
     ###########################################################################
     def _check_directory(self, directory: "str", exit: "bool" = False):
         """
