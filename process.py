@@ -50,13 +50,13 @@ output_directory = parser.get("directories", "output")
 #         data_directory=data_directory,
 #         output_directory=output_directory,
 #     )
-# spectra = data_process.interpolate_parallel(
-#     data_directory=data_directory, output_directory=output_directory
-# )
-
-spectra = data_process.interpolate(
+spectra = data_process.interpolate_parallel(
     data_directory=data_directory, output_directory=output_directory
 )
+
+# spectra = data_process.interpolate(
+#     data_directory=data_directory, output_directory=output_directory
+# )
 ################################################################
 print(f"Handle indefinite values")
 
