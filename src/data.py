@@ -307,7 +307,7 @@ class RawData:
 
         self.meta_data_frame = None
 
-    ############################################################################
+    ###########################################################################
     def get_raw_spectra(self):
         """
         Save data frame with all meta data
@@ -333,6 +333,7 @@ class RawData:
             ],
         )
 
+    ###########################################################################
     def _get_spectra(self, galaxy_index: "int"):
         """
         Gets a row of meta data
@@ -407,6 +408,7 @@ class RawData:
 
             return meta_data
 
+    ###########################################################################
     def _rest_frame(self, galaxy_index: "int", galaxy_fits_location: "str"):
         """
         De-redshifting
@@ -426,19 +428,45 @@ class RawData:
                 sub_class: sdss subclass pipeline classification
         """
 
-        with pyfits.open(galaxy_fits_location) as hdul:
-            wave = 10.0 ** (hdul[1].data["loglam"])
-            flux = hdul[1].data["flux"]
-            classification = hdul[2].data["CLASS"][0]
-            sub_class = hdul[2].data["SUBCLASS"][0]
+        try:
+            with pyfits.open(galaxy_fits_location) as hdul:
 
-        z = self.df.iloc[galaxy_index]["z"]
-        z_factor = 1.0 / (1.0 + z)
-        wave *= z_factor
+                wave = 10.0 ** (hdul[1].data["loglam"])
+                flux = hdul[1].data["flux"]
+                classification = hdul[2].data["CLASS"][0]
+                sub_class = hdul[2].data["SUBCLASS"][0]
 
-        signal_noise_ratio = self.df.iloc[galaxy_index]["snMedian"]
+            z = self.df.iloc[galaxy_index]["z"]
+            z_factor = 1.0 / (1.0 + z)
+            wave *= z_factor
 
-        return wave, flux, z, signal_noise_ratio, classification, sub_class
+            signal_noise_ratio = self.df.iloc[galaxy_index]["snMedian"]
+
+            return [
+                wave,
+                flux,
+                z,
+                signal_noise_ratio,
+                classification,
+                sub_class
+            ]
+
+        except:
+            wave = np.nan*np.empty(1)
+            flux = np.nan*np.empty(1)
+            z = np.nan
+            signal_noise_ratio  = np.nan
+            classification = ""
+            sub_class = ""
+
+            return [
+                wave,
+                flux,
+                z,
+                signal_noise_ratio,
+                classification,
+                sub_class
+            ]
 
     def _galaxy_localization(self, galaxy_index: "int"):
         """
@@ -505,6 +533,5 @@ class RawData:
                 sys.exit()
 
             os.makedirs(directory)
-
-
+    ###########################################################################
 ###############################################################################
