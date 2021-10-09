@@ -8,24 +8,6 @@ import astropy.io.fits as pyfits
 import numpy as np
 import pandas as pd
 
-
-
-def main():
-    nrows = 5
-    ncols = 5
-    shape = (nrows, ncols)
-
-    shared_array = mp.Array(ctypes.c_double, nrows * ncols, lock=False)
-    arr = to_numpy_array(shared_array, shape)
-    print(arr)
-    print('-' * 80)
-
-    x_y_values = [(x, y) for x in range(nrows) for y in range(ncols)]
-
-    pool = mp.Pool(initializer=init_worker, initargs=(shared_array, shape))
-    pool.starmap(worker_fun, x_y_values)
-
-    print(arr)
 ################################################################################
 class DataProcess:
     def __init__(
@@ -163,7 +145,6 @@ class DataProcess:
         grid = np.linspace(lower, upper, number_waves)
 
         return grid
-
     ###########################################################################
     def interpolate(self, data_directory: "str", output_directory: "str"):
         """
@@ -270,7 +251,6 @@ class DataProcess:
 
     ###########################################################################
 
-
 ###############################################################################
 class RawData:
     def __init__(
@@ -279,7 +259,7 @@ class RawData:
         data_directory: "str",
         output_directory: "str",
         number_processes: "int",
-    ):
+        ):
         """
         PARAMETERS
 
@@ -468,6 +448,7 @@ class RawData:
                 sub_class
             ]
 
+    ###########################################################################
     def _galaxy_localization(self, galaxy_index: "int"):
         """
         PARAMETERS
