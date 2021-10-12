@@ -8,12 +8,14 @@ def init_worker(counter):
     """
     global global_counter
 
+    global_counter = counter
+
     # Update counter to show advance
     with global_counter.get_lock():
         global_counter.value += 1
         counter_value = global_counter.value
+        print(f"Get data from file N: {counter_value}")
 
-    print(f"Get data from file N: {counter_value}", end="\r")
 
 
 def worker():

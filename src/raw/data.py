@@ -48,7 +48,7 @@ class RawData:
         self.rest_frame_directory = f"{output_directory}/rest_frame"
 
     ###########################################################################
-    def _update_columns_data_frame(self, data: "dictionary") -> "None":
+    def _add_columns_data_frame(self, data: "dictionary") -> "None":
         """
         Add class and subclass classification for galaxy data frame
 
@@ -83,8 +83,28 @@ class RawData:
             initializer=init_worker,
             initargs=(counter,),
         ) as pool:
+
             results = pool.map(self._get_spectra, galaxy_indexes)
 
+        results = self._filter(results, parameter=1)
+
+        self._add_columns_data_frame(results)
+    ###########################################################################
+    def _filter(self, results: "list", parameter) -> "list":
+        """
+        Filters input list
+
+        PARAMETERS
+            results: list from parallel computation.
+                Visible satellites are a list, non visible is None
+
+        OUTPUTS
+            returns list with visible satellites
+        """
+
+        results = list(filter(lambda x: x != parameter, results))
+
+        return results
     ###########################################################################
     def _get_spectra(self, galaxy_index: "int"):
         """
@@ -108,7 +128,7 @@ class RawData:
 
         [file_directory, spectra_name] = self._get_file_location(galaxy_index)
 
-        # print(f"Process {spectra_name} --> N:{galaxy_index}", end="\r")
+        print(f"Process {spectra_name} --> N:{galaxy_index}", end="\r")
 
         file_location = f"{file_directory}/{spectra_name}.fits"
 
