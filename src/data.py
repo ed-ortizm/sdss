@@ -285,8 +285,15 @@ class RawData:
         self._check_directory(f"{output_directory}/rest_frame")
         self.rest_frame_directory = f"{output_directory}/rest_frame"
 
-        self.meta_data_frame = None
-
+    ###########################################################################
+    def _update_columns_data_frame(self, data_frame: "pandas.DataFrame"):
+        """Add class and subclass classification for galaxy data frame"""
+        # can I use a dictionary ?
+        # d1 = {idx:clas, ...}, d2 = {idx:subclas}
+        # df["class"] = d1
+        # df["subclass"] = d2
+        # Update in place
+        pass
     ###########################################################################
     def get_raw_spectra(self):
         """
