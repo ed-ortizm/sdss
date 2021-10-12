@@ -1,6 +1,7 @@
 import ctypes
 from functools import partial
 import multiprocessing as mp
+from multiprocessing.sharedctypes import RawArray
 import os
 
 ####################################################################
@@ -8,6 +9,8 @@ import astropy.io.fits as pyfits
 import numpy as np
 import pandas as pd
 
+####################################################################
+# from src.process.worker import init_worker
 ################################################################################
 class DataProcess:
     def __init__(
@@ -15,6 +18,8 @@ class DataProcess:
         galaxies_frame: "pd.df",
         number_processes: "int",
         grid_parameters: "dict",
+        data_directory: "str",
+        output_directory: "str",
     ):
         """
         Class to process rest frame spectra
@@ -30,96 +35,11 @@ class DataProcess:
         self.number_processes = number_processes
         self.grid = self._get_grid(grid_parameters)
 
-        self.fluxes = None
-
-    ###########################################################################
-    def interpolate_parallel(
-        self, data_directory: "str", output_directory: "str"
-    ):
-
-        ######################################################################
-        def to_numpy_array(shared_array, shape):
-            """Create a numpy array backed by a shared memory Array."""
-            fluxes = np.ctypeslib.as_array(shared_array)
-            return fluxes.reshape(shape)
-
-        def init_worker(shared_array, shape):
-            """
-            Initialize worker for processing:
-            Create the numpy array from the shared memory Array for each process in the pool.
-            """
-            global fluxes
-            fluxes = to_numpy_array(shared_array, shape)
-
-        ######################################################################
-        spectra_directory = f"{data_directory}/rest_frame"
-        self._check_directory(spectra_directory)
-
-        worker_function = partial(
-            self._interpolate_parallel, spectra_directory=spectra_directory
-        )
-        ######################################################################
-        print(f"Interpolate parallel...")
-
-        number_spectra = self.frame.shape[0]
-        number_fluxes = self.grid.size
-        shape = (number_spectra, number_fluxes)
-
-        shared_array = mp.Array(
-            ctypes.c_double, number_spectra * number_fluxes, lock=False
-        )
-
-        fluxes = to_numpy_array(shared_array, shape)
-
-        galaxy_indexes = self.frame.index
-
-        with mp.Pool(
-            processes=self.number_processes,
-            initializer=init_worker,
-            initargs=(shared_array, shape),
-        ) as pool:
-
-            pool.map(worker_function, galaxy_indexes)
+        self.data_directory = data_directory
+        self.spectra_directory = f"{data_directory}/rest_frame"
 
         self._check_directory(output_directory)
-        self.frame.to_csv(f"{output_directory}/meta_data.csv", index=False)
-        np.save(f"{output_directory}/fluxes_interp.npy", fluxes)
-
-        return fluxes
-
-    ###########################################################################
-    def _interpolate_parallel(self, galaxy_index, spectra_directory):
-
-        galaxy_name = self.frame.name.iloc[galaxy_index]
-        print(f"Interpolate {galaxy_name}", end="\r")
-
-        spectrum = np.load(f"{spectra_directory}/{galaxy_name}.npy")
-
-        flux = np.interp(
-            self.grid,
-            spectrum[0],  # wave
-            spectrum[1],  # flux
-            left=np.nan,
-            right=np.nan,
-        )
-
-        fluxes[galaxy_index, :] = flux[:]
-
-    ###########################################################################
-    def _check_directory(self, directory: "str", exit: "bool" = False):
-        """
-        Check if a directory exists, if not it creates it or
-        exits depending on the value of exit
-        """
-
-        if not os.path.exists(directory):
-
-            if exit:
-                print(f"Directory {diretory} NOT FOUND")
-                print("Code cannot execute")
-                sys.exit()
-
-            os.makedirs(directory)
+        self.output_directory = output_directory
 
     ###########################################################################
     def _get_grid(self, grid_parameters: "dict") -> "np.array":
@@ -146,46 +66,57 @@ class DataProcess:
         return grid
 
     ###########################################################################
-    def interpolate(self, data_directory: "str", output_directory: "str"):
+    def interpolate(self):
         """
         Interpolate rest frame spectra from data directory according to
         wave master  and save it to output directory
 
-        PARAMETERS
-            data_directory:
-            output_directory:
-
         OUTPUT
-            mp.pool list with integers telling whether the process was successful or not.
-            Interpolate spectra will be saved in output directory
         """
+        def to_numpy_array(shared_array, array_shape):
+            """Create a numpy array backed by a shared memory Array."""
+            share_array = np.ctypeslib.as_array(shared_array)
+            return share_array.reshape(array_shape)
+
+        def init_worker(share_array, array_shape):
+
+            global fluxes
+
+            fluxes = to_numpy_array(share_array, array_shape)
+
         print(f"Interpolate spectra...")
 
         number_spectra = self.frame.shape[0]
-        fluxes = np.empty((number_spectra, self.grid.size))
+        number_waves = self.grid.size
+        fluxes_shape = (number_spectra, number_waves)
 
-        galaxy_names = self.frame.name
+        shared_fluxes = RawArray(ctypes.c_float, number_spectra * number_waves)
 
-        spectra_directory = f"{data_directory}/rest_frame"
-        self._check_directory(spectra_directory)
+        galaxy_indexes = self.frame.index.values
 
-        for idx, galaxy_name in enumerate(galaxy_names):
+        with mp.Pool(
+            processes=self.number_processes,
+            initializer=init_worker,
+            initargs=(shared_fluxes, fluxes_shape),
+        ) as pool:
 
-            flux = self._interpolate(galaxy_name, spectra_directory)
-            fluxes[idx, :] = flux[:]
+            results = pool.map(self._interpolate, galaxy_indexes)
 
-        self._check_directory(output_directory)
-        self.frame.to_csv(f"{output_directory}/meta_data.csv", index=False)
-        np.save(f"{output_directory}/fluxes_interp.npy", fluxes)
+        fluxes = to_numpy_array(shared_fluxes, fluxes_shape)
+        save_to = f"{self.output_directory}/fluxes_interp.npy"
+        np.save(save_to, fluxes)
 
-        return fluxes
+        self._check_directory(self.output_directory)
+        self.frame.to_csv(f"{self.output_directory}/meta_data.csv", index=False)
 
     ###########################################################################
-    def _interpolate(self, galaxy_name, spectra_directory):
+    def _interpolate(self, galaxy_index: "int"):
 
-        print(f"Interpolate {galaxy_name}", end="\r")
+        spectrum_name = self._get_name(galaxy_index)
+        print(f"Interpolate {spectrum_name}", end="\r")
 
-        spectrum = np.load(f"{spectra_directory}/{galaxy_name}.npy")
+        spectrum_location = f"{self.spectra_directory}/{spectrum_name}.npy"
+        spectrum = np.load(spectrum_location)
 
         flux = np.interp(
             self.grid,
@@ -195,8 +126,20 @@ class DataProcess:
             right=np.nan,
         )
 
-        return flux
+        fluxes[galaxy_index, :] = flux[:]
 
+    ###########################################################################
+    def _get_name(self, galaxy_index: "int"):
+
+        galaxy = self.frame.iloc[galaxy_index]
+
+        plate = f"{galaxy['plate']:04}"
+        mjd = f"{galaxy['mjd']}"
+        fiberid = f"{galaxy['fiberid']:04}"
+
+        spectrum_name = f"spec-{plate}-{mjd}-{fiberid}"
+
+        return spectrum_name
     ###########################################################################
     def normalize(self, spectra: "np.array"):
         """Spectra has no missing values"""
@@ -252,6 +195,20 @@ class DataProcess:
         return spectra, wave
 
     ###########################################################################
+    def _check_directory(self, directory: "str", exit: "bool" = False):
+        """
+        Check if a directory exists, if not it creates it or
+        exits depending on the value of exit
+        """
+
+        if not os.path.exists(directory):
+
+            if exit:
+                print(f"Directory {diretory} NOT FOUND")
+                print("Code cannot execute")
+                sys.exit()
+
+            os.makedirs(directory)
 
 
 ###############################################################################

@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 ####################################################################
-from src import data
+from src.process import data
 
 ################################################################################
 t0 = time.time()
@@ -30,33 +30,20 @@ number_processes = parser.getint("parameters", "processes")
 
 grid_parameters = dict(parser.items("grid"))
 
+output_directory = parser.get("directories", "output")
+
 data_process = data.DataProcess(
     galaxies_frame=galaxies_frame,
     number_processes=number_processes,
     grid_parameters=grid_parameters,
+    data_directory=data_directory,
+    output_directory=output_directory,
 )
 ################################################################
 # interpolate spectra
-output_directory = parser.get("directories", "output")
+data_process.interpolate()
+spectra = np.load(f"{output_directory}/fluxes_interp.npy")
 
-################################################################
-# if os.path.exists(f"{output_directory}/fluxes_interp.npy"):
-#
-#     spectra = np.load(f"{output_directory}/fluxes_interp.npy")
-#
-# else:
-#
-#     spectra = data_process.interpolate(
-#         data_directory=data_directory,
-#         output_directory=output_directory,
-#     )
-spectra = data_process.interpolate_parallel(
-    data_directory=data_directory, output_directory=output_directory
-)
-
-# spectra = data_process.interpolate(
-#     data_directory=data_directory, output_directory=output_directory
-# )
 ################################################################
 print(f"Handle indefinite values")
 
