@@ -41,8 +41,15 @@ data_process = data.DataProcess(
 )
 ################################################################
 # interpolate spectra
-data_process.interpolate()
-spectra = np.load(f"{output_directory}/fluxes_interp.npy")
+have_to_interpolate = parser.getboolean("parameters", "interpolate")
+
+if have_to_interpolate:
+
+    spectra = np.load(f"{output_directory}/fluxes_interp.npy")
+
+else:
+    
+    spectra = data_process.interpolate()
 
 ################################################################
 print(f"Handle indefinite values")

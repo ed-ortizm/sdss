@@ -73,6 +73,7 @@ class DataProcess:
 
         OUTPUT
         """
+
         def to_numpy_array(shared_array, array_shape):
             """Create a numpy array backed by a shared memory Array."""
             share_array = np.ctypeslib.as_array(shared_array)
@@ -106,8 +107,7 @@ class DataProcess:
         save_to = f"{self.output_directory}/fluxes_interp.npy"
         np.save(save_to, fluxes)
 
-        self._check_directory(self.output_directory)
-        self.frame.to_csv(f"{self.output_directory}/meta_data.csv", index=False)
+        return fluxes
 
     ###########################################################################
     def _interpolate(self, galaxy_index: "int"):
@@ -126,6 +126,9 @@ class DataProcess:
             right=np.nan,
         )
 
+        # fluxes is the shared array made global in worker initializer
+        # galaxy index makes shure that location in array is the same
+        # as in the data frame :)
         fluxes[galaxy_index, :] = flux[:]
 
     ###########################################################################
@@ -140,6 +143,7 @@ class DataProcess:
         spectrum_name = f"spec-{plate}-{mjd}-{fiberid}"
 
         return spectrum_name
+
     ###########################################################################
     def normalize(self, spectra: "np.array"):
         """Spectra has no missing values"""
