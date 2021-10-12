@@ -60,12 +60,21 @@ class RawData:
                 }
 
         """
-        # can I use a dictionary ?
-        # d1 = {idx:clas, ...}, d2 = {idx:subclas}
-        # df["class"] = d1
-        # df["subclass"] = d2
-        # Update in place
-        pass
+
+        def get_lambda(idx):
+            return lambda x: x[idx]
+
+        f = get_lambda(0)
+        indexes = list(map(f, data))
+
+        f = get_lambda(1)
+        classification = list(map(f, data))
+
+        f = get_lambda(2)
+        sub_class = list(map(f, data))
+
+        self.df.loc[indexes,"class"] = classification
+        self.df.loc[indexes,"subclass"] = sub_class
 
     ###########################################################################
     def get_raw_spectra(self):

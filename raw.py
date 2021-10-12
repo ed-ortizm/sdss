@@ -51,6 +51,7 @@ meta_data_location = parser.get("files", "meta_data")
 data_processing.df.to_csv(
     path_or_buf=meta_data_location, index=False
 )
+print(data_processing.df.columns)
 ################################################################################
 t1 = time.time()
 print(f"Run time: {t1-t0}")
