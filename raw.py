@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 ####################################################################
-from src import data
+from src.raw import data
 
 ################################################################################
 t0 = time.time()
@@ -48,7 +48,7 @@ data_processing.get_raw_spectra()
 # saving data frame with meta data of the raw a spectra in the rest frame
 meta_data_location = parser.get("files", "meta_data")
 
-data_processing.meta_data_frame.to_csv(
+data_processing.df.to_csv(
     path_or_buf=meta_data_location, index=False
 )
 ################################################################################
