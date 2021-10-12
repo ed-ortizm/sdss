@@ -46,12 +46,10 @@ print("Get raw spectra")
 data_processing.get_raw_spectra()
 ################################################################################
 # saving data frame with meta data of the raw a spectra in the rest frame
-meta_data_location = parser.get("files", "meta_data")
+meta_data_name = parser.get("files", "meta_data")
 
-data_processing.df.to_csv(
-    path_or_buf=meta_data_location, index=False
-)
-print(data_processing.df.columns)
+data_processing.save_data_frame(meta_data_name)
+print(data_processing.df.shape)
 ################################################################################
 t1 = time.time()
 print(f"Run time: {t1-t0}")

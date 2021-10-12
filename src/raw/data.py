@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 ####################################################################
-from src.raw.worker import worker, init_worker
+# from src.raw.worker import worker, init_worker
 
 ################################################################################
 class RawData:
@@ -48,6 +48,12 @@ class RawData:
         self.rest_frame_directory = f"{output_directory}/rest_frame"
 
     ###########################################################################
+    def save_data_frame(self, name):
+
+        location = f"{self.data_output_directory}/{name}"
+
+        self.df.to_csv(path_or_buf=location, index=False)
+    ###########################################################################
     def _add_columns_data_frame(self, data: "dictionary") -> "None":
         """
         Add class and subclass classification for galaxy data frame
@@ -84,13 +90,13 @@ class RawData:
 
         print(f"Saving raw redshift corrected spectra and meta-data!")
 
-        counter = mp.Value("i", 0)
+        # counter = mp.Value("i", 0)
         galaxy_indexes = range(self.df.shape[0])
 
         with mp.Pool(
             processes=self.number_processes,
-            initializer=init_worker,
-            initargs=(counter,),
+            # initializer=init_worker,
+            # initargs=(counter,),
         ) as pool:
 
             results = pool.map(self._get_spectra, galaxy_indexes)
