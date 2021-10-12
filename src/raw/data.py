@@ -7,11 +7,14 @@ import os
 import astropy.io.fits as pyfits
 import numpy as np
 import pandas as pd
+
 ####################################################################
 from src.raw.worker import worker, init_worker
+
 ################################################################################
 class RawData:
     """Handled raw data from sdss"""
+
     def __init__(
         self,
         galaxies_df: "pd.df",
@@ -45,7 +48,7 @@ class RawData:
         self.rest_frame_directory = f"{output_directory}/rest_frame"
 
     ###########################################################################
-    def _update_columns_data_frame(self, data: "dictionary")->"None":
+    def _update_columns_data_frame(self, data: "dictionary") -> "None":
         """
         Add class and subclass classification for galaxy data frame
 
@@ -72,9 +75,14 @@ class RawData:
 
         print(f"Saving raw redshift corrected spectra and meta-data!")
 
+        counter = mp.Value("i", 0)
         galaxy_indexes = range(self.df.shape[0])
 
-        with mp.Pool(processes=self.number_processes) as pool:
+        with mp.Pool(
+            processes=self.number_processes,
+            initializer=init_worker,
+            initargs=(counter,),
+        ) as pool:
             results = pool.map(self._get_spectra, galaxy_indexes)
 
     ###########################################################################
@@ -98,12 +106,9 @@ class RawData:
                 ]
         """
 
-        [
-            file_directory,
-            spectra_name,
-        ] = self._get_file_location(galaxy_index)
+        [file_directory, spectra_name] = self._get_file_location(galaxy_index)
 
-        print(f"Process {spectra_name} --> N:{galaxy_index}", end="\r")
+        # print(f"Process {spectra_name} --> N:{galaxy_index}", end="\r")
 
         file_location = f"{file_directory}/{spectra_name}.fits"
 
@@ -111,10 +116,9 @@ class RawData:
 
             return 1
 
-        [
-            classification,
-            sub_class,
-        ] = self._rest_frame(galaxy_index, file_location, spectra_name)
+        [classification, sub_class] = self._rest_frame(
+            galaxy_index, file_location, spectra_name
+        )
 
         meta_data = [galaxy_index, classification, sub_class]
 
@@ -157,10 +161,8 @@ class RawData:
 
         np.save(save_to, array_to_save)
 
-        return [
-            classification,
-            sub_class,
-        ]
+        return [classification, sub_class]
+
     ###########################################################################
     def _get_file_location(self, galaxy_index: "int"):
         """
@@ -177,7 +179,7 @@ class RawData:
         """
 
         galaxy = self.df.iloc[galaxy_index]
-        [plate, mjd, fiberid, run2d,] = self._galaxy_identifiers(galaxy)
+        [plate, mjd, fiberid, run2d] = self._galaxy_identifiers(galaxy)
 
         spectra_name = f"spec-{plate}-{mjd}-{fiberid}"
 
@@ -186,7 +188,7 @@ class RawData:
             f"/{run2d}/spectra/lite/{plate}"
         )
 
-        return [file_directory, spectra_name,]
+        return [file_directory, spectra_name]
 
     ###########################################################################
     def _galaxy_identifiers(self, galaxy: "df.row"):
@@ -210,7 +212,7 @@ class RawData:
         fiberid = f"{galaxy['fiberid']:04}"
         run2d = f"{galaxy['run2d']}"
 
-        return [plate, mjd, fiberid, run2d,]
+        return [plate, mjd, fiberid, run2d]
 
     ###########################################################################
     def _check_directory(self, directory: "str", exit: "bool" = False):
