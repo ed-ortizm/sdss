@@ -53,6 +53,7 @@ class RawData:
         location = f"{self.data_output_directory}/{name}"
 
         self.df.to_csv(path_or_buf=location, index=False)
+
     ###########################################################################
     def _add_columns_data_frame(self, data: "dictionary") -> "None":
         """
@@ -79,8 +80,8 @@ class RawData:
         f = get_lambda(2)
         sub_class = list(map(f, data))
 
-        self.df.loc[indexes,"class"] = classification
-        self.df.loc[indexes,"subclass"] = sub_class
+        self.df.loc[indexes, "class"] = classification
+        self.df.loc[indexes, "subclass"] = sub_class
 
     ###########################################################################
     def get_raw_spectra(self):
@@ -104,6 +105,7 @@ class RawData:
         results = self._filter(results, parameter=1)
 
         self._add_columns_data_frame(results)
+
     ###########################################################################
     def _filter(self, results: "list", parameter) -> "list":
         """
@@ -120,6 +122,7 @@ class RawData:
         results = list(filter(lambda x: x != parameter, results))
 
         return results
+
     ###########################################################################
     def _get_spectra(self, galaxy_index: "int"):
         """
@@ -160,7 +163,9 @@ class RawData:
         return meta_data
 
     ###########################################################################
-    def _rest_frame(self, galaxy_index: "int", file_location: "str", spectra_name):
+    def _rest_frame(
+        self, galaxy_index: "int", file_location: "str", spectra_name
+    ):
         """
         De-redshifting
 

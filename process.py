@@ -48,7 +48,7 @@ if have_to_interpolate:
     spectra = np.load(f"{output_directory}/fluxes_interp.npy")
 
 else:
-    
+
     spectra = data_process.interpolate()
 
 ################################################################

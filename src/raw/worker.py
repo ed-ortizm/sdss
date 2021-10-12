@@ -1,4 +1,5 @@
 import numpy as np
+
 ###############################################################################
 def init_worker(counter):
     """
@@ -15,7 +16,6 @@ def init_worker(counter):
         global_counter.value += 1
         counter_value = global_counter.value
         print(f"Get data from file N: {counter_value}")
-
 
 
 def worker():
