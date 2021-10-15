@@ -4,6 +4,7 @@ import os
 
 import astropy.io.fits as pyfits
 import pandas as pd
+
 ###############################################################################
 def check_file(location: "str", exit: "bool" = False):
     """
@@ -20,6 +21,8 @@ def check_file(location: "str", exit: "bool" = False):
         sys.exit()
 
     return file_exists
+
+
 ###############################################################################
 parser = ConfigParser(interpolation=ExtendedInterpolation())
 parser.read("raw.ini")
@@ -30,10 +33,8 @@ print(f"Entries in data frame: {raw_data_frame.shape}")
 ####################################################################
 # Use z_noqso when available
 raw_data_frame.z = np.where(
-                            raw_data_frame.z_noqso.ne(0),
-                            raw_data_frame.z_noqso,
-                            raw_data_frame.z
-                        )
+    raw_data_frame.z_noqso.ne(0), raw_data_frame.z_noqso, raw_data_frame.z
+)
 
 # Remove galaxies with redshift z<=0.01
 raw_data_frame = raw_data_frame[raw_data_frame.z > 0.01]
@@ -63,7 +64,7 @@ for index in raw_data_frame.index:
 
     print(f"Get data for {spectrum_name} --> {index}", end="\r")
 
-    file_location =(
+    file_location = (
         f"{data_directory}/sas/dr16/sdss/spectro/redux"
         f"/{run2d}/spectra/lite/{plate}"
         f"/{spectrum_name}.fits"

@@ -48,7 +48,7 @@ class DownloadData:
         self.n_processes = n_processes
 
     ###########################################################################
-    def download_files(self)->"None":
+    def download_files(self) -> "None":
         """Download spectra from the science archive server"""
 
         print(f"Start download of {self.spectra_df.shape[0]} fits files...")
@@ -73,12 +73,12 @@ class DownloadData:
         print(f"Finish download...")
         print(f"Fail to download {number_fail} files")
 
-        download_time = finish_time_download-start_time_download
+        download_time = finish_time_download - start_time_download
         print(f"Download took {download_time:.2f}[s]")
 
     ###########################################################################
 
-    def _get_file(self, index_spectrum: "int")-> "int":
+    def _get_file(self, index_spectrum: "int") -> "int":
         """
         Retrieve a single file from this science archive server
 
@@ -90,9 +90,38 @@ class DownloadData:
         """
 
         df_row_spectrum = self.spectra_df.iloc[index_spectrum]
+
         [plate, mjd, fiberid, run2d] = self._file_identifier(df_row_spectrum)
 
         file_name = f"spec-{plate}-{mjd}-{fiberid}.fits"
+
+        # # sas: science archive server
+        # sas_location = (
+        #     f"sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate}"
+        # )
+        #
+        # save_to = f"{self.output_directory}/{sas_location}"
+        #
+        # url = f"https://data.sdss.org/{sas_location}/{file_name}"
+        #
+        # sel._check_directory(save_to, exit=False)
+
+        # Try & Except a failed Download
+
+        try:
+            self._query_file(file_name, run2d, plate)
+
+            return 0
+
+        except Exception as e:
+
+            print(f"Failed : {file_name}. run2d:{run2d}")
+            print(f"{e}")
+
+            return 1
+
+    ###########################################################################
+    def _query_file(self, file_name, run2d, plate):
 
         # sas: science archive server
         sas_location = (
@@ -101,56 +130,53 @@ class DownloadData:
 
         save_to = f"{self.output_directory}/{sas_location}"
 
-        url = f"https://data.sdss.org/{sas_location}/{file_name}"
+        file_url = f"https://data.sdss.org/{sas_location}/{file_name}"
 
-        sel._check_directory(save_to, exit=False)
+        self._check_directory(save_to, exit=False)
 
-        # Try & Except a failed Download
+        file_exists = self._file_exits(
+            file_location=f"{save_to}/{file_name}", exit=False
+        )
 
-        try:
-            self._retrieve_url(url, save_to, file_name)
-            return 0
-
-        except Exception as e:
-
-            print(f"Failed : {url}")
-
-            print(f"{e}")
-            return 1
-
-    ###########################################################################
-    def _retrieve_url(self, url, save_to, file_name):
-
-        if not (os.path.isfile(f"{save_to}/{file_name}")):
+        if not file_exists:
 
             with counter.get_lock():
                 counter.value += 1
                 print(f"[{counter.value}] download {file_name}", end="\r")
-            # print(f"Downloading ", end="\r")
 
-            urllib.request.urlretrieve(url, f"{save_to}/{file_name}")
-
-            file_size = os.path.getsize(f"{save_to}/{file_name}")
-
-            j = 0
-
-            while j < 10 and (file_size < 60000):
-
-                os.remove(f"{save_to}/{file_name}")
-                urllib.request.urlretrieve(url, f"{save_to}/{file_name}")
-                j += 1
-                time.sleep(1)
+            urllib.request.urlretrieve(file_url, f"{save_to}/{file_name}")
 
             file_size = os.path.getsize(f"{save_to}/{file_name}")
 
-            if file_size < 60000:
-                print(f"Size of {file_name}: {file_size}... Removing file!!")
-                os.remove(f"{save_to}/{file_name}")
-                raise Exception("Spectra wasn't found")
+            self._retry_download_if_small_size(
+                file_size, file_name, save_to, file_url
+            )
 
         else:
-            print(f"{file_name} already downloaded!!", end="\r")
+            print(f"{file_name} already downloaded!!")
 
+    ###########################################################################
+    def _retry_download_if_small_size(
+        self, file_size, file_name, save_to, file_url
+    ):
+
+        j = 0
+
+        while j < 10 and (file_size < 60000):
+
+            os.remove(f"{save_to}/{file_name}")
+            urllib.request.urlretrieve(file_url, f"{save_to}/{file_name}")
+            j += 1
+            time.sleep(1)
+
+        file_size = os.path.getsize(f"{save_to}/{file_name}")
+
+        if file_size < 60000:
+            print(f"Size of {file_name}: {file_size}... Removing file!!")
+            os.remove(f"{save_to}/{file_name}")
+            raise Exception("Spectra wasn't found")
+
+    ###########################################################################
     def _file_identifier(self, df_row_spectrum):
 
         plate = f"{df_row_spectrum['plate']:04}"
@@ -175,3 +201,28 @@ class DownloadData:
                 sys.exit()
 
             os.makedirs(directory)
+
+    ###########################################################################
+    def _file_exits(self, file_location: "str", exit: "bool") -> "bool":
+        """
+        Check if a file exists and depending on exit parameter, it exits
+        the program because the file is necessary for computations.
+
+        PARAMETERS
+
+            file_location: file location with extension
+                example: /home/john/data/data.txt
+
+            exit: if True, it exits the program
+        """
+
+        if not os.path.isfile(file_location):
+
+            if exit:
+                print(f"NOT FOUND: {file_location}")
+                print(f"Program cannot execute with out this file")
+                sys.exit()
+
+            return False
+
+        return True
