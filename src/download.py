@@ -17,11 +17,6 @@ def init_download_worker(input_counter):
     global counter
 
     counter = input_counter
-
-    # Update counter to show advance
-    # with counter.get_lock():
-    #     counter.value += 1
-    #     print(f"Download file N: {counter.value}", end="\r")
 ###############################################################################
 class DownloadData:
     def __init__(self,
