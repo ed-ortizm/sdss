@@ -7,37 +7,64 @@ import urllib.request
 import numpy as np
 import pandas as pd
 
-################################################################################
-class DownloadData:
-    def __init__(self, files_data_frame, download_path, n_processes):
-        """
-        files_data_frame: Pandas DataFrame with all the imformation of the sdss
-        galaxies
+###############################################################################
+def init_download_worker(input_counter):
+    """
+    Initialize worker for download
+    PARAMETERS
+        counter:
+    """
+    global counter
 
-        download_path: (string) Path where the data will be downloaded
+    counter = input_counter
+
+    # Update counter to show advance
+    # with counter.get_lock():
+    #     counter.value += 1
+    #     print(f"Download file N: {counter.value}", end="\r")
+###############################################################################
+class DownloadData:
+    def __init__(self,
+        spectra_df: "pandas data frame",
+        output_directory: "str",
+        n_processes: "int"
+        ):
         """
-        self.data_frame = files_data_frame
-        self.download_path = download_path
+        PARAMETERS
+            spectra_df: Pandas DataFrame with all the information of
+                the sdss galaxies
+            output_directory: Path where the data will be downloaded
+            n_processes: Number of processes for parallel execution
+        """
+        self.data_frame = spectra_df
+
+        self._check_directory(output_directory)
+        self.output_directory = output_directory
+
         self.n_processes = n_processes
 
-    def get_files(self):
+    ###########################################################################
+    def download_files(self):
 
-        print(f"*** Getting {len(self.data_frame)} fits files ****")
+        print(f"*** Getting {self.data_frame.shape[0]} fits files ****")
         start_time_download = time.time()
 
-        if not os.path.exists(self.download_path):
-            os.makedirs(self.download_path)
+        spectra_indexes = self.data_frame.index.values
 
-        params = range(len(self.data_frame))
+        counter = mp.Value("i", 0)
 
-        with mp.Pool(processes=self.n_processes) as pool:
-            res = pool.map(self._get_file, params)
-            n_failed = sum(res)
+        with mp.Pool(
+            processes=self.n_processes,
+            initializer=init_download_worker,
+            initargs=(counter,),
+        ) as pool:
+            results = pool.map(self._get_file, spectra_indexes)
+            number_fail= sum(results)
 
         finish_time_download = time.time()
 
         print(f"Done! Finished downloading .fits files...")
-        print(f"Failed to download {n_failed} files")
+        print(f"Failed to download {number_fail} files")
         print(
             f"Download took {finish_time_download-start_time_download:.2f}[s]"
         )
@@ -50,7 +77,7 @@ class DownloadData:
         fname = f"spec-{plate}-{mjd}-{fiberid}.fits"
 
         SDSSpath = f"sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate}"
-        folder_path = f"{self.download_path}/{SDSSpath}"
+        folder_path = f"{self.output_directory}/{SDSSpath}"
 
         url = f"https://data.sdss.org/{SDSSpath}/{fname}"
 
@@ -74,7 +101,10 @@ class DownloadData:
 
         if not (os.path.isfile(f"{folder_path}/{fname}")):
 
-            print(f"Downloading {fname}", end="\r")
+            with counter.get_lock():
+                counter.value += 1
+                print(f"[{counter.value}] download {fname}", end="\r")
+            # print(f"Downloading ", end="\r")
 
             urllib.request.urlretrieve(url, f"{folder_path}/{fname}")
 
@@ -107,3 +137,19 @@ class DownloadData:
         run2d = f"{object['run2d']}"
 
         return plate, mjd, fiberid, run2d
+
+    ###########################################################################
+    def _check_directory(self, directory: "str", exit: "bool" = False):
+        """
+        Check if a directory exists, if not it creates it or
+        exits depending on the value of exit
+        """
+
+        if not os.path.exists(directory):
+
+            if exit:
+                print(f"Directory {diretory} NOT FOUND")
+                print("Code cannot execute")
+                sys.exit()
+
+            os.makedirs(directory)

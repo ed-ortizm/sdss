@@ -1,0 +1,30 @@
+SELECT
+specobjid,
+mjd,
+plate,
+fiberid,
+run1d,
+run2d,
+ra,
+dec,
+z,
+zErr,
+zWarning,
+class,
+subClass,
+z_noqso,
+zErr_noqso,
+zWarning_noqso,
+class_noqso,
+subClass_noqso,
+z_person,
+class_person,
+comments_person,
+snMedian_u,
+snMedian_g,
+snMedian_r,
+snMedian_i,
+snMedian
+FROM SpecObj
+WHERE class!='STAR'
+ORDER BY snMedian DESC
