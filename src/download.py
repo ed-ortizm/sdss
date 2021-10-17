@@ -8,6 +8,11 @@ import numpy as np
 import pandas as pd
 
 ###############################################################################
+# spawn creates entirely new processes independent from the parent process
+# fork [default] basically just does a minimal cloning, keeping a lot of
+# shared elements
+mp.set_start_method('spawn')
+
 def init_download_worker(input_counter: "mp.Value") -> "None":
     """
     Initialize worker for download
@@ -80,7 +85,7 @@ class DownloadData:
 
     def _get_file(self, index_spectrum: "int") -> "int":
         """
-        Retrieve a single file from this science archive server
+        Retrieve a single file from the science archive server
 
         PARAMETERS
             index_spectrum: index of the spectrum in spectra data frame
@@ -94,17 +99,6 @@ class DownloadData:
         [plate, mjd, fiberid, run2d] = self._file_identifier(df_row_spectrum)
 
         file_name = f"spec-{plate}-{mjd}-{fiberid}.fits"
-
-        # # sas: science archive server
-        # sas_location = (
-        #     f"sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate}"
-        # )
-        #
-        # save_to = f"{self.output_directory}/{sas_location}"
-        #
-        # url = f"https://data.sdss.org/{sas_location}/{file_name}"
-        #
-        # sel._check_directory(save_to, exit=False)
 
         # Try & Except a failed Download
 
@@ -121,7 +115,11 @@ class DownloadData:
             return 1
 
     ###########################################################################
-    def _query_file(self, file_name, run2d, plate):
+    def _query_file(self,
+        file_name: "str",
+        run2d: "str",
+        plate: "str"
+        )->"None":
 
         # sas: science archive server
         sas_location = (
@@ -142,7 +140,7 @@ class DownloadData:
 
             with counter.get_lock():
                 counter.value += 1
-                print(f"[{counter.value}] download {file_name}", end="\r")
+                print(f"[{counter.value}] Download {file_name}", end="\r")
 
             urllib.request.urlretrieve(file_url, f"{save_to}/{file_name}")
 
@@ -156,9 +154,18 @@ class DownloadData:
             print(f"{file_name} already downloaded!!")
 
     ###########################################################################
-    def _retry_download_if_small_size(
-        self, file_size, file_name, save_to, file_url
-    ):
+    def _retry_download_if_small_size(self,
+        file_size: "float",
+        file_name: "str",
+        save_to: "str",
+        file_url: "str"
+    ) -> "None || exception":
+
+        """
+        Check the size of downloaded file. If the size is smaller than
+        60 Kbs, it trys to download it again (at least 10 times), otherwise
+        it will raise an exception
+        """
 
         j = 0
 
