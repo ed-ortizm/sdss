@@ -8,11 +8,6 @@ import numpy as np
 import pandas as pd
 
 ###############################################################################
-# spawn creates entirely new processes independent from the parent process
-# fork [default] basically just does a minimal cloning, keeping a lot of
-# shared elements
-mp.set_start_method('spawn')
-
 def init_download_worker(input_counter: "mp.Value") -> "None":
     """
     Initialize worker for download
@@ -54,6 +49,7 @@ class DownloadData:
 
     ###########################################################################
     def download_files(self) -> "None":
+
         """Download spectra from the science archive server"""
 
         print(f"Start download of {self.spectra_df.shape[0]} fits files...")
@@ -80,6 +76,7 @@ class DownloadData:
 
         download_time = finish_time_download - start_time_download
         print(f"Download took {download_time:.2f}[s]")
+        #######################################################################
 
     ###########################################################################
 
