@@ -10,6 +10,7 @@
 *.html
 # Heavy data
 *.csv
+*data/
 # Astronomical data
 *.fit
 *.fits
