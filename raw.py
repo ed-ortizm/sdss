@@ -1,55 +1,51 @@
 #! /usr/bin/env python3
 from configparser import ConfigParser, ExtendedInterpolation
+import multiprocessing as mp
 import time
 
-####################################################################
 import numpy as np
 import pandas as pd
 
-####################################################################
 from src.raw import data
+###############################################################################
+# spawn creates entirely new processes independent from the parent process
+# fork [default] basically just does a minimal cloning, keeping a lot of
+# shared elements
 
-################################################################################
-t0 = time.time()
-################################################################################
-parser = ConfigParser(interpolation=ExtendedInterpolation())
-parser.read("raw.ini")
-################################################################################
-# Data processing
-raw_frame_location = parser.get("files", "raw_meta_data")
+# When using spawn you should guard the part that launches
+# the job in if __name__ == '__main__':
+# set_start_method should also go there
 
-galaxy = pd.read_csv(raw_frame_location)
-####################################################################
-# Use z_noqso when available
-galaxy.z = np.where(galaxy.z_noqso.ne(0), galaxy.z_noqso, galaxy.z)
-# Remove galaxies with redshift z<=0.01
-galaxy = galaxy[galaxy.z > 0.01]
-galaxy.index = np.arange(galaxy.shape[0])
-####################################################################
-number_spectra = parser.getint("parameters", "number_spectra")
-if number_spectra != -1:
-    galaxy = galaxy[:number_spectra]
-####################################################################
-data_directory = parser.get("directories", "data")
-output_directory = parser.get("directories", "output")
-number_processes = parser.getint("parameters", "number_processes")
+if __name__=="__main__":
+    mp.set_start_method("spawn")
 
-data_processing = data.RawData(
-    galaxies_df=galaxy,
-    data_directory=data_directory,
-    output_directory=output_directory,
-    number_processes=number_processes,
-)
-####################################################################
-# get raw spectra
-print("Get raw spectra")
-data_processing.get_raw_spectra()
-################################################################################
-# saving data frame with meta data of the raw a spectra in the rest frame
-meta_data_name = parser.get("files", "meta_data")
+    t0 = time.time()
+    ###########################################################################
+    parser = ConfigParser(interpolation=ExtendedInterpolation())
+    parser.read("raw.ini")
+    ###########################################################################
+    # Data processing
+    data_directory = parser.get("directories", "data")
 
-data_processing.save_data_frame(meta_data_name)
-print(data_processing.df.shape)
-################################################################################
-t1 = time.time()
-print(f"Run time: {t1-t0}")
+    spectra_df_name = parser.get("files", "spectra_df")
+    spectra_df = pd.read_csv(f"{data_directory}/{spectra_df_name}")
+
+    number_spectra = parser.getint("parameters", "number_spectra")
+    if number_spectra != -1:
+        spectra_df = spectra_df[:number_spectra]
+    ###########################################################################
+    output_directory = parser.get("directories", "output")
+    number_processes = parser.getint("parameters", "number_processes")
+
+    raw_data = data.GetRawData(
+        data_directory=data_directory,
+        output_directory=output_directory,
+        number_processes=number_processes,
+    )
+    ###########################################################################
+    print("Get raw spectra")
+    # raw_data.save_raw_data()
+    raw_data.save_raw_data(spectra_df)
+    ###########################################################################
+    t1 = time.time()
+    print(f"Run time: {t1-t0}")

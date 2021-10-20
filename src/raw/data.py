@@ -1,22 +1,31 @@
-import ctypes
-from functools import partial
 import multiprocessing as mp
 import os
+import sys
+import warnings
 
-####################################################################
 import astropy.io.fits as pyfits
 import numpy as np
 import pandas as pd
 
-####################################################################
+###############################################################################
+def init_get_data_worker(input_counter: "mp.Value", in_df) -> "None":
+    """
+    Initialize worker for download
+    PARAMETERS
+        counter: counts the number of the child process
+    """
+    global counter
+    global galaxies_df
+
+    counter = input_counter
+    galaxies_df = in_df
 
 ################################################################################
-class RawData:
+class GetRawData:
     """Handled raw data from sdss"""
 
     def __init__(
         self,
-        galaxies_df: "pd.df",
         data_directory: "str",
         output_directory: "str",
         number_processes: "int",
@@ -26,15 +35,13 @@ class RawData:
 
             galaxies_df : data frame containing meta data from sdss
             data_directory : sdss raw data's directory
-            output_directory : redshift corrected spectra's
-                and meta data directory
+            output_directory : save here .npy files
             number_processes : number of processes to use with mp.Pool
 
         OUTPUT
-            RawDataProcessing object
+            GetRawData object
         """
 
-        self.df = galaxies_df
         self.number_processes = number_processes
 
         self._check_directory(data_directory, exit=True)
@@ -47,83 +54,34 @@ class RawData:
         self.rest_frame_directory = f"{output_directory}/rest_frame"
 
     ###########################################################################
-    def save_data_frame(self, name):
-
-        location = f"{self.data_output_directory}/{name}"
-
-        self.df.to_csv(path_or_buf=location, index=False)
-
-    ###########################################################################
-    def _add_columns_data_frame(self, data: "dictionary") -> "None":
+    def save_raw_data(self, galaxies_df: "pandas dataframe")->"None":
         """
-        Add class and subclass classification for galaxy data frame
+        Save data frame with all meta dat
 
         PARAMETERS
-            data: dictionary with data to update data frame in place.
-                data dictionary has the format
-                data = {
-
-                }
-
+            galaxies_df: data frame with meta data of galaxies
         """
 
-        def get_lambda(idx):
-            return lambda x: x[idx]
+        print(f"Save wave, flux, ivar!")
 
-        f = get_lambda(0)
-        indexes = list(map(f, data))
+        galaxy_indexes = galaxies_df.index.values
 
-        f = get_lambda(1)
-        classification = list(map(f, data))
-
-        f = get_lambda(2)
-        sub_class = list(map(f, data))
-
-        self.df.loc[indexes, "class"] = classification
-        self.df.loc[indexes, "subclass"] = sub_class
-
-    ###########################################################################
-    def get_raw_spectra(self):
-        """
-        Save data frame with all meta data
-        """
-
-        print(f"Saving raw redshift corrected spectra and meta-data!")
-
-        # counter = mp.Value("i", 0)
-        galaxy_indexes = range(self.df.shape[0])
+        counter = mp.Value("i", 0)
 
         with mp.Pool(
             processes=self.number_processes,
-            # initializer=init_worker,
-            # initargs=(counter,),
+            initializer=init_get_data_worker,
+            initargs=(counter,galaxies_df),
         ) as pool:
 
-            results = pool.map(self._get_spectra, galaxy_indexes)
+            results = pool.map(self._get_data, galaxy_indexes)
 
-        results = self._filter(results, parameter=1)
 
-        self._add_columns_data_frame(results)
-
-    ###########################################################################
-    def _filter(self, results: "list", parameter) -> "list":
-        """
-        Filters input list
-
-        PARAMETERS
-            results: list from parallel computation.
-                Visible satellites are a list, non visible is None
-
-        OUTPUTS
-            returns list with visible satellites
-        """
-
-        results = list(filter(lambda x: x != parameter, results))
-
-        return results
+        number_fail = sum(results)
+        print(f"Fail with {number_fail} files")
 
     ###########################################################################
-    def _get_spectra(self, galaxy_index: "int"):
+    def _get_data(self, galaxy_index: "int")-> "int":
         """
         Gets a row of meta data
 
@@ -132,102 +90,110 @@ class RawData:
                 frame passed to the constructor of the class
 
         OUTPUT
-            meta data list, a row in the meta_data_frame:
-                [
-                name: galaxy name,
-                z: redshift,
-                snr: signal to noise ratio,
-                run2d,
-                sub-class: sdss classification,
-                class: sdss classification
-                ]
+            1 if file is not present, 0 otherwise
         """
 
-        [file_directory, spectra_name] = self._get_file_location(galaxy_index)
+        [
+            file_directory,
+            spectrum_name
+        ] = self._get_file_location(galaxy_index)
 
-        print(f"Process {spectra_name} --> N:{galaxy_index}", end="\r")
+        file_location = f"{file_directory}/{spectrum_name}.fits"
 
-        file_location = f"{file_directory}/{spectra_name}.fits"
-
-        if self._check_file(file_location, exit=False):
+        if not self._file_exists(file_location, exit=False):
+            print(file_location)
 
             return 1
 
-        [classification, sub_class] = self._rest_frame(
-            galaxy_index, file_location, spectra_name
-        )
+        with counter.get_lock():
+            counter.value += 1
+            print(f"[{counter.value}] Get {spectrum_name}", end="\r")
 
-        meta_data = [galaxy_index, classification, sub_class]
+        result = self._open_fits_file(
+                                        galaxy_index,
+                                        file_location,
+                                        spectrum_name
+                                    )
 
-        return meta_data
+        return result
 
     ###########################################################################
-    def _rest_frame(
-        self, galaxy_index: "int", file_location: "str", spectra_name
-    ):
+    def _open_fits_file(
+        self,
+        galaxy_index: "int",
+        file_location: "str",
+        spectrum_name: "str",
+        # number_attempts: "int" = 10
+    )-> "None":
         """
-        De-redshifting
-
         PARAMETER
             galaxy_index: index of the galaxy in the input data frame
                 passed to the constructor
-            galaxy_file_location: directory location of the fits file
-
-         OUTPUT
-            return wave, flux, z, signal_noise_ratio, classification, sub_class
-                wave: de-redshifted wave length
-                flux: flux
-                z: redshift
-                signal_noise_ratio: signal to noise ratio
-                classification: sdss pipeline classification
-                sub_class: sdss subclass pipeline classification
+            file_location: directory location of the fits file
+            spectrum_name:
+            number_attempts:
         """
 
-        with pyfits.open(file_location) as hdul:
+        save_to = f"{self.rest_frame_directory}/{spectrum_name}.npy"
 
-            wave = 10.0 ** (hdul[1].data["loglam"])
+        if self._file_exists(save_to, exit=False):
+            print(f"Data of {spectrum_name} already saved!", end="\r")
+            return 0
+
+        warnings.filterwarnings(action="error")
+
+        try:
+
+            hdul = pyfits.open(file_location, memmap=False)
+
+            wave = np.array(10.0 ** (hdul[1].data["loglam"]), dtype=float)
             flux = hdul[1].data["flux"]
-            classification = hdul[2].data["CLASS"][0]
-            sub_class = hdul[2].data["SUBCLASS"][0]
+            ivar = hdul[1].data['ivar']
+            specobjid = int(hdul[2].data['specobjid'].item())
 
-        # deredshift flux?
-        z = self.df.iloc[galaxy_index]["z"]
-        z_factor = 1.0 / (1.0 + z)
-        wave *= z_factor
+            df_specobjid = galaxies_df.iloc[galaxy_index]['specobjid']
+            assert specobjid == df_specobjid , 'specobjid do not match'
 
-        save_to = f"{self.rest_frame_directory}/{spectra_name}.npy"
-        array_to_save = np.vstack((wave, flux))
+            hdul.close()
 
-        np.save(save_to, array_to_save)
+            array_to_save = np.vstack((wave, flux, ivar))
 
-        return [classification, sub_class]
+            np.save(save_to, array_to_save)
+
+            return 0
+
+        except Exception as e:
+
+            print(f"Problem with {spectrum_name}")
+            print(e)
+
+            return 1
 
     ###########################################################################
-    def _get_file_location(self, galaxy_index: "int"):
+    def _get_file_location(self, galaxy_index: "int")-> "list":
         """
         PARAMETERS
             galaxy_index: index of the galaxy in the input data frame
                 passed to the constructor
 
         OUTPUTS
-            return sdss_directory, spectra_name, run2d
-
-                sdss_directory: directory location of the spectra fits file
-                spectra_name: f'spec-{plate}-{mjd}-{fiberid}'
-                run2d: PENDING
+            return [file_directory, spectrum_name]
+                file_directory: location of the spectrum fits file
+                spectrum_name: f'spec-{plate}-{mjd}-{fiberid}'
         """
 
-        galaxy = self.df.iloc[galaxy_index]
+        galaxy = galaxies_df.iloc[galaxy_index]
+
         [plate, mjd, fiberid, run2d] = self._galaxy_identifiers(galaxy)
 
-        spectra_name = f"spec-{plate}-{mjd}-{fiberid}"
+        spectrum_name = f"spec-{plate}-{mjd}-{fiberid}"
 
         file_directory = (
             f"{self.data_directory}/sas/dr16/sdss/spectro/redux"
             f"/{run2d}/spectra/lite/{plate}"
         )
 
-        return [file_directory, spectra_name]
+        return [file_directory, spectrum_name]
 
     ###########################################################################
     def _galaxy_identifiers(self, galaxy: "df.row"):
@@ -270,19 +236,24 @@ class RawData:
             os.makedirs(directory)
 
     ###########################################################################
-    def _check_file(self, location: "str", exit: "bool" = False):
+    def _file_exists(self, location: "str", exit: "bool" = False):
         """
-        Check if a location exists, if not it creates it or
-        exits depending on the value of exit
+        Check if a location is a file, if not exits depending
+        on the value of exit
         """
 
-        file_exists = not os.path.exists(location)
+        file_exists = os.path.isfile(location)
 
-        if not file_exists and exit:
+        if not file_exists:
 
-            print(f"File {location} NOT FOUND!")
-            print("Code cannot execute")
-            sys.exit()
+            file_name = location.split("/")[-1]
+
+            if exit:
+                print(f"File {file_name} NOT FOUND!")
+                print("Code cannot execute")
+                sys.exit()
+
+            return file_exists
 
         return file_exists
 
