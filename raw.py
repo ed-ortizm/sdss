@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from src.raw import data
+
 ###############################################################################
 # spawn creates entirely new processes independent from the parent process
 # fork [default] basically just does a minimal cloning, keeping a lot of
@@ -16,7 +17,7 @@ from src.raw import data
 # the job in if __name__ == '__main__':
 # set_start_method should also go there
 
-if __name__=="__main__":
+if __name__ == "__main__":
     mp.set_start_method("spawn")
 
     t0 = time.time()

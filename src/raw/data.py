@@ -9,9 +9,8 @@ import pandas as pd
 
 ###############################################################################
 def init_get_data_worker(
-    input_counter: "mp.Value",
-    input_df: "pandas dataframe"
-    ) -> "None":
+    input_counter: "mp.Value", input_df: "pandas dataframe"
+) -> "None":
     """
     Initialize worker for download
     PARAMETERS
@@ -23,6 +22,7 @@ def init_get_data_worker(
 
     counter = input_counter
     galaxies_df = input_df
+
 
 ###############################################################################
 class GetRawData:
@@ -57,7 +57,7 @@ class GetRawData:
         self.rest_frame_directory = f"{output_directory}/rest_frame"
 
     ###########################################################################
-    def save_raw_data(self, galaxies_df: "pandas dataframe")->"None":
+    def save_raw_data(self, galaxies_df: "pandas dataframe") -> "None":
         """
         Save data frame with all meta dat
 
@@ -74,7 +74,7 @@ class GetRawData:
         with mp.Pool(
             processes=self.number_processes,
             initializer=init_get_data_worker,
-            initargs=(counter,galaxies_df),
+            initargs=(counter, galaxies_df),
         ) as pool:
 
             results = pool.map(self._get_data, galaxy_indexes)
@@ -83,7 +83,7 @@ class GetRawData:
         print(f"Fail with {number_fail} files")
 
     ###########################################################################
-    def _get_data(self, galaxy_index: "int")-> "int":
+    def _get_data(self, galaxy_index: "int") -> "int":
         """
         Save data from spetrum corresponding to galaxy_index in
         galaxies_df
@@ -96,10 +96,7 @@ class GetRawData:
             0 for successful operation, 1 otherwise
         """
 
-        [
-            file_directory,
-            spectrum_name
-        ] = self._get_file_location(galaxy_index)
+        [file_directory, spectrum_name] = self._get_file_location(galaxy_index)
 
         file_location = f"{file_directory}/{spectrum_name}.fits"
 
@@ -113,10 +110,8 @@ class GetRawData:
             print(f"[{counter.value}] Get {spectrum_name}", end="\r")
 
         result = self._open_fits_file(
-                                        galaxy_index,
-                                        file_location,
-                                        spectrum_name
-                                    )
+            galaxy_index, file_location, spectrum_name
+        )
 
         return result
 
@@ -127,7 +122,7 @@ class GetRawData:
         file_location: "str",
         spectrum_name: "str",
         # number_attempts: "int" = 10
-    )-> "int":
+    ) -> "int":
 
         """
         Get and save wav, flux and ivar
@@ -159,11 +154,11 @@ class GetRawData:
 
             wave = np.array(10.0 ** (hdul[1].data["loglam"]), dtype=float)
             flux = hdul[1].data["flux"]
-            ivar = hdul[1].data['ivar']
-            specobjid = int(hdul[2].data['specobjid'].item())
+            ivar = hdul[1].data["ivar"]
+            specobjid = int(hdul[2].data["specobjid"].item())
 
-            df_specobjid = galaxies_df.iloc[galaxy_index]['specobjid']
-            assert specobjid == df_specobjid , 'specobjid do not match'
+            df_specobjid = galaxies_df.iloc[galaxy_index]["specobjid"]
+            assert specobjid == df_specobjid, "specobjid do not match"
 
             hdul.close()
 
@@ -181,7 +176,7 @@ class GetRawData:
             return 1
 
     ###########################################################################
-    def _get_file_location(self, galaxy_index: "int")-> "list":
+    def _get_file_location(self, galaxy_index: "int") -> "list":
         """
         PARAMETERS
             galaxy_index: index of the galaxy in the input data frame
@@ -207,7 +202,7 @@ class GetRawData:
         return [file_directory, spectrum_name]
 
     ###########################################################################
-    def _galaxy_identifiers(self, galaxy: "df.row")-> "list":
+    def _galaxy_identifiers(self, galaxy: "df.row") -> "list":
         """
         PARAMETER
             galaxy : pd.row from the galaxy data frame passed to
@@ -230,10 +225,9 @@ class GetRawData:
         return [plate, mjd, fiberid, run2d]
 
     ###########################################################################
-    def _check_directory(self,
-        directory: "str",
-        exit: "bool" = False
-    )->"None":
+    def _check_directory(
+        self, directory: "str", exit: "bool" = False
+    ) -> "None":
         """
         Check if a directory exists, if not it creates it or
         exits depending on the value of exit
@@ -249,7 +243,7 @@ class GetRawData:
             os.makedirs(directory)
 
     ###########################################################################
-    def _file_exists(self, location: "str", exit: "bool" = False)->"bool":
+    def _file_exists(self, location: "str", exit: "bool" = False) -> "bool":
         """
         Check if a location is a file, if not exits depending
         on the value of exit
@@ -269,5 +263,6 @@ class GetRawData:
             return file_exists
 
         return file_exists
+
 
 ###############################################################################

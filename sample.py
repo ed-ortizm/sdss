@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 ###############################################################################
-if __name__=="__main__":
+if __name__ == "__main__":
     mp.set_start_method("spawn")
 
     start_time = time.time()

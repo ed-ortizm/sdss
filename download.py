@@ -17,7 +17,7 @@ from src import download
 # the job in if __name__ == '__main__':
 # set_start_method should also go there
 
-if __name__=="__main__":
+if __name__ == "__main__":
     mp.set_start_method("spawn")
 
     ti = time.time()

@@ -112,11 +112,9 @@ class DownloadData:
             return 1
 
     ###########################################################################
-    def _query_file(self,
-        file_name: "str",
-        run2d: "str",
-        plate: "str"
-        )->"None":
+    def _query_file(
+        self, file_name: "str", run2d: "str", plate: "str"
+    ) -> "None":
 
         # sas: science archive server
         sas_location = (
@@ -151,11 +149,12 @@ class DownloadData:
             print(f"{file_name} already downloaded!!")
 
     ###########################################################################
-    def _retry_download_if_small_size(self,
+    def _retry_download_if_small_size(
+        self,
         file_size: "float",
         file_name: "str",
         save_to: "str",
-        file_url: "str"
+        file_url: "str",
     ) -> "None || exception":
 
         """
