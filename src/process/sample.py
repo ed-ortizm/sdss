@@ -32,7 +32,7 @@ class SampleData(FileDirectory):
         self,
         data_directory: "str",
         output_directory: "str",
-        number_processes: "int",
+        # number_processes: "int",
     ):
         """
         PARAMETERS
@@ -45,7 +45,7 @@ class SampleData(FileDirectory):
             GetRawData object
         """
 
-        self.number_processes = number_processes
+        # self.number_processes = number_processes
 
         super().check_directory(data_directory, exit=True)
         self.data_directory = data_directory
@@ -54,13 +54,44 @@ class SampleData(FileDirectory):
         self.data_output_directory = output_directory
 
     ###########################################################################
-    def sample_red_shift(self, spectra_df: "pandas data frame") -> "":
-        pass
+    def red_shift_sampling(self,
+        spectra_df: "pandas data frame",
+        lower_bound: "float",
+        upper_bound: "float",
+        ) -> "np.array":
+
+        """
+        PARAMETERS
+
+        OUTPUTS
+            sample_selection_mask: contain bools to pick sample from
+                original data frame
+
+        """
+
+        no_qso_mask = spectra_df["z_noqso"].values != 0.
+
+        spectra_df.loc[no_qso_mask, "z"] = \
+            spectra_df.loc[no_qso_mask, "z_noqso"]
+
+        z = spectra_df["z"].values
+
+        sample_selection_mask = (lower_bound < z) * (z < upper_bound)
+
+        return sample_selection_mask
 
     ###########################################################################
     def sample_signal_to_noise_ratio(
         self, spectra_df: "pandas data frame"
     ) -> "":
+        """
+        PARAMETERS
+
+        OUTPUTS
+            sample_selection_mask: contain bools to pick sample from
+                original data frame
+
+        """
 
         pass
 
