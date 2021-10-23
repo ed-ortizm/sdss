@@ -47,6 +47,23 @@ class FileDirectory:
             return file_exists
 
         return file_exists
+    ###########################################################################
+    def remove_file(self, file_location: "str")->"None":
 
+        """
+        remove file at file_location
+        PARAMETERS
+            file_location: e.g. "/home/user/file.text"
+        """
+
+        file_name = file_location.split("/")[-1]
+
+        if self.file_exists(file_location, exit=False):
+
+            print(f"There is no {file_name}!")
+
+        else:
+            os.remove(file_location)
+            print(f"File {file_name} removed!")
 
 ###############################################################################
