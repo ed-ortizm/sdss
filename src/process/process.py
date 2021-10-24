@@ -4,37 +4,47 @@ import multiprocessing as mp
 from multiprocessing.sharedctypes import RawArray
 import os
 
-####################################################################
 import astropy.io.fits as pyfits
 import numpy as np
 import pandas as pd
 
+from src.superclasses import FileDirectory
+from src.superclasses import MetaData
 ###############################################################################
-class DataProcess(FileDirectory):
+
+# galaxy_frame: meta data of sdss galaxies, such as name,
+    # signal to noise ratio and z
+class DataProcess(FileDirectory, MetaData):
+    """Process sdss spectra"""
     def __init__(
         self,
-        galaxies_frame: "pd.df",
-        number_processes: "int",
-        grid_parameters: "dict",
         data_directory: "str",
         output_directory: "str",
+        grid_parameters: "dict",
+        number_processes: "int",
     ):
         """
-        Class to process rest frame spectra
+        Class to process  spectra
+
         PARAMETERS
-            galaxy_frame: meta data of sdss galaxies, such as name,
-                signal to noise ratio and z
+            data_directory:
+            output_directory:
+            grid_parameters: parameters to build common grid
+                {
+
+                }
             number_processes: number of jobs when processing a bulk of a spectra
         OUTPUT
             check how to document the constructor of a class
         """
 
-        self.frame = galaxies_frame
-        self.number_processes = number_processes
-        self.grid = self._get_grid(grid_parameters)
-
+        super().check_directory(data_directory, exit=True)
         self.data_directory = data_directory
         self.spectra_directory = f"{data_directory}/rest_frame"
+
+        self.grid = self._get_grid(grid_parameters)
+        self.number_processes = number_processes
+
 
         self._check_directory(output_directory)
         self.output_directory = output_directory

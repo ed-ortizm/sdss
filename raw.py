@@ -35,6 +35,7 @@ if __name__ == "__main__":
                             )
 
     number_spectra = parser.getint("parameters", "number_spectra")
+
     if number_spectra != -1:
         spectra_df = spectra_df[:number_spectra]
     ###########################################################################

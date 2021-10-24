@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from src.superclasses import FileDirectory
+from src.superclasses import MetaData
 ###############################################################################
 def init_worker(
     input_counter: "mp.Value", input_df: "pandas dataframe"
@@ -25,7 +26,7 @@ def init_worker(
     files_df = input_df
 
 ###############################################################################
-class RawData(FileDirectory):
+class RawData(FileDirectory, MetaData):
     """Get wave, flux and ivar from sdss dr16 spectra"""
 
     def __init__(
@@ -51,10 +52,8 @@ class RawData(FileDirectory):
         self.data_directory = data_directory
 
         super().check_directory(output_directory)
-        self.data_output_directory = output_directory
+        self.output_directory = output_directory
 
-        super().check_directory(f"{output_directory}/rest_frame")
-        self.rest_frame_directory = f"{output_directory}/rest_frame"
 
     ###########################################################################
     def remove_fits_files(self, files_df: "pandas_data_frame")->"None":
@@ -144,9 +143,16 @@ class RawData(FileDirectory):
 
         file_row = files_df.loc[file_index]
 
-        [file_directory, spectrum_name] = self._get_file_location(file_row)
+        [
+            sas_directory,
+            spectrum_name
+        ] = super().get_file_location_sas(file_row)
 
-        file_location = f"{file_directory}/{spectrum_name}.fits"
+        # [file_directory, spectrum_name] = self._get_file_location(file_row)
+
+        file_location = (
+            f"{self.data_directory}/{sas_directory}/{spectrum_name}.fits"
+        )
 
         if not super().file_exists(file_location, exit=False):
             print(file_location)
@@ -157,14 +163,14 @@ class RawData(FileDirectory):
             counter.value += 1
             print(f"[{counter.value}] Get {spectrum_name}", end="\r")
 
-        result = self._open_fits_file(
+        result = self._get_save_wave_flux_ivar(
             file_index, file_location, spectrum_name
         )
 
         return result
 
     ###########################################################################
-    def _open_fits_file(
+    def _get_save_wave_flux_ivar(
         self,
         file_index: "int",
         file_location: "str",
@@ -188,7 +194,7 @@ class RawData(FileDirectory):
             0 for successful operation, 1 otherwise
         """
 
-        save_to = f"{self.rest_frame_directory}/{spectrum_name}.npy"
+        save_to = f"{self.output_directory}/{spectrum_name}.npy"
 
         if super().file_exists(save_to, exit=False):
             print(f"Data of {spectrum_name} already saved!", end="\r")
@@ -221,51 +227,5 @@ class RawData(FileDirectory):
             print(e)
 
             return 1
-
-    ###########################################################################
-    def _get_file_location(self, file_row: "pd.row") -> "list":
-        """
-        PARAMETERS
-            file_row:
-        OUTPUTS
-            return [file_directory, spectrum_name]
-                file_directory: location of the spectrum fits file
-                spectrum_name: f'spec-{plate}-{mjd}-{fiberid}'
-        """
-
-
-        [plate, mjd, fiberid, run2d] = self._galaxy_identifiers(file_row)
-
-        spectrum_name = f"spec-{plate}-{mjd}-{fiberid}"
-
-        file_directory = (
-            f"{self.data_directory}/sas/dr16/sdss/spectro/redux"
-            f"/{run2d}/spectra/lite/{plate}"
-        )
-
-        return [file_directory, spectrum_name]
-
-    ###########################################################################
-    def _galaxy_identifiers(self, file_row: "df.row") -> "list":
-        """
-        PARAMETER
-            file_row : pd.row from the object data frame passed to
-                the constructor of the class
-
-        OUTPUT
-            return [plate, mjd, fiberid, run2d]
-                plate: self explanatory
-                mjd: date
-                fiberid: self explanatory
-                run2d: PENDING
-
-        """
-
-        plate = f"{file_row['plate']:04}"
-        mjd = f"{file_row['mjd']}"
-        fiberid = f"{file_row['fiberid']:04}"
-        run2d = f"{file_row['run2d']}"
-
-        return [plate, mjd, fiberid, run2d]
 
 ###############################################################################

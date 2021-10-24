@@ -73,27 +73,34 @@ class MetaData:
     def __init__(self):
         pass
     ###########################################################################
-    def science_archive_server_url(self):
+    def get_science_archive_server_url(self, file_row: "pd.row"):
         pass
     ###########################################################################
-
+    def get_sky_server_url(self, file_row: "pd.row"):
+    # 'http://skyserver.sdss.org/dr14/en/tools/explore/summary.aspx?plate=' +
+    # str(row['plate']).zfill(4) + '&mjd=' + str(row['mjd']) + '&fiber=' +
+    # str(row['fiberid']).zfill(4)
+        pass
+    ###########################################################################
     def get_file_location_sas(self, file_row: "pd.row") -> "list":
         """
         PARAMETERS
-            file_row:
+            file_row: contains at least the columns
+                plate, mjd, fiberid, run2d
         OUTPUTS
             return [file_directory, spectrum_name]
                 file_directory: location of the spectrum fits file
+                in sas directory
                 spectrum_name: f'spec-{plate}-{mjd}-{fiberid}'
         """
 
 
-        [plate, mjd, fiberid, run2d] = self._galaxy_identifiers(file_row)
+        [plate, mjd, fiberid, run2d] = self.galaxy_identifiers(file_row)
 
         spectrum_name = f"spec-{plate}-{mjd}-{fiberid}"
 
         file_directory = (
-            f"{self.data_directory}/sas/dr16/sdss/spectro/redux"
+            f"sas/dr16/sdss/spectro/redux"
             f"/{run2d}/spectra/lite/{plate}"
         )
 
@@ -103,9 +110,8 @@ class MetaData:
     def galaxy_identifiers(self, file_row: "df.row") -> "list":
         """
         PARAMETER
-            file_row : pd.row from the object data frame passed to
-                the constructor of the class
-
+            file_row: contains at least the columns
+                plate, mjd, fiberid, run2d
         OUTPUT
             return [plate, mjd, fiberid, run2d]
                 plate: self explanatory
