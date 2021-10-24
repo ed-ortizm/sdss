@@ -6,7 +6,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from src import download
+from src.raw.data import GetRawData
 
 ###############################################################################
 if __name__ == "__main__":
@@ -18,25 +18,28 @@ if __name__ == "__main__":
     parser.read("remove.ini")
     ###########################################################################
     data_directory = parser.get("directories", "data")
-    galaxy_df_name = parser.get("files", "spectra_df")
+    files_df_name = parser.get("files", "files_df")
 
-    galaxy_df = pd.read_csv(f"{data_directory}/{galaxy_df_name}")
+    files_df = pd.read_csv(
+                            f"{data_directory}/{files_df_name}",
+                            index_col="specobjid"
+                        )
 
     number_spectra = parser.getint("parameters", "number_spectra")
 
     if number_spectra != -1:
-        spectra_df = spectra_df[:number_spectra]
+        files_df = files_df[:number_spectra]
     ##############################################################
     # Data Download
     number_processes = parser.getint("parameters", "number_processes")
 
-    download_spectra = download.DownloadData(
-        spectra_df=spectra_df,
-        output_directory=output_directory,
-        n_processes=number_processes,
+    raw = GetRawData(
+        data_directory=data_directory,
+        output_directory=data_directory,
+        number_processes=number_processes,
     )
 
-    download_spectra.download_files()
+    raw.remove_fits_files(files_df)
     ###########################################################################
     tf = time.time()
 

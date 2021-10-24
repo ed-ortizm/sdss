@@ -58,8 +58,9 @@ class FileDirectory:
 
         file_name = file_location.split("/")[-1]
 
-        if self.file_exists(file_location, exit=False):
+        if not self.file_exists(file_location, exit=False):
 
+            print(file_location)
             print(f"There is no {file_name}!")
 
         else:

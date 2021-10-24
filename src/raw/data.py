@@ -93,10 +93,9 @@ class GetRawData(FileDirectory):
             initargs=(counter, files_df),
         ) as pool:
 
-            results = pool.map(self._remove_fits_file, files_indexes)
+            pool.map(self._remove_fits_file, files_indexes)
 
-        number_fail = sum(results)
-        print(f"Fail with {number_fail} files")
+        print(f"Remove files finish...")
     ###########################################################################
     def _remove_fits_file(self, file_index: "int")->"None":
         """
@@ -104,7 +103,14 @@ class GetRawData(FileDirectory):
         PARAMETERS
             file_index: specobjid of the object
         """
-        pass
+
+        file_row = files_df.loc[file_index]
+
+        [file_directory, spectrum_name] = self._get_file_location(file_row)
+
+        file_location = f"{file_directory}/{spectrum_name}.fits"
+
+        super().remove_file(file_location)
 
 
     ###########################################################################
