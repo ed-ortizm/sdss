@@ -9,10 +9,8 @@ import astropy.io.fits as pyfits
 import numpy as np
 import pandas as pd
 
-####################################################################
-# from src.process.worker import init_worker
-################################################################################
-class DataProcess:
+###############################################################################
+class DataProcess(FileDirectory):
     def __init__(
         self,
         galaxies_frame: "pd.df",
@@ -155,10 +153,10 @@ class DataProcess:
 
         return spectra
 
-    ############################################################################
+    ###########################################################################
     def replace_missing_flux(self, spectra: "array", method: "str" = "median"):
         """"""
-        ########################################################################
+        #######################################################################
         if method == "median":
 
             mask_replacement = ~np.isfinite(spectra)
@@ -174,7 +172,7 @@ class DataProcess:
 
         return spectra
 
-    ############################################################################
+    ###########################################################################
     def drop_indefinite_values(self, spectra: "np.array", drop: "float" = 0.1):
         """
         spectra: train
@@ -199,20 +197,4 @@ class DataProcess:
         return spectra, wave
 
     ###########################################################################
-    def _check_directory(self, directory: "str", exit: "bool" = False):
-        """
-        Check if a directory exists, if not it creates it or
-        exits depending on the value of exit
-        """
-
-        if not os.path.exists(directory):
-
-            if exit:
-                print(f"Directory {diretory} NOT FOUND")
-                print("Code cannot execute")
-                sys.exit()
-
-            os.makedirs(directory)
-
-
 ###############################################################################

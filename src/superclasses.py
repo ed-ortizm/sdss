@@ -68,3 +68,58 @@ class FileDirectory:
             print(f"File {file_name} removed!", end="\r")
 
 ###############################################################################
+class MetaData:
+    """Deal with medata data """
+    def __init__(self):
+        pass
+    ###########################################################################
+    def science_archive_server_url(self):
+        pass
+    ###########################################################################
+
+    def get_file_location_sas(self, file_row: "pd.row") -> "list":
+        """
+        PARAMETERS
+            file_row:
+        OUTPUTS
+            return [file_directory, spectrum_name]
+                file_directory: location of the spectrum fits file
+                spectrum_name: f'spec-{plate}-{mjd}-{fiberid}'
+        """
+
+
+        [plate, mjd, fiberid, run2d] = self._galaxy_identifiers(file_row)
+
+        spectrum_name = f"spec-{plate}-{mjd}-{fiberid}"
+
+        file_directory = (
+            f"{self.data_directory}/sas/dr16/sdss/spectro/redux"
+            f"/{run2d}/spectra/lite/{plate}"
+        )
+
+        return [file_directory, spectrum_name]
+
+    ###########################################################################
+    def galaxy_identifiers(self, file_row: "df.row") -> "list":
+        """
+        PARAMETER
+            file_row : pd.row from the object data frame passed to
+                the constructor of the class
+
+        OUTPUT
+            return [plate, mjd, fiberid, run2d]
+                plate: self explanatory
+                mjd: date
+                fiberid: self explanatory
+                run2d: PENDING
+
+        """
+
+        plate = f"{file_row['plate']:04}"
+        mjd = f"{file_row['mjd']}"
+        fiberid = f"{file_row['fiberid']:04}"
+        run2d = f"{file_row['run2d']}"
+
+        return [plate, mjd, fiberid, run2d]
+
+###############################################################################
