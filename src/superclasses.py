@@ -61,10 +61,10 @@ class FileDirectory:
         if not self.file_exists(file_location, exit=False):
 
             print(file_location)
-            print(f"There is no {file_name}!")
+            print(f"There is no {file_name}!", end="\r")
 
         else:
             os.remove(file_location)
-            print(f"File {file_name} removed!")
+            print(f"File {file_name} removed!", end="\r")
 
 ###############################################################################
