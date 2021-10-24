@@ -41,7 +41,7 @@ if __name__ == "__main__":
     output_directory = parser.get("directories", "output")
     number_processes = parser.getint("parameters", "number_processes")
 
-    raw_data = data.GetRawData(
+    raw_data = data.RawData(
         data_directory=data_directory,
         output_directory=output_directory,
         number_processes=number_processes,

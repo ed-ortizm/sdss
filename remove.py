@@ -6,7 +6,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from src.raw.data import GetRawData
+from src.raw.data import RawData
 
 ###############################################################################
 if __name__ == "__main__":
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     ##############################################################
     number_processes = parser.getint("parameters", "number_processes")
 
-    raw = GetRawData(
+    raw = RawData(
         data_directory=data_directory,
         output_directory=data_directory,
         number_processes=number_processes,

@@ -8,22 +8,6 @@ import numpy as np
 import pandas as pd
 
 from src.superclasses import FileDirectory
-
-###############################################################################
-# def init_get_data_worker(
-#     input_counter: "mp.Value", input_df: "pandas dataframe"
-# ) -> "None":
-#     """
-#     Initialize worker for download
-#     PARAMETERS
-#         counter: counts the number of the child process
-#         input_df: pandas dataframe to be accessible to each child
-#     """
-#     global counter
-#     global galaxies_df
-#
-#     counter = input_counter
-#     galaxies_df = input_df
 ###############################################################################
 def init_worker(
     input_counter: "mp.Value", input_df: "pandas dataframe"
@@ -41,7 +25,7 @@ def init_worker(
     files_df = input_df
 
 ###############################################################################
-class GetRawData(FileDirectory):
+class RawData(FileDirectory):
     """Get wave, flux and ivar from sdss dr16 spectra"""
 
     def __init__(
@@ -58,7 +42,7 @@ class GetRawData(FileDirectory):
             number_processes : number of processes to use with mp.Pool
 
         OUTPUT
-            GetRawData object
+            RawData object
         """
 
         self.number_processes = number_processes
@@ -78,7 +62,8 @@ class GetRawData(FileDirectory):
         Remove unwanted files, e.g. non galaxies fro sample
 
         PARAMETER
-            files_df
+            files_df: data frame with necessary data to delete
+                unwanted files
         """
         print(f"Remove files...")
 
@@ -150,7 +135,7 @@ class GetRawData(FileDirectory):
         files_df
 
         PARAMETERS
-            file_index: index of a galaxy in that galaxy that the
+            file_index: specobjid of a galaxy in that galaxy that the
                 frame passed to the constructor of the class
 
         OUTPUT
@@ -191,7 +176,7 @@ class GetRawData(FileDirectory):
         Get and save wav, flux and ivar
         PARAMETER
 
-            galaxy_index: index of the galaxy in the input data frame
+            file_index: specobjid of the galaxy in the input data frame
                 passed to the constructor
             file_location: location of the fits file including extension
             spectrum_name: name of spectrum
