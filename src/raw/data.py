@@ -110,6 +110,10 @@ class GetRawData(FileDirectory):
 
         file_location = f"{file_directory}/{spectrum_name}.fits"
 
+        with counter.get_lock():
+            counter.value += 1
+            print(f"[{counter.value}] Remove {spectrum_name}", end="\r")
+
         super().remove_file(file_location)
 
 
