@@ -7,25 +7,41 @@ import astropy.io.fits as pyfits
 import numpy as np
 import pandas as pd
 
+from src.superclasses import FileDirectory
+
 ###############################################################################
-def init_get_data_worker(
+# def init_get_data_worker(
+#     input_counter: "mp.Value", input_df: "pandas dataframe"
+# ) -> "None":
+#     """
+#     Initialize worker for download
+#     PARAMETERS
+#         counter: counts the number of the child process
+#         input_df: pandas dataframe to be accessible to each child
+#     """
+#     global counter
+#     global galaxies_df
+#
+#     counter = input_counter
+#     galaxies_df = input_df
+###############################################################################
+def init_worker(
     input_counter: "mp.Value", input_df: "pandas dataframe"
 ) -> "None":
     """
-    Initialize worker for download
+    Initialize worker
     PARAMETERS
         counter: counts the number of the child process
         input_df: pandas dataframe to be accessible to each child
     """
     global counter
-    global galaxies_df
+    global files_df
 
     counter = input_counter
-    galaxies_df = input_df
-
+    files_df = input_df
 
 ###############################################################################
-class GetRawData:
+class GetRawData(FileDirectory):
     """Get wave, flux and ivar from sdss dr16 spectra"""
 
     def __init__(
@@ -47,60 +63,97 @@ class GetRawData:
 
         self.number_processes = number_processes
 
-        self._check_directory(data_directory, exit=True)
+        super().check_directory(data_directory, exit=True)
         self.data_directory = data_directory
 
-        self._check_directory(output_directory)
+        super().check_directory(output_directory)
         self.data_output_directory = output_directory
 
-        self._check_directory(f"{output_directory}/rest_frame")
+        super().check_directory(f"{output_directory}/rest_frame")
         self.rest_frame_directory = f"{output_directory}/rest_frame"
 
     ###########################################################################
-    def save_raw_data(self, galaxies_df: "pandas dataframe") -> "None":
+    def remove_fits_files(self, files_df: "pandas_data_frame")->"None":
         """
-        Save data frame with all meta dat
+        Remove unwanted files, e.g. non galaxies fro sample
 
-        PARAMETERS
-            galaxies_df: data frame with meta data of galaxies
+        PARAMETER
+            files_df
         """
+        print(f"Remove files...")
 
-        print(f"Save wave, flux, ivar!")
-
-        galaxy_indexes = galaxies_df.index.values
+        # I use specobjid as the index in the data frame
+        files_indexes = files_df.index.values
 
         counter = mp.Value("i", 0)
 
         with mp.Pool(
             processes=self.number_processes,
-            initializer=init_get_data_worker,
-            initargs=(counter, galaxies_df),
+            initializer=init_worker,
+            initargs=(counter, files_df),
         ) as pool:
 
-            results = pool.map(self._get_data, galaxy_indexes)
+            results = pool.map(self._remove_fits_file, files_indexes)
+
+        number_fail = sum(results)
+        print(f"Fail with {number_fail} files")
+    ###########################################################################
+    def _remove_fits_file(self, file_index: "int")->"None":
+        """
+        Remove file
+        PARAMETERS
+            file_index: specobjid of the object
+        """
+        pass
+
+
+    ###########################################################################
+    def save_raw_data(self, files_df: "pandas dataframe") -> "None":
+        """
+        Save data frame with all meta dat
+
+        PARAMETERS
+            files_df: data frame with meta data of galaxies
+        """
+
+        print(f"Save wave, flux, ivar!")
+
+        files_indexes = files_df.index.values
+
+        counter = mp.Value("i", 0)
+
+        with mp.Pool(
+            processes=self.number_processes,
+            initializer=init_worker,
+            initargs=(counter, files_df),
+        ) as pool:
+
+            results = pool.map(self._get_data, files_indexes)
 
         number_fail = sum(results)
         print(f"Fail with {number_fail} files")
 
     ###########################################################################
-    def _get_data(self, galaxy_index: "int") -> "int":
+    def _get_data(self, file_index: "int") -> "int":
         """
-        Save data from spetrum corresponding to galaxy_index in
-        galaxies_df
+        Save data from spetrum corresponding to file_index in
+        files_df
 
         PARAMETERS
-            galaxy_index: index of a galaxy in that galaxy that the
+            file_index: index of a galaxy in that galaxy that the
                 frame passed to the constructor of the class
 
         OUTPUT
             0 for successful operation, 1 otherwise
         """
 
-        [file_directory, spectrum_name] = self._get_file_location(galaxy_index)
+        file_row = files_df.loc[file_index]
+
+        [file_directory, spectrum_name] = self._get_file_location(file_row)
 
         file_location = f"{file_directory}/{spectrum_name}.fits"
 
-        if not self._file_exists(file_location, exit=False):
+        if not super().file_exists(file_location, exit=False):
             print(file_location)
 
             return 1
@@ -110,7 +163,7 @@ class GetRawData:
             print(f"[{counter.value}] Get {spectrum_name}", end="\r")
 
         result = self._open_fits_file(
-            galaxy_index, file_location, spectrum_name
+            file_index, file_location, spectrum_name
         )
 
         return result
@@ -118,7 +171,7 @@ class GetRawData:
     ###########################################################################
     def _open_fits_file(
         self,
-        galaxy_index: "int",
+        file_index: "int",
         file_location: "str",
         spectrum_name: "str",
         # number_attempts: "int" = 10
@@ -142,7 +195,7 @@ class GetRawData:
 
         save_to = f"{self.rest_frame_directory}/{spectrum_name}.npy"
 
-        if self._file_exists(save_to, exit=False):
+        if super().file_exists(save_to, exit=False):
             print(f"Data of {spectrum_name} already saved!", end="\r")
             return 0
 
@@ -157,8 +210,7 @@ class GetRawData:
             ivar = hdul[1].data["ivar"]
             specobjid = int(hdul[2].data["specobjid"].item())
 
-            df_specobjid = galaxies_df.iloc[galaxy_index]["specobjid"]
-            assert specobjid == df_specobjid, "specobjid do not match"
+            assert specobjid == file_index, "specobjid do not match"
 
             hdul.close()
 
@@ -176,21 +228,18 @@ class GetRawData:
             return 1
 
     ###########################################################################
-    def _get_file_location(self, galaxy_index: "int") -> "list":
+    def _get_file_location(self, file_row: "pd.row") -> "list":
         """
         PARAMETERS
-            galaxy_index: index of the galaxy in the input data frame
-                passed to the constructor
-
+            file_row:
         OUTPUTS
             return [file_directory, spectrum_name]
                 file_directory: location of the spectrum fits file
                 spectrum_name: f'spec-{plate}-{mjd}-{fiberid}'
         """
 
-        galaxy = galaxies_df.iloc[galaxy_index]
 
-        [plate, mjd, fiberid, run2d] = self._galaxy_identifiers(galaxy)
+        [plate, mjd, fiberid, run2d] = self._galaxy_identifiers(file_row)
 
         spectrum_name = f"spec-{plate}-{mjd}-{fiberid}"
 
@@ -202,10 +251,10 @@ class GetRawData:
         return [file_directory, spectrum_name]
 
     ###########################################################################
-    def _galaxy_identifiers(self, galaxy: "df.row") -> "list":
+    def _galaxy_identifiers(self, file_row: "df.row") -> "list":
         """
         PARAMETER
-            galaxy : pd.row from the galaxy data frame passed to
+            file_row : pd.row from the object data frame passed to
                 the constructor of the class
 
         OUTPUT
@@ -217,52 +266,11 @@ class GetRawData:
 
         """
 
-        plate = f"{galaxy['plate']:04}"
-        mjd = f"{galaxy['mjd']}"
-        fiberid = f"{galaxy['fiberid']:04}"
-        run2d = f"{galaxy['run2d']}"
+        plate = f"{file_row['plate']:04}"
+        mjd = f"{file_row['mjd']}"
+        fiberid = f"{file_row['fiberid']:04}"
+        run2d = f"{file_row['run2d']}"
 
         return [plate, mjd, fiberid, run2d]
-
-    ###########################################################################
-    def _check_directory(
-        self, directory: "str", exit: "bool" = False
-    ) -> "None":
-        """
-        Check if a directory exists, if not it creates it or
-        exits depending on the value of exit
-        """
-
-        if not os.path.exists(directory):
-
-            if exit:
-                print(f"Directory {diretory} NOT FOUND")
-                print("Code cannot execute")
-                sys.exit()
-
-            os.makedirs(directory)
-
-    ###########################################################################
-    def _file_exists(self, location: "str", exit: "bool" = False) -> "bool":
-        """
-        Check if a location is a file, if not exits depending
-        on the value of exit
-        """
-
-        file_exists = os.path.isfile(location)
-
-        if not file_exists:
-
-            file_name = location.split("/")[-1]
-
-            if exit:
-                print(f"File {file_name} NOT FOUND!")
-                print("Code cannot execute")
-                sys.exit()
-
-            return file_exists
-
-        return file_exists
-
 
 ###############################################################################
