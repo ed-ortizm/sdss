@@ -148,8 +148,6 @@ class RawData(FileDirectory, MetaData):
             spectrum_name
         ] = super().get_file_location_sas(file_row)
 
-        # [file_directory, spectrum_name] = self._get_file_location(file_row)
-
         file_location = (
             f"{self.data_directory}/{sas_directory}/{spectrum_name}.fits"
         )
@@ -194,7 +192,7 @@ class RawData(FileDirectory, MetaData):
             0 for successful operation, 1 otherwise
         """
 
-        save_to = f"{self.output_directory}/{spectrum_name}.npy"
+        save_to = f"{self.output_directory}/{file_index}.npy"
 
         if super().file_exists(save_to, exit=False):
             print(f"Data of {spectrum_name} already saved!", end="\r")
