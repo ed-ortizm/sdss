@@ -16,21 +16,27 @@ if __name__ == "__main__":
     ###########################################################################
     parser = ConfigParser(interpolation=ExtendedInterpolation())
     parser.read("remove.ini")
-    ###########################################################################
     data_directory = parser.get("directories", "data")
-    files_df_name = parser.get("files", "files_df")
+    ###########################################################################
+    keep_df_name = parser.get("files", "keep_df")
 
-    files_df = pd.read_csv(
-                            f"{data_directory}/{files_df_name}",
+    keep_df = pd.read_csv(
+                            f"{data_directory}/{keep_df_name}",
                             index_col="specobjid"
                         )
 
-    number_spectra = parser.getint("parameters", "number_spectra")
-
-    if number_spectra != -1:
-        files_df = files_df[:number_spectra]
     ##############################################################
-    # Data Download
+    remove_df_name = parser.get("files", "remove_df")
+    remove_df = pd.read_csv(
+                            f"{data_directory}/{remove_df_name}",
+                            index_col="specobjid"
+                        )
+    ##############################################################
+    is_in_keep_mask = remove_df.index.isin(keep_df.index)
+    remove_mask  = ~is_in_keep_mask
+
+    files_remove_df = remove_df.loc[remove_mask]
+    ##############################################################
     number_processes = parser.getint("parameters", "number_processes")
 
     raw = GetRawData(
@@ -39,7 +45,7 @@ if __name__ == "__main__":
         number_processes=number_processes,
     )
 
-    raw.remove_fits_files(files_df)
+    raw.remove_fits_files(files_remove_df)
     ###########################################################################
     tf = time.time()
 
