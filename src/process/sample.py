@@ -42,37 +42,36 @@ class SampleData(FileDirectory):
             number_processes : number of processes to use with mp.Pool
 
         OUTPUT
-            GetRawData object
+            SampleData object
         """
-
-        # self.number_processes = number_processes
 
         super().check_directory(data_directory, exit=True)
         self.data_directory = data_directory
 
-        super().check_directory(output_directory)
+        super().check_directory(output_directory, exit=False)
         self.data_output_directory = output_directory
 
+        # self.number_processes = number_processes
     ###########################################################################
     def red_shift_sampling(self,
         spectra_df: "pandas data frame",
         lower_bound: "float",
         upper_bound: "float",
-        ) -> "np.array":
+        ) -> "pandas series":
 
         """
         PARAMETERS
 
         OUTPUTS
-            sample_selection_mask: contain bools to pick sample from
+            sample_selection: contains the specobjid to sample from
                 original data frame
 
         """
 
-        no_qso_mask = spectra_df["z_noqso"].values != 0.
+        z_no_qso_mask = spectra_df["z_noqso"].values != 0.
 
-        spectra_df.loc[no_qso_mask, "z"] = \
-            spectra_df.loc[no_qso_mask, "z_noqso"]
+        spectra_df.loc[z_no_qso_mask, "z"] = \
+            spectra_df.loc[z_no_qso_mask, "z_noqso"]
 
         z = spectra_df["z"].values
 

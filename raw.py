@@ -25,7 +25,6 @@ if __name__ == "__main__":
     parser = ConfigParser(interpolation=ExtendedInterpolation())
     parser.read("raw.ini")
     ###########################################################################
-    # Data processing
     data_directory = parser.get("directories", "data")
 
     spectra_df_name = parser.get("files", "spectra_df")

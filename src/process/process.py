@@ -11,14 +11,39 @@ import pandas as pd
 from src.superclasses import FileDirectory
 from src.superclasses import MetaData
 ###############################################################################
+def to_numpy_array(input_shared_array, array_shape):
+    """Create a numpy array backed by a shared memory Array."""
 
-# galaxy_frame: meta data of sdss galaxies, such as name,
-    # signal to noise ratio and z
+    share_array = np.ctypeslib.as_array(input_shared_array)
+
+    return share_array.reshape(array_shape)
+
+def init_process_worker(
+    input_counter: "mp.Value",
+    # input_df: "pandas dataframe",
+    input_share_array: "c types share array",
+    array_shape: "tuple",
+) -> "None":
+    """
+    Initialize worker to get sample relevant for the science
+    PARAMETERS
+        counter: counts the number of the child process
+        input_df: pandas dataframe to be accessible to each child
+    """
+    global counter
+    # global spectra_df
+    global share_array
+
+    counter = input_counter
+    # spectra_df = input_df
+    share_array = to_numpy_array(input_share_array, array_shape)
+
+###############################################################################
 class DataProcess(FileDirectory, MetaData):
     """Process sdss spectra"""
     def __init__(
         self,
-        data_directory: "str",
+        raw_data_directory: "str",
         output_directory: "str",
         grid_parameters: "dict",
         number_processes: "int",
@@ -27,28 +52,28 @@ class DataProcess(FileDirectory, MetaData):
         Class to process  spectra
 
         PARAMETERS
-            data_directory:
+            data_directory: location of raw spectra
             output_directory:
-            grid_parameters: parameters to build common grid
+            grid_parameters: dictionary with structure
                 {
-
+                    "number_waves": "number fluxes in the grid",
+                    "lower": "lower bound in the grid",
+                    "upper": "upper bound in the grid"
                 }
             number_processes: number of jobs when processing a bulk of a spectra
         OUTPUT
             check how to document the constructor of a class
         """
 
-        super().check_directory(data_directory, exit=True)
-        self.data_directory = data_directory
-        self.spectra_directory = f"{data_directory}/rest_frame"
+        super().check_directory(raw_data_directory, exit=True)
+        self.spectra_directory = raw_data_directory
 
-        self.grid = self._get_grid(grid_parameters)
-        self.number_processes = number_processes
-
-
-        self._check_directory(output_directory)
+        super().check_directory(output_directory, exit=False)
         self.output_directory = output_directory
 
+        self.grid = self._get_grid(grid_parameters)
+
+        self.number_processes = number_processes
     ###########################################################################
     def _get_grid(self, grid_parameters: "dict") -> "np.array":
         """
@@ -56,15 +81,17 @@ class DataProcess(FileDirectory, MetaData):
 
         ARGUMENTS
 
-        grid_parameters: dictionary with structure
-        {
-        "number_waves": "number fluxes in the grid",
-        "lower": "lower bound in the grid",
-        "upper": "upper bound in the grid"
-        }
+            grid_parameters: dictionary with structure
+                {
+                    "number_waves": "number fluxes in the grid",
+                    "lower": "lower bound in the grid",
+                    "upper": "upper bound in the grid"
+                }
+
         RETURN
-        wave_grid: numpy array with the grid
+            wave_grid: numpy array with the grid
         """
+
         number_waves = int(grid_parameters["number_waves"])
         lower = float(grid_parameters["lower"])
         upper = float(grid_parameters["upper"])
@@ -74,83 +101,73 @@ class DataProcess(FileDirectory, MetaData):
         return grid
 
     ###########################################################################
-    def interpolate(self):
+    def interpolate(self, spectra_df: "pandas dataframe")->"np.array":
         """
         Interpolate rest frame spectra from data directory according to
         wave master  and save it to output directory
 
         OUTPUT
+            share_array: contains interpolate fluxes
         """
 
-        def to_numpy_array(shared_array, array_shape):
-            """Create a numpy array backed by a shared memory Array."""
-            share_array = np.ctypeslib.as_array(shared_array)
-            return share_array.reshape(array_shape)
 
-        def init_worker(share_array, array_shape):
-
-            global fluxes
-
-            fluxes = to_numpy_array(share_array, array_shape)
-
-        print(f"Interpolate spectra...")
-
-        number_spectra = self.frame.shape[0]
+        number_spectra = spectra_df.shape[0]
+        print(f"Interpolate {number_spectra} spectra")
         number_waves = self.grid.size
+
+        counter = mp.Value("i", 0)
+
+        fluxes = RawArray(ctypes.c_float, number_spectra * number_waves)
         fluxes_shape = (number_spectra, number_waves)
 
-        shared_fluxes = RawArray(ctypes.c_float, number_spectra * number_waves)
 
-        galaxy_indexes = self.frame.index.values
+        spectra_indexes = spectra_df.index
 
         with mp.Pool(
             processes=self.number_processes,
-            initializer=init_worker,
-            initargs=(shared_fluxes, fluxes_shape),
+            initializer=init_process_worker,
+            initargs=(counter, fluxes, fluxes_shape),
         ) as pool:
 
-            results = pool.map(self._interpolate, galaxy_indexes)
+            results = pool.map(self._interpolate, spectra_indexes)
 
-        fluxes = to_numpy_array(shared_fluxes, fluxes_shape)
-        save_to = f"{self.output_directory}/fluxes_interp.npy"
+        fluxes = to_numpy_array(fluxes, fluxes_shape)
+
+        save_to = f"{self.output_directory}/interpolate.npy"
         np.save(save_to, fluxes)
 
         return fluxes
 
     ###########################################################################
-    def _interpolate(self, galaxy_index: "int"):
+    def _interpolate(self, spectrum_index: "int")->"None":
+        """
+        Interpolate a single spectrum
 
-        spectrum_name = self._get_name(galaxy_index)
-        print(f"Interpolate {spectrum_name}", end="\r")
+        PARAMETERS
+            spectrum_index: specobj of a spectrum in spectra_df
 
-        spectrum_location = f"{self.spectra_directory}/{spectrum_name}.npy"
+        """
+
+        # spectrum_row_df = spectra_df.loc[spectrum_index]
+
+        spectrum_location = f"{self.spectra_directory}/{spectrum_index}.npy"
         spectrum = np.load(spectrum_location)
 
-        flux = np.interp(
-            self.grid,
-            spectrum[0],  # wave
-            spectrum[1],  # flux
-            left=np.nan,
-            right=np.nan,
-        )
+        with counter.get_lock():
 
-        # fluxes is the shared array made global in worker initializer
-        # galaxy index makes shure that location in array is the same
-        # as in the data frame :)
-        fluxes[galaxy_index, :] = flux[:]
+            flux = np.interp(
+                self.grid,
+                spectrum[0],  # wave
+                spectrum[1],  # flux
+                left=np.nan,
+                right=np.nan,
+            )
 
-    ###########################################################################
-    def _get_name(self, galaxy_index: "int"):
+            #?
+            share_array[counter.value, :] = flux[:]
 
-        galaxy = self.frame.iloc[galaxy_index]
-
-        plate = f"{galaxy['plate']:04}"
-        mjd = f"{galaxy['mjd']}"
-        fiberid = f"{galaxy['fiberid']:04}"
-
-        spectrum_name = f"spec-{plate}-{mjd}-{fiberid}"
-
-        return spectrum_name
+            counter.value += 1
+            print(f"[{counter.value}] Interpolate {spectrum_index}", end="\r")
 
     ###########################################################################
     def normalize(self, spectra: "np.array"):

@@ -3,75 +3,86 @@
 # Idea is to handle everything from the data frame
 ####################################################################
 from configparser import ConfigParser, ExtendedInterpolation
+import multiprocessing as mp
 import os
 import time
 
-####################################################################
 import numpy as np
 import pandas as pd
 
-####################################################################
-from src.process import data
+from src.process import process
 
-################################################################################
-t0 = time.time()
-################################################################################
-parser = ConfigParser(interpolation=ExtendedInterpolation())
-parser.read("process.ini")
-################################################################################
-# # Data processing
-# Loading data DataFrame with galaxies info
-data_directory = parser.get("directories", "data")
-meta_data_file = parser.get("files", "meta_data")
+###############################################################################
+if __name__ == "__main__":
 
-galaxies_frame = pd.read_csv(f"{data_directory}/{meta_data_file}")
-################################################################
-number_processes = parser.getint("parameters", "processes")
+    mp.set_start_method("spawn")
 
-grid_parameters = dict(parser.items("grid"))
+    start_time = time.time()
 
-output_directory = parser.get("directories", "output")
+    parser = ConfigParser(interpolation=ExtendedInterpolation())
+    parser.read("process.ini")
+    ###########################################################################
+    ###########################################################################
+    raw_data_directory = parser.get("directories", "raw_spectra")
+    output_directory = parser.get("directories", "output")
+    grid_parameters = dict(parser.items("grid"))
+    number_processes = parser.getint("parameters", "processes")
 
-data_process = data.DataProcess(
-    galaxies_frame=galaxies_frame,
-    number_processes=number_processes,
-    grid_parameters=grid_parameters,
-    data_directory=data_directory,
-    output_directory=output_directory,
-)
-################################################################
-# interpolate spectra
-have_to_interpolate = parser.getboolean("parameters", "interpolate")
+    data_process = process.DataProcess(
+        raw_data_directory=raw_data_directory,
+        output_directory=output_directory,
+        grid_parameters=grid_parameters,
+        number_processes=number_processes,
+    )
+    ###########################################################################
+    # A load data frame with meta data
+    data_directory = parser.get("directories", "data")
 
-if have_to_interpolate:
+    spectra_df_name = parser.get("files", "spectra_df")
+    spectra_df = pd.read_csv(
+    f"{data_directory}/{spectra_df_name}",
+    index_col="specobjid"
+    )
 
-    spectra = np.load(f"{output_directory}/fluxes_interp.npy")
+    number_spectra = parser.getint("parameters", "number_spectra")
 
-else:
+    if number_spectra != -1:
+        spectra_df = spectra_df[:number_spectra]
 
-    spectra = data_process.interpolate()
+    ###########################################################################
+    # interpolate spectra
+    have_to_interpolate = parser.getboolean("parameters", "interpolate")
 
-################################################################
-print(f"Handle indefinite values")
+    if not have_to_interpolate:
 
-drop_fraction = parser.getfloat("parameters", "drop")
+        spectra_interpolate = parser.get("files", "interpolate")
+        spectra = np.load(f"{output_directory}/{spectra_interpolate}")
 
-spectra, wave = data_process.drop_indefinite_values(
-    spectra=spectra, drop=drop_fraction
-)
+    else:
 
-print(f"Replace missing flux")
+        spectra = data_process.interpolate(spectra_df=spectra_df)
 
-spectra = data_process.replace_missing_flux(spectra=spectra, method="median")
-################################################################################
-print(f"Normalize data")
+    ###########################################################################
+    # print(f"Handle indefinite values")
 
-spectra = data_process.normalize(spectra=spectra)
+   #  drop_fraction = parser.getfloat("parameters", "drop")
 
-print(f"Save data")
+   #  spectra, wave = data_process.drop_indefinite_values(
+    #     spectra=spectra, drop=drop_fraction
+    # )
 
-np.save(f"{output_directory}/fluxes.npy", spectra)
-np.save(f"{output_directory}/wave.npy", wave)
-################################################################################
-t1 = time.time()
-print(f"Running time: {t1-t0:.2f} [s]")
+   #  print(f"Replace missing flux")
+
+   #  spectra = data_process.replace_missing_flux(spectra=spectra, method="median")
+    ###########################################################################
+    # print(f"Normalize data")
+
+   #  spectra = data_process.normalize(spectra=spectra)
+
+   #  print(f"Save data")
+
+   #  np.save(f"{output_directory}/fluxes.npy", spectra)
+    # np.save(f"{output_directory}/wave.npy", wave)
+    ###########################################################################
+    finish_time = time.time()
+    print(f"Running time: {finish_time - start_time:.2f} [s]")

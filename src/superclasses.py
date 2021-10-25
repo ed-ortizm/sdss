@@ -107,6 +107,14 @@ class MetaData:
         return [file_directory, spectrum_name]
 
     ###########################################################################
+    def get_spectrum_name(self, file_row: "pd.row")-> "str":
+
+        [plate, mjd, fiberid, run2d] = self.galaxy_identifiers(file_row)
+        
+        spectrum_name = f"spec-{plate}-{mjd}-{fiberid}"
+
+        pass
+    ###########################################################################
     def galaxy_identifiers(self, file_row: "df.row") -> "list":
         """
         PARAMETER
