@@ -20,7 +20,7 @@ def to_numpy_array(input_shared_array, array_shape):
 
 def init_process_worker(
     input_counter: "mp.Value",
-    # input_df: "pandas dataframe",
+    input_df: "pandas dataframe",
     input_share_array: "c types share array",
     array_shape: "tuple",
 ) -> "None":
@@ -31,11 +31,11 @@ def init_process_worker(
         input_df: pandas dataframe to be accessible to each child
     """
     global counter
-    # global spectra_df
+    global spectra_df
     global share_array
 
     counter = input_counter
-    # spectra_df = input_df
+    spectra_df = input_df
     share_array = to_numpy_array(input_share_array, array_shape)
 
 ###############################################################################
@@ -126,7 +126,7 @@ class DataProcess(FileDirectory, MetaData):
         with mp.Pool(
             processes=self.number_processes,
             initializer=init_process_worker,
-            initargs=(counter, fluxes, fluxes_shape),
+            initargs=(counter, spectra_df, fluxes, fluxes_shape),
         ) as pool:
 
             results = pool.map(self._interpolate, spectra_indexes)
@@ -148,17 +148,21 @@ class DataProcess(FileDirectory, MetaData):
 
         """
 
-        # spectrum_row_df = spectra_df.loc[spectrum_index]
-
         spectrum_location = f"{self.spectra_directory}/{spectrum_index}.npy"
         spectrum = np.load(spectrum_location)
+
+        wave = spectrum[0]
+        z = spectra_df.loc[spectrum_index, "z"]
+        wave = self._convert_to_rest_frame(wave, z)
+
+        flux = spectrum[1]
 
         with counter.get_lock():
 
             flux = np.interp(
                 self.grid,
-                spectrum[0],  # wave
-                spectrum[1],  # flux
+                wave,
+                flux,
                 left=np.nan,
                 right=np.nan,
             )
@@ -169,6 +173,13 @@ class DataProcess(FileDirectory, MetaData):
             counter.value += 1
             print(f"[{counter.value}] Interpolate {spectrum_index}", end="\r")
 
+    ###########################################################################
+    def _convert_to_rest_frame(self, wave:"np.array", z:"float"):
+
+        rest_frame_factor = 1./(1.+z)
+        wave = wave * rest_frame_factor
+
+        return wave
     ###########################################################################
     def normalize(self, spectra: "np.array"):
         """Spectra has no missing values"""
