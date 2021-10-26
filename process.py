@@ -77,18 +77,16 @@ if __name__ == "__main__":
     number_indefinite_values = np.count_nonzero(~np.isfinite(spectra))
     print(f"Indefinite fluxes after drop: {number_indefinite_values}")
 
-    print(f"Replace missing flux")
+    print(f"Replace missing fluxes and normalize")
+    
+    spectra = data_process.replace_missing_fluxes_and_normalize_by_nan_median(
+        spectra
+    )
 
-    spectra = data_process.replace_missing_fluxes(spectra=spectra)
-    ###########################################################################
-    # print(f"Normalize data")
+    print(f"Save data")
 
-    #  spectra = data_process.normalize(spectra=spectra)
-
-    #  print(f"Save data")
-
-    #  np.save(f"{output_directory}/fluxes.npy", spectra)
-    # np.save(f"{output_directory}/wave.npy", wave)
+    np.save(f"{output_directory}/fluxes.npy", spectra)
+    np.save(f"{output_directory}/wave.npy", wave)
     ###########################################################################
     finish_time = time.time()
     print(f"Running time: {finish_time - start_time:.2f} [s]")

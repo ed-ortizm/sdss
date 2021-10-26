@@ -160,12 +160,13 @@ class DataProcess(FileDirectory, MetaData):
             results = pool.map(self._interpolate, spectra_indexes)
 
         track_indexes = to_numpy_array(track_indexes, track_indexes_shape)
+        success_interpolation_mask = ~track_indexes[:, 2].astype(np.bool)
+        track_indexes = track_indexes[success_interpolation_mask]
         save_to = f"{self.output_directory}/indexes_interpolate.npy"
         np.save(save_to, track_indexes)
 
         fluxes = to_numpy_array(fluxes, fluxes_shape)
 
-        success_interpolation_mask = ~track_indexes[:, 2].astype(np.bool)
         fluxes = fluxes[success_interpolation_mask]
 
         save_to = f"{self.output_directory}/interpolate.npy"
@@ -248,25 +249,23 @@ class DataProcess(FileDirectory, MetaData):
         return wave
 
     ###########################################################################
-    def normalize(self, spectra: "np.array"):
-        """Spectra has no missing values"""
-
-        normalization_array = np.median(spectra, axis=1)
-        normalization_array = normalization_array.reshape((-1, 1))
-
-        spectra[:, :] *= 1 / normalization_array
-
-        return spectra
-
-    ###########################################################################
-    def replace_missing_fluxes(self, spectra: "np.array")->"np.array":
+    def replace_missing_fluxes_and_normalize_by_nan_median(self,
+        spectra: "np.array",
+    )->"np.array":
         """
         """
 
-        replacement_mask = ~np.isfinite(spectra)
 
-        for idx, mask in enumerate(replacement_mask):
-            spectra[idx, mask] = np.nanmedian(spectra[idx])
+        missing_values_mask = ~np.isfinite(spectra)
+
+        nan_median = np.nanmedian(spectra, axis=1)
+
+        spectra *= 1/nan_median.reshape((-1,1))
+        spectra[missing_values_mask] = 1.
+
+        zero_median_mask = nan_median==0
+
+        spectra[zero_median_mask, :] = 0.
 
         return spectra
 
