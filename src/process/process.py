@@ -131,7 +131,8 @@ class DataProcess(FileDirectory, MetaData):
 
         counter = mp.Value("i", 0)
 
-        fluxes = RawArray(ctypes.c_float, number_spectra * number_waves)
+        # fluxes = RawArray(ctypes.c_longdouble, number_spectra * number_waves)
+        fluxes = RawArray(ctypes.c_double, number_spectra * number_waves)
         fluxes_shape = (number_spectra, number_waves)
 
         # array with counter, specobjid and 0 or one if processing is
@@ -155,7 +156,7 @@ class DataProcess(FileDirectory, MetaData):
         ) as pool:
 
             results = pool.map(self._interpolate, spectra_indexes)
-            number_fail = sum(results)
+            # number_fail = sum(results)
 
         track_indexes = to_numpy_array(track_indexes, track_indexes_shape)
         save_to = f"{self.output_directory}/indexes_interpolate.npy"
