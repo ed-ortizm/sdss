@@ -21,22 +21,34 @@ def to_numpy_array(input_shared_array, array_shape):
 def init_process_worker(
     input_counter: "mp.Value",
     input_df: "pandas dataframe",
-    input_share_array: "c types share array",
+    input_share_array: "c_float share array",
     array_shape: "tuple",
+    input_share_track_indexes: "c_uint shared array",
+    input_share_track_indexes_shape
 ) -> "None":
     """
     Initialize worker to get sample relevant for the science
     PARAMETERS
         counter: counts the number of the child process
         input_df: pandas dataframe to be accessible to each child
+        input_share_array:
+        array_shape:
+        input_share_track_indexes:
     """
     global counter
     global spectra_df
     global share_array
+    global track_indexes
 
     counter = input_counter
     spectra_df = input_df
+    
     share_array = to_numpy_array(input_share_array, array_shape)
+
+    track_indexes = to_numpy_array(
+                                    input_share_track_indexes,
+                                    input_share_track_indexes_shape
+                                )
 
 ###############################################################################
 class DataProcess(FileDirectory, MetaData):
@@ -120,13 +132,23 @@ class DataProcess(FileDirectory, MetaData):
         fluxes = RawArray(ctypes.c_float, number_spectra * number_waves)
         fluxes_shape = (number_spectra, number_waves)
 
+        # array with counter and specobjid columns
+        track_indexes = RawArray(ctypes.c_uint, number_spectra * 2)
+        track_indexes_shape = (number_spectra, 2)
+
 
         spectra_indexes = spectra_df.index
 
         with mp.Pool(
             processes=self.number_processes,
             initializer=init_process_worker,
-            initargs=(counter, spectra_df, fluxes, fluxes_shape),
+            initargs=(
+                counter,
+                spectra_df,
+                fluxes, fluxes_shape,
+                track_indexes,
+                track_indexes_shape,
+                ),
         ) as pool:
 
             results = pool.map(self._interpolate, spectra_indexes)
