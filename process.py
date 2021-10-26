@@ -22,9 +22,9 @@ if __name__ == "__main__":
     parser = ConfigParser(interpolation=ExtendedInterpolation())
     parser.read("process.ini")
     ###########################################################################
-    ###########################################################################
     raw_data_directory = parser.get("directories", "raw_spectra")
     output_directory = parser.get("directories", "output")
+
     grid_parameters = dict(parser.items("grid"))
     number_processes = parser.getint("parameters", "processes")
 
@@ -40,10 +40,11 @@ if __name__ == "__main__":
 
     spectra_df_name = parser.get("files", "spectra_df")
     spectra_df = pd.read_csv(
-    f"{data_directory}/{spectra_df_name}",
-    index_col="specobjid"
+                               f"{data_directory}/{spectra_df_name}",
+                               index_col="specobjid"
     )
 
+    # set number of rows from data frame
     number_spectra = parser.getint("parameters", "number_spectra")
 
     if number_spectra != -1:

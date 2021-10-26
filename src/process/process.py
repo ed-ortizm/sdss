@@ -3,6 +3,7 @@ from functools import partial
 import multiprocessing as mp
 from multiprocessing.sharedctypes import RawArray
 import os
+import warnings
 
 import astropy.io.fits as pyfits
 import numpy as np
@@ -10,6 +11,7 @@ import pandas as pd
 
 from src.superclasses import FileDirectory
 from src.superclasses import MetaData
+###############################################################################
 ###############################################################################
 def to_numpy_array(input_shared_array, array_shape):
     """Create a numpy array backed by a shared memory Array."""
@@ -37,13 +39,13 @@ def init_process_worker(
     """
     global counter
     global spectra_df
-    global share_array
+    global fluxes
     global track_indexes
 
     counter = input_counter
     spectra_df = input_df
-    
-    share_array = to_numpy_array(input_share_array, array_shape)
+
+    fluxes = to_numpy_array(input_share_array, array_shape)
 
     track_indexes = to_numpy_array(
                                     input_share_track_indexes,
@@ -119,7 +121,7 @@ class DataProcess(FileDirectory, MetaData):
         wave master  and save it to output directory
 
         OUTPUT
-            share_array: contains interpolate fluxes
+            fluxes: contains interpolate fluxes
         """
 
 
@@ -132,12 +134,13 @@ class DataProcess(FileDirectory, MetaData):
         fluxes = RawArray(ctypes.c_float, number_spectra * number_waves)
         fluxes_shape = (number_spectra, number_waves)
 
-        # array with counter and specobjid columns
-        track_indexes = RawArray(ctypes.c_uint, number_spectra * 2)
-        track_indexes_shape = (number_spectra, 2)
+        # array with counter, specobjid and 0 or one if processing is
+        # successful columns
+        track_indexes = RawArray(ctypes.c_uint64, number_spectra * 3)
+        track_indexes_shape = (number_spectra, 3)
 
 
-        spectra_indexes = spectra_df.index
+        spectra_indexes = spectra_df.index.to_numpy()
 
         with mp.Pool(
             processes=self.number_processes,
@@ -152,9 +155,13 @@ class DataProcess(FileDirectory, MetaData):
         ) as pool:
 
             results = pool.map(self._interpolate, spectra_indexes)
+            number_fail = sum(results)
+
+        track_indexes = to_numpy_array(track_indexes, track_indexes_shape)
+        save_to = f"{self.output_directory}/indexes_interpolate.npy"
+        np.save(save_to, track_indexes)
 
         fluxes = to_numpy_array(fluxes, fluxes_shape)
-
         save_to = f"{self.output_directory}/interpolate.npy"
         np.save(save_to, fluxes)
 
@@ -171,15 +178,16 @@ class DataProcess(FileDirectory, MetaData):
         """
 
         spectrum_location = f"{self.spectra_directory}/{spectrum_index}.npy"
-        spectrum = np.load(spectrum_location)
 
-        wave = spectrum[0]
-        z = spectra_df.loc[spectrum_index, "z"]
-        wave = self._convert_to_rest_frame(wave, z)
+        try:
 
-        flux = spectrum[1]
+            spectrum = np.load(spectrum_location)
 
-        with counter.get_lock():
+            wave = spectrum[0]
+            z = spectra_df.loc[spectrum_index, "z"]
+            wave = self._convert_to_rest_frame(wave, z)
+
+            flux = spectrum[1]
 
             flux = np.interp(
                 self.grid,
@@ -189,11 +197,49 @@ class DataProcess(FileDirectory, MetaData):
                 right=np.nan,
             )
 
-            #?
-            share_array[counter.value, :] = flux[:]
+            with counter.get_lock():
+                #?
+                fluxes[counter.value, :] = flux[:]
 
-            counter.value += 1
-            print(f"[{counter.value}] Interpolate {spectrum_index}", end="\r")
+                index_track = np.array(
+                    [counter.value, spectrum_index, 0],
+                    dtype=np.uint
+                )
+                track_indexes[counter.value, :] = index_track[:]
+
+                print(
+                f"[{counter.value}] Interpolate {spectrum_index}",
+                end="\r"
+                )
+
+                counter.value += 1
+
+            return 0
+
+        except Exception as e:
+
+            with counter.get_lock():
+                #?
+                dummy_flux = np.empty(fluxes.shape[1]) * np.nan
+
+                fluxes[counter.value, :] = dummy_flux[:]
+
+                index_track = np.array(
+                    [counter.value, spectrum_index, 1],
+                    dtype=np.uint
+                )
+                track_indexes[counter.value, :] = index_track[:]
+
+                print(
+                    f"[{counter.value}] Fail to interpolate {spectrum_index}",
+                    end="\r"
+                )
+
+                counter.value += 1
+
+                print(e, index_track)
+
+            return 1
 
     ###########################################################################
     def _convert_to_rest_frame(self, wave:"np.array", z:"float"):
