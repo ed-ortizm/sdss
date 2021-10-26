@@ -164,8 +164,13 @@ class DataProcess(FileDirectory, MetaData):
         np.save(save_to, track_indexes)
 
         fluxes = to_numpy_array(fluxes, fluxes_shape)
+
+        success_interpolation_mask = ~track_indexes[:, 2].astype(np.bool)
+        fluxes = fluxes[success_interpolation_mask]
+
         save_to = f"{self.output_directory}/interpolate.npy"
         np.save(save_to, fluxes)
+
 
         return fluxes
 
