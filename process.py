@@ -77,9 +77,9 @@ if __name__ == "__main__":
     number_indefinite_values = np.count_nonzero(~np.isfinite(spectra))
     print(f"Indefinite fluxes after drop: {number_indefinite_values}")
 
-    # print(f"Replace missing flux")
+    print(f"Replace missing flux")
 
-    #  spectra = data_process.replace_missing_flux(spectra=spectra, method="median")
+    spectra = data_process.replace_missing_fluxes(spectra=spectra)
     ###########################################################################
     # print(f"Normalize data")
 

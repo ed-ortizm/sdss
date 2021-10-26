@@ -259,21 +259,14 @@ class DataProcess(FileDirectory, MetaData):
         return spectra
 
     ###########################################################################
-    def replace_missing_flux(self, spectra: "array", method: "str" = "median"):
-        """"""
-        #######################################################################
-        if method == "median":
+    def replace_missing_fluxes(self, spectra: "np.array")->"np.array":
+        """
+        """
 
-            mask_replacement = ~np.isfinite(spectra)
+        replacement_mask = ~np.isfinite(spectra)
 
-            for idx, mask in enumerate(mask_replacement):
-                spectra[idx, mask] = np.nanmedian(spectra[idx, :])
-
-        elif method == "mean":
-
-            mask_replacement = ~np.isfinite(spectra)
-            for idx, mask in enumerate(mask_replacement):
-                spectra[idx, mask] = np.nanmean(spectra[idx, :])
+        for idx, mask in enumerate(replacement_mask):
+            spectra[idx, mask] = np.nanmedian(spectra[idx])
 
         return spectra
 
