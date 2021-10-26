@@ -11,6 +11,7 @@ import pandas as pd
 
 from src.superclasses import FileDirectory
 from src.superclasses import MetaData
+
 ###############################################################################
 ###############################################################################
 def to_numpy_array(input_shared_array, array_shape):
@@ -20,13 +21,14 @@ def to_numpy_array(input_shared_array, array_shape):
 
     return share_array.reshape(array_shape)
 
+
 def init_process_worker(
     input_counter: "mp.Value",
     input_df: "pandas dataframe",
     input_share_array: "c_float share array",
     array_shape: "tuple",
     input_share_track_indexes: "c_uint shared array",
-    input_share_track_indexes_shape
+    input_share_track_indexes_shape,
 ) -> "None":
     """
     Initialize worker to get sample relevant for the science
@@ -48,13 +50,14 @@ def init_process_worker(
     fluxes = to_numpy_array(input_share_array, array_shape)
 
     track_indexes = to_numpy_array(
-                                    input_share_track_indexes,
-                                    input_share_track_indexes_shape
-                                )
+        input_share_track_indexes, input_share_track_indexes_shape
+    )
+
 
 ###############################################################################
 class DataProcess(FileDirectory, MetaData):
     """Process sdss spectra"""
+
     def __init__(
         self,
         raw_data_directory: "str",
@@ -88,6 +91,7 @@ class DataProcess(FileDirectory, MetaData):
         self.grid = self._get_grid(grid_parameters)
 
         self.number_processes = number_processes
+
     ###########################################################################
     def _get_grid(self, grid_parameters: "dict") -> "np.array":
         """
@@ -115,7 +119,7 @@ class DataProcess(FileDirectory, MetaData):
         return grid
 
     ###########################################################################
-    def interpolate(self, spectra_df: "pandas dataframe")->"np.array":
+    def interpolate(self, spectra_df: "pandas dataframe") -> "np.array":
         """
         Interpolate rest frame spectra from data directory according to
         wave master  and save it to output directory
@@ -124,22 +128,19 @@ class DataProcess(FileDirectory, MetaData):
             fluxes: contains interpolate fluxes
         """
 
-
         number_spectra = spectra_df.shape[0]
         print(f"Interpolate {number_spectra} spectra")
         number_waves = self.grid.size
 
         counter = mp.Value("i", 0)
 
-        # fluxes = RawArray(ctypes.c_longdouble, number_spectra * number_waves)
         fluxes = RawArray(ctypes.c_double, number_spectra * number_waves)
         fluxes_shape = (number_spectra, number_waves)
 
-        # array with counter, specobjid and 0 or one if processing is
+        # array with counter, specobjid and 0 or 1 if processing is
         # successful columns
         track_indexes = RawArray(ctypes.c_uint64, number_spectra * 3)
         track_indexes_shape = (number_spectra, 3)
-
 
         spectra_indexes = spectra_df.index.to_numpy()
 
@@ -149,14 +150,14 @@ class DataProcess(FileDirectory, MetaData):
             initargs=(
                 counter,
                 spectra_df,
-                fluxes, fluxes_shape,
+                fluxes,
+                fluxes_shape,
                 track_indexes,
                 track_indexes_shape,
-                ),
+            ),
         ) as pool:
 
             results = pool.map(self._interpolate, spectra_indexes)
-            # number_fail = sum(results)
 
         track_indexes = to_numpy_array(track_indexes, track_indexes_shape)
         save_to = f"{self.output_directory}/indexes_interpolate.npy"
@@ -169,7 +170,7 @@ class DataProcess(FileDirectory, MetaData):
         return fluxes
 
     ###########################################################################
-    def _interpolate(self, spectrum_index: "int")->"None":
+    def _interpolate(self, spectrum_index: "int") -> "None":
         """
         Interpolate a single spectrum
 
@@ -190,27 +191,19 @@ class DataProcess(FileDirectory, MetaData):
 
             flux = spectrum[1]
 
-            flux = np.interp(
-                self.grid,
-                wave,
-                flux,
-                left=np.nan,
-                right=np.nan,
-            )
+            flux = np.interp(self.grid, wave, flux, left=np.nan, right=np.nan)
 
             with counter.get_lock():
-                #?
+                # ?
                 fluxes[counter.value, :] = flux[:]
 
                 index_track = np.array(
-                    [counter.value, spectrum_index, 0],
-                    dtype=np.uint
+                    [counter.value, spectrum_index, 0], dtype=np.uint
                 )
                 track_indexes[counter.value, :] = index_track[:]
 
                 print(
-                f"[{counter.value}] Interpolate {spectrum_index}",
-                end="\r"
+                    f"[{counter.value}] Interpolate {spectrum_index}", end="\r"
                 )
 
                 counter.value += 1
@@ -220,20 +213,19 @@ class DataProcess(FileDirectory, MetaData):
         except Exception as e:
 
             with counter.get_lock():
-                #?
+                # ?
                 dummy_flux = np.empty(fluxes.shape[1]) * np.nan
 
                 fluxes[counter.value, :] = dummy_flux[:]
 
                 index_track = np.array(
-                    [counter.value, spectrum_index, 1],
-                    dtype=np.uint
+                    [counter.value, spectrum_index, 1], dtype=np.uint
                 )
                 track_indexes[counter.value, :] = index_track[:]
 
                 print(
                     f"[{counter.value}] Fail to interpolate {spectrum_index}",
-                    end="\r"
+                    end="\r",
                 )
 
                 counter.value += 1
@@ -243,12 +235,13 @@ class DataProcess(FileDirectory, MetaData):
             return 1
 
     ###########################################################################
-    def _convert_to_rest_frame(self, wave:"np.array", z:"float"):
+    def _convert_to_rest_frame(self, wave: "np.array", z: "float"):
 
-        rest_frame_factor = 1./(1.+z)
+        rest_frame_factor = 1.0 / (1.0 + z)
         wave = wave * rest_frame_factor
 
         return wave
+
     ###########################################################################
     def normalize(self, spectra: "np.array"):
         """Spectra has no missing values"""
@@ -280,28 +273,44 @@ class DataProcess(FileDirectory, MetaData):
         return spectra
 
     ###########################################################################
-    def drop_indefinite_values(self, spectra: "np.array", drop: "float" = 0.1):
+    def drop_indefinite_values(
+        self, spectra: "np.array", drop: "float" = 0.1
+    ) -> "[2D np.array, 1D np.array]":
         """
-        spectra: train
-        discard_fraction:'float'=0.1
+        Drops indefinite values per wavelength according to
+        the drop fraction specified by the drop parameter
+
+        PARAMETERS
+            spectra: contains interpolated fluxes in a common grid
+            drop: fraction of indefinite values to discard at a given
+                wavelength, e.g. drop = 0.1 will discard a wavelength
+                where more than 10% of fluxes are indefinite values
+
+        OUTPUTS
+            [spectra, wave]:
+                spectra: fluxes without indefinite values
+                wave: common grid to all spectra update according
+                    to wavelengths dropped
         """
-        ########################################################################
-        print(f"spectra shape before keep_spec_mask: {spectra.shape}")
+        print(f"Shape before discard indefinite values: {spectra.shape}")
 
-        n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
-        print(f"Indefinite vals in the input array: {np.sum(n_indef)}")
+        number_indefinite_fluxes = np.count_nonzero(
+            ~np.isfinite(spectra), axis=0
+        )
 
-        keep_flux_mask = n_indef < spectra.shape[0] * drop
+        number_fluxes = spectra.shape[0]
+        keep_fluxes_mask = number_indefinite_fluxes < number_fluxes * drop
 
-        spectra = spectra[:, keep_flux_mask]
-        print(f"spectra shape after keep_spec_mask: {spectra.shape}")
+        spectra = spectra[:, keep_fluxes_mask]
 
-        wave = self.grid[keep_flux_mask]
+        print(f"Shape after discard indefinite values: {spectra.shape}")
 
-        n_indef = np.count_nonzero(~np.isfinite(spectra), axis=0)
-        print(f"Indefinite vals in the NEW array: {np.sum(n_indef)}")
+        # update wavelength grid
+        wave = self.grid[keep_fluxes_mask]
 
-        return spectra, wave
+        return [spectra, wave]
 
     ###########################################################################
+
+
 ###############################################################################

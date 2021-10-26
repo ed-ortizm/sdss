@@ -40,8 +40,7 @@ if __name__ == "__main__":
 
     spectra_df_name = parser.get("files", "spectra_df")
     spectra_df = pd.read_csv(
-                               f"{data_directory}/{spectra_df_name}",
-                               index_col="specobjid"
+        f"{data_directory}/{spectra_df_name}", index_col="specobjid"
     )
 
     # set number of rows from data frame
@@ -64,25 +63,31 @@ if __name__ == "__main__":
         spectra = data_process.interpolate(spectra_df=spectra_df)
 
     ###########################################################################
-    # print(f"Handle indefinite values")
+    print(f"Handle indefinite values")
 
-   #  drop_fraction = parser.getfloat("parameters", "drop")
+    number_indefinite_values = np.count_nonzero(~np.isfinite(spectra))
+    print(f"Indefinite fluxes before drop: {number_indefinite_values}")
 
-   #  spectra, wave = data_process.drop_indefinite_values(
-    #     spectra=spectra, drop=drop_fraction
-    # )
+    drop_fraction = parser.getfloat("parameters", "drop")
 
-   #  print(f"Replace missing flux")
+    spectra, wave = data_process.drop_indefinite_values(
+        spectra=spectra, drop=drop_fraction
+    )
 
-   #  spectra = data_process.replace_missing_flux(spectra=spectra, method="median")
+    number_indefinite_values = np.count_nonzero(~np.isfinite(spectra))
+    print(f"Indefinite fluxes after drop: {number_indefinite_values}")
+
+    # print(f"Replace missing flux")
+
+    #  spectra = data_process.replace_missing_flux(spectra=spectra, method="median")
     ###########################################################################
     # print(f"Normalize data")
 
-   #  spectra = data_process.normalize(spectra=spectra)
+    #  spectra = data_process.normalize(spectra=spectra)
 
-   #  print(f"Save data")
+    #  print(f"Save data")
 
-   #  np.save(f"{output_directory}/fluxes.npy", spectra)
+    #  np.save(f"{output_directory}/fluxes.npy", spectra)
     # np.save(f"{output_directory}/wave.npy", wave)
     ###########################################################################
     finish_time = time.time()

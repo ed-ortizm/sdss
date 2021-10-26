@@ -9,6 +9,7 @@ import pandas as pd
 
 from src.superclasses import FileDirectory
 from src.superclasses import MetaData
+
 ###############################################################################
 def init_worker(
     input_counter: "mp.Value", input_df: "pandas dataframe"
@@ -24,6 +25,7 @@ def init_worker(
 
     counter = input_counter
     files_df = input_df
+
 
 ###############################################################################
 class RawData(FileDirectory, MetaData):
@@ -54,9 +56,8 @@ class RawData(FileDirectory, MetaData):
         super().check_directory(output_directory)
         self.output_directory = output_directory
 
-
     ###########################################################################
-    def remove_fits_files(self, files_df: "pandas_data_frame")->"None":
+    def remove_fits_files(self, files_df: "pandas_data_frame") -> "None":
         """
         Remove unwanted files, e.g. non galaxies fro sample
 
@@ -80,8 +81,9 @@ class RawData(FileDirectory, MetaData):
             pool.map(self._remove_fits_file, files_indexes)
 
         print(f"Remove files finish...")
+
     ###########################################################################
-    def _remove_fits_file(self, file_index: "int")->"None":
+    def _remove_fits_file(self, file_index: "int") -> "None":
         """
         Remove file
         PARAMETERS
@@ -99,7 +101,6 @@ class RawData(FileDirectory, MetaData):
             print(f"[{counter.value}] Remove {spectrum_name}", end="\r")
 
         super().remove_file(file_location)
-
 
     ###########################################################################
     def save_raw_data(self, files_df: "pandas dataframe") -> "None":
@@ -143,10 +144,9 @@ class RawData(FileDirectory, MetaData):
 
         file_row = files_df.loc[file_index]
 
-        [
-            sas_directory,
-            spectrum_name
-        ] = super().get_file_location_sas(file_row)
+        [sas_directory, spectrum_name] = super().get_file_location_sas(
+            file_row
+        )
 
         file_location = (
             f"{self.data_directory}/{sas_directory}/{spectrum_name}.fits"
@@ -225,5 +225,6 @@ class RawData(FileDirectory, MetaData):
             print(e)
 
             return 1
+
 
 ###############################################################################

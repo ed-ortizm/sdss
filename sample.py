@@ -24,9 +24,9 @@ if __name__ == "__main__":
     spectra_df_name = parser.get("files", "spectra_df")
 
     spectra_df = pd.read_csv(
-                                f"{data_directory}/{spectra_df_name}",
-                                usecols=["specobjid","z", "z_noqso"]
-                            )
+        f"{data_directory}/{spectra_df_name}",
+        usecols=["specobjid", "z", "z_noqso"],
+    )
 
     number_spectra = parser.getint("parameters", "number_spectra")
 
@@ -43,9 +43,7 @@ if __name__ == "__main__":
 
     # sample
     z_selection_mask = sample.red_shift_sampling(
-        spectra_df=spectra_df,
-        lower_bound=lower_bound,
-        upper_bound=upper_bound
+        spectra_df=spectra_df, lower_bound=lower_bound, upper_bound=upper_bound
     )
     print(np.count_nonzero(z_selection_mask))
     ###########################################################################

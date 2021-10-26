@@ -52,12 +52,14 @@ class SampleData(FileDirectory):
         self.data_output_directory = output_directory
 
         # self.number_processes = number_processes
+
     ###########################################################################
-    def red_shift_sampling(self,
+    def red_shift_sampling(
+        self,
         spectra_df: "pandas data frame",
         lower_bound: "float",
         upper_bound: "float",
-        ) -> "pandas series":
+    ) -> "pandas series":
 
         """
         PARAMETERS
@@ -68,10 +70,11 @@ class SampleData(FileDirectory):
 
         """
 
-        z_no_qso_mask = spectra_df["z_noqso"].values != 0.
+        z_no_qso_mask = spectra_df["z_noqso"].values != 0.0
 
-        spectra_df.loc[z_no_qso_mask, "z"] = \
-            spectra_df.loc[z_no_qso_mask, "z_noqso"]
+        spectra_df.loc[z_no_qso_mask, "z"] = spectra_df.loc[
+            z_no_qso_mask, "z_noqso"
+        ]
 
         z = spectra_df["z"].values
 

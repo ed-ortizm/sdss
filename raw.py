@@ -29,9 +29,8 @@ if __name__ == "__main__":
 
     spectra_df_name = parser.get("files", "spectra_df")
     spectra_df = pd.read_csv(
-                                f"{data_directory}/{spectra_df_name}",
-                                index_col="specobjid"
-                            )
+        f"{data_directory}/{spectra_df_name}", index_col="specobjid"
+    )
 
     number_spectra = parser.getint("parameters", "number_spectra")
 

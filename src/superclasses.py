@@ -47,8 +47,9 @@ class FileDirectory:
             return file_exists
 
         return file_exists
+
     ###########################################################################
-    def remove_file(self, file_location: "str")->"None":
+    def remove_file(self, file_location: "str") -> "None":
 
         """
         remove file at file_location
@@ -67,20 +68,25 @@ class FileDirectory:
             os.remove(file_location)
             print(f"File {file_name} removed!", end="\r")
 
+
 ###############################################################################
 class MetaData:
     """Deal with medata data """
+
     def __init__(self):
         pass
+
     ###########################################################################
     def get_science_archive_server_url(self, file_row: "pd.row"):
         pass
+
     ###########################################################################
     def get_sky_server_url(self, file_row: "pd.row"):
-    # 'http://skyserver.sdss.org/dr14/en/tools/explore/summary.aspx?plate=' +
-    # str(row['plate']).zfill(4) + '&mjd=' + str(row['mjd']) + '&fiber=' +
-    # str(row['fiberid']).zfill(4)
+        # 'http://skyserver.sdss.org/dr14/en/tools/explore/summary.aspx?plate=' +
+        # str(row['plate']).zfill(4) + '&mjd=' + str(row['mjd']) + '&fiber=' +
+        # str(row['fiberid']).zfill(4)
         pass
+
     ###########################################################################
     def get_file_location_sas(self, file_row: "pd.row") -> "list":
         """
@@ -94,26 +100,25 @@ class MetaData:
                 spectrum_name: f'spec-{plate}-{mjd}-{fiberid}'
         """
 
-
         [plate, mjd, fiberid, run2d] = self.galaxy_identifiers(file_row)
 
         spectrum_name = f"spec-{plate}-{mjd}-{fiberid}"
 
         file_directory = (
-            f"sas/dr16/sdss/spectro/redux"
-            f"/{run2d}/spectra/lite/{plate}"
+            f"sas/dr16/sdss/spectro/redux" f"/{run2d}/spectra/lite/{plate}"
         )
 
         return [file_directory, spectrum_name]
 
     ###########################################################################
-    def get_spectrum_name(self, file_row: "pd.row")-> "str":
+    def get_spectrum_name(self, file_row: "pd.row") -> "str":
 
         [plate, mjd, fiberid, run2d] = self.galaxy_identifiers(file_row)
-        
+
         spectrum_name = f"spec-{plate}-{mjd}-{fiberid}"
 
         pass
+
     ###########################################################################
     def galaxy_identifiers(self, file_row: "df.row") -> "list":
         """
@@ -135,5 +140,6 @@ class MetaData:
         run2d = f"{file_row['run2d']}"
 
         return [plate, mjd, fiberid, run2d]
+
 
 ###############################################################################
