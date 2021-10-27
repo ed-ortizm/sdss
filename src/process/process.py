@@ -249,7 +249,7 @@ class DataProcess(FileDirectory, MetaData):
         return wave
 
     ###########################################################################
-    def replace_missing_fluxes_and_normalize_by_nan_median(self,
+    def replace_missing_fluxes_and_normalize_by_median(self,
         spectra: "np.array",
     )->"np.array":
         """
@@ -259,13 +259,11 @@ class DataProcess(FileDirectory, MetaData):
         missing_values_mask = ~np.isfinite(spectra)
 
         nan_median = np.nanmedian(spectra, axis=1)
+        null_median_mask = nan_median == 0.
+        nan_median[null_median_mask] = 1.
 
         spectra *= 1/nan_median.reshape((-1,1))
         spectra[missing_values_mask] = 1.
-
-        zero_median_mask = nan_median==0
-
-        spectra[zero_median_mask, :] = 0.
 
         return spectra
 

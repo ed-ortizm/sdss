@@ -78,8 +78,8 @@ if __name__ == "__main__":
     print(f"Indefinite fluxes after drop: {number_indefinite_values}")
 
     print(f"Replace missing fluxes and normalize")
-    
-    spectra = data_process.replace_missing_fluxes_and_normalize_by_nan_median(
+
+    spectra = data_process.replace_missing_fluxes_and_normalize_by_median(
         spectra
     )
 
