@@ -263,7 +263,11 @@ class DataProcess(FileDirectory, MetaData):
         nan_median[null_median_mask] = 1.
 
         spectra *= 1/nan_median.reshape((-1,1))
+
         spectra[missing_values_mask] = 1.
+
+        # zero for spectra where nanmedian is null
+        spectra[null_median_mask, :] = 0
 
         return spectra
 
