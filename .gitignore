@@ -1,3 +1,6 @@
+# laboratory records
+*.me
+#
 *.insyncdl
 *.txt
 # Serialized data

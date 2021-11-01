@@ -7,8 +7,8 @@ import astropy.io.fits as pyfits
 import numpy as np
 import pandas as pd
 
-from src.superclasses import FileDirectory
-from src.superclasses import MetaData
+from sdss.superclasses import FileDirectory
+from sdss.superclasses import MetaData
 
 ###############################################################################
 def init_worker(
