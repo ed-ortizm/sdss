@@ -30,14 +30,14 @@ class SampleData(FileDirectory):
 
     def __init__(
         self,
-        data_directory: "str",
-        output_directory: "str",
+        # data_directory: "str",
+        # output_directory: "str",
         # number_processes: "int",
     ):
         """
         PARAMETERS
 
-            data_directory : sdss raw data's directory
+            # data_directory : sdss raw data's directory
             output_directory : save here .npy files
             number_processes : number of processes to use with mp.Pool
 
@@ -45,16 +45,16 @@ class SampleData(FileDirectory):
             SampleData object
         """
 
-        super().check_directory(data_directory, exit=True)
-        self.data_directory = data_directory
+        # super().check_directory(data_directory, exit=True)
+        # self.data_directory = data_directory
 
-        super().check_directory(output_directory, exit=False)
-        self.data_output_directory = output_directory
+        # super().check_directory(output_directory, exit=False)
+        # self.data_output_directory = output_directory
 
         # self.number_processes = number_processes
 
     ###########################################################################
-    def red_shift_sampling(
+    def red_shift(
         self,
         spectra_df: "pandas data frame",
         lower_bound: "float",
@@ -76,15 +76,17 @@ class SampleData(FileDirectory):
             z_no_qso_mask, "z_noqso"
         ]
 
-        z = spectra_df["z"].values
+        z = spectra_df["z"]
 
         sample_selection_mask = (lower_bound < z) * (z < upper_bound)
 
         return sample_selection_mask
 
     ###########################################################################
-    def sample_signal_to_noise_ratio(
-        self, spectra_df: "pandas data frame"
+    def signal_to_noise(self,
+        spectra_df: "pandas data frame",
+        lower_bound: "float",
+        upper_bound: "float",
     ) -> "":
         """
         PARAMETERS
@@ -94,8 +96,10 @@ class SampleData(FileDirectory):
                 original data frame
 
         """
+        signal_to_noise = spectra_df["snMedian"]
 
-        pass
+        sample_selection_mask = (lower_bound < signal_to_noise)\
+            * (signal_to_noise < upper_bound)
 
-
+        return sample_selection_mask
 ###############################################################################
