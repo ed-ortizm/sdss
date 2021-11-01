@@ -6,7 +6,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from src import download
+from sdss import download
 
 ###############################################################################
 # spawn creates entirely new processes independent from the parent process

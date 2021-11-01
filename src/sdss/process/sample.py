@@ -5,7 +5,7 @@ import astropy.io.fits as pyfits
 import numpy as np
 import pandas as pd
 
-from src.superclasses import FileDirectory
+from sdss.superclasses import FileDirectory
 
 ###############################################################################
 def init_sample_data_worker(
