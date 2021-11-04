@@ -25,10 +25,10 @@ if __name__ == "__main__":
     parser = ConfigParser(interpolation=ExtendedInterpolation())
     parser.read("download.ini")
     ###########################################################################
-    output_directory = parser.get("directories", "output")
+    meta_data_directory = parser.get("directories", "meta_data")
     spectra_df_name = parser.get("files", "spectra_df")
 
-    spectra_df = pd.read_csv(f"{output_directory}/{spectra_df_name}")
+    spectra_df = pd.read_csv(f"{meta_data_directory}/{spectra_df_name}")
 
     number_spectra = parser.getint("parameters", "number_spectra")
 
@@ -36,6 +36,7 @@ if __name__ == "__main__":
         spectra_df = spectra_df[:number_spectra]
     ##############################################################
     # Data Download
+    output_directory = parser.get("directories", "output")
     number_processes = parser.getint("parameters", "number_processes")
 
     download_spectra = download.DownloadData(
