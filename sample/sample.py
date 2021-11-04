@@ -76,15 +76,11 @@ if __name__ == "__main__":
         f"{str(snr_upper_bound).replace('.', '_')}"
     )
 
-    output_directory = parser.get("directories", "output")
-
-    output_directory = f"{output_directory}/{z_name}_{signal_to_noise_name}"
-    check.check_directory(output_directory, exit=False)
 
     spectra_df_name = f"{z_name}_{signal_to_noise_name}.csv.gz"
 
     spectra_df.loc[selection_mask].to_csv(
-        f"{output_directory}/{spectra_df_name}",
+        f"{meta_data_directory}/{spectra_df_name}",
         index=True
         )
     ###########################################################################
