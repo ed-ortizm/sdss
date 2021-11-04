@@ -21,12 +21,12 @@ if __name__ == "__main__":
     check = FileDirectory()
     ###########################################################################
     # get relevant data
-    data_directory = parser.get("directories", "data")
+    meta_data_directory = parser.get("directories", "meta_data")
 
     spectra_df_name = parser.get("files", "spectra_df")
 
     spectra_df = pd.read_csv(
-        f"{data_directory}/{spectra_df_name}",
+        f"{meta_data_directory}/{spectra_df_name}",
         index_col="specobjid",
     )
 
@@ -37,8 +37,6 @@ if __name__ == "__main__":
     ###########################################################################
     # Set sample class
     sample = SampleData(
-        # data_directory,
-        # output_directory
     )
     ###########################################################################
     # Set sample parameters for snr
