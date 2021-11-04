@@ -10,7 +10,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from src.process import process
+from sdss.process import process
 
 ###############################################################################
 if __name__ == "__main__":
@@ -36,11 +36,11 @@ if __name__ == "__main__":
     )
     ###########################################################################
     # A load data frame with meta data
-    data_directory = parser.get("directories", "data")
+    meta_data_directory = parser.get("directories", "meta_data")
 
     spectra_df_name = parser.get("files", "spectra_df")
     spectra_df = pd.read_csv(
-        f"{data_directory}/{spectra_df_name}", index_col="specobjid"
+        f"{meta_data_directory}/{spectra_df_name}", index_col="specobjid"
     )
 
     # set number of rows from data frame
