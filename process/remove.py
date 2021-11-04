@@ -6,7 +6,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from src.raw.data import RawData
+from sdss.raw.data import RawData
 
 ###############################################################################
 if __name__ == "__main__":
@@ -16,18 +16,18 @@ if __name__ == "__main__":
     ###########################################################################
     parser = ConfigParser(interpolation=ExtendedInterpolation())
     parser.read("remove.ini")
-    data_directory = parser.get("directories", "data")
+    meta_data_directory = parser.get("directories", "meta_data")
     ###########################################################################
     keep_df_name = parser.get("files", "keep_df")
 
     keep_df = pd.read_csv(
-        f"{data_directory}/{keep_df_name}", index_col="specobjid"
+        f"{meta_data_directory}/{keep_df_name}", index_col="specobjid"
     )
 
     ##############################################################
     remove_df_name = parser.get("files", "remove_df")
     remove_df = pd.read_csv(
-        f"{data_directory}/{remove_df_name}", index_col="specobjid"
+        f"{meta_data_directory}/{remove_df_name}", index_col="specobjid"
     )
     ##############################################################
     is_in_keep_mask = remove_df.index.isin(keep_df.index)
@@ -35,6 +35,7 @@ if __name__ == "__main__":
 
     files_remove_df = remove_df.loc[remove_mask]
     ##############################################################
+    data_directory = parser.get("directories", "data")
     number_processes = parser.getint("parameters", "number_processes")
 
     raw = RawData(
