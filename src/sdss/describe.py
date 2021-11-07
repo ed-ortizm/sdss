@@ -20,7 +20,7 @@ class DataDescription:
             header=header,
             formatters=formatters,
             caption=caption,
-            label=label,
+            label=f"table: {label}",
             bold_rows=bold_rows,
             position=position,
             index=index
