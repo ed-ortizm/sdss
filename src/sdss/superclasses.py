@@ -91,7 +91,7 @@ class MetaData:
             galaxy_url: url of sdss dr16 in the object explorer
         """
 
-        explorer_url = "http://skyserver.sdss.org/dr16/en/tools/explore
+        explorer_url = "http://skyserver.sdss.org/dr16/en/tools/explore"
         galaxy_id = f"summary.aspx?sid={galaxy_specobjid}&apid="
 
         galaxy_url = f"{explorer_url}/{galaxy_id}"
