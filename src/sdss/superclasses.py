@@ -81,11 +81,22 @@ class MetaData:
         pass
 
     ###########################################################################
-    def get_sky_server_url(self, file_row: "pd.row"):
-        # 'http://skyserver.sdss.org/dr14/en/tools/explore/summary.aspx?plate=' +
-        # str(row['plate']).zfill(4) + '&mjd=' + str(row['mjd']) + '&fiber=' +
-        # str(row['fiberid']).zfill(4)
-        pass
+    def get_sky_server_url(self, galaxy_specobjid:int)-> str:
+        """
+        PARAMETERS
+            galaxy_specobjid: unique identification of a galaxy in
+                the data frame with the meta data
+
+        OUTPUTS
+            galaxy_url: url of sdss dr16 in the object explorer
+        """
+
+        explorer_url = "http://skyserver.sdss.org/dr16/en/tools/explore
+        galaxy_id = f"summary.aspx?sid={galaxy_specobjid}&apid="
+
+        galaxy_url = f"{explorer_url}/{galaxy_id}"
+
+        return galaxy_url
 
     ###########################################################################
     def get_file_location_sas(self, file_row: "pd.row") -> "list":
