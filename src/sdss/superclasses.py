@@ -1,5 +1,6 @@
 import os
 import sys
+import urllib.request
 
 ###############################################################################
 class FileDirectory:
@@ -77,8 +78,44 @@ class MetaData:
         pass
 
     ###########################################################################
-    def get_science_archive_server_url(self, file_row: "pd.row"):
-        pass
+    def get_sdss_image(self, galaxy_specobjid, RA, DEC, save_to, scale=0.2, width=200, height=200 ):
+
+        sdss_url = (
+            f"http://skyserver.sdss.org/dr16/SkyServerWS/ImgCutout/"
+            f"getjpeg?TaskName=Skyserver.Explore.Image"
+        )
+
+        coordinates = f"ra={RA}&dec={DEC}"
+
+        image_dimensions = f"scale={scale}&width={width}&height={height}"
+
+        image_url = f"{sdss_url}&{coordinates}&{image_dimensions}&opt=G"
+
+        urllib.request.urlretrieve(
+            image_url,
+            f"{save_to}/{galaxy_specobjid}.pdf"
+        )
+        
+    ###########################################################################
+    def download_sdss_spectrum_image(self,
+        galaxy_specobjid:int,
+        save_to:str
+    )-> None:
+        """
+        PARAMETERS
+            galaxy_specobjid: unique identification of a galaxy in
+                the data frame with the meta data
+            save_to: directory location to save the image
+        """
+
+        sdss_url = f"http://skyserver.sdss.org/dr16/en/get/SpecById.ashx?id="
+
+        spectrum_url = f"{sdss_url}{galaxy_specobjid}"
+
+        urllib.request.urlretrieve(
+            spectrum_url,
+            f"{save_to}/{galaxy_specobjid}.pdf"
+        )
 
     ###########################################################################
     def get_sky_server_url(self, galaxy_specobjid:int)-> str:
