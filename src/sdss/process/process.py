@@ -13,11 +13,11 @@ from sdss.superclasses import FileDirectory
 from sdss.superclasses import MetaData
 
 ###############################################################################
-###############################################################################
 def to_numpy_array(input_shared_array, array_shape):
     """Create a numpy array backed by a shared memory Array."""
 
     share_array = np.ctypeslib.as_array(input_shared_array)
+    share_array.astype(np.float32)
 
     return share_array.reshape(array_shape)
 
