@@ -17,7 +17,7 @@ def to_numpy_array(input_shared_array, array_shape):
     """Create a numpy array backed by a shared memory Array."""
 
     share_array = np.ctypeslib.as_array(input_shared_array)
-    share_array.astype(np.float32)
+    share_array = share_array.astype(np.float32)
 
     return share_array.reshape(array_shape)
 
@@ -195,7 +195,7 @@ class DataProcess(FileDirectory, MetaData):
             z = spectra_df.loc[spectrum_index, "z"]
             wave = self._convert_to_rest_frame(wave, z)
 
-            flux = spectrum[1]
+            flux = spectrum[1].astype(np.float32)
 
             flux = np.interp(self.grid, wave, flux, left=np.nan, right=np.nan)
 
