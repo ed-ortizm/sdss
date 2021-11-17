@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
     print(f"Save data")
 
-    np.save(f"{output_directory}/fluxes.npy", spectra)
+    np.save(f"{output_directory}/fluxes.npy", spectra.astype(np.float32))
     np.save(f"{output_directory}/wave.npy", wave)
     ###########################################################################
     finish_time = time.time()

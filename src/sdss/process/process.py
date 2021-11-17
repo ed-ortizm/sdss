@@ -17,7 +17,6 @@ def to_numpy_array(input_shared_array, array_shape):
     """Create a numpy array backed by a shared memory Array."""
 
     share_array = np.ctypeslib.as_array(input_shared_array)
-    share_array = share_array.astype(np.float32)
 
     return share_array.reshape(array_shape)
 
@@ -198,10 +197,9 @@ class DataProcess(FileDirectory, MetaData):
             flux = spectrum[1]
 
             flux = np.interp(self.grid, wave, flux, left=np.nan, right=np.nan)
-            flux = flux.astype(np.float32)
 
             with counter.get_lock():
-                # ?
+
                 fluxes[counter.value, :] = flux[:]
 
                 index_track = np.array(
