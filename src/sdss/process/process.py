@@ -195,9 +195,10 @@ class DataProcess(FileDirectory, MetaData):
             z = spectra_df.loc[spectrum_index, "z"]
             wave = self._convert_to_rest_frame(wave, z)
 
-            flux = spectrum[1].astype(np.float32)
+            flux = spectrum[1]
 
             flux = np.interp(self.grid, wave, flux, left=np.nan, right=np.nan)
+            flux = flux.astype(np.float32)
 
             with counter.get_lock():
                 # ?
