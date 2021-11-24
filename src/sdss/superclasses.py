@@ -2,6 +2,54 @@ import os
 import sys
 
 ###############################################################################
+class ConfigurationFile:
+    """Manage common operation with configuration files.
+    For instance:
+
+        [parameters]
+        metric = mse, lp, mad
+
+    when reading metric I can inmediately get it as a list if looping
+    is needed in addition, I can get a whole section in the configuration
+    file as a dictionary and do the necessary transformation to each key,
+    value pair
+
+    """
+
+    def __init__(self):
+        pass
+
+    ###########################################################################
+    def section_to_dictionary(self, items:tuple) -> dict:
+        """
+
+        PARAMETERS
+            items: items in a section of the configuration file
+
+        OUTPUTS
+            items_as_dictionary: items transformed
+        """
+        pass
+    ###########################################################################
+    def entry_to_list(self, entry: str, entry_type: str)->list:
+        """
+
+        PARAMETERS
+
+            entry: a coma separated string
+                architecture: 100, 50, 5, 50, 100
+
+            entry_type: either float, int or bool
+
+        OUTPUTS
+            entry_list: list of elements in entry with the type
+                100, 50, 5, 50, 100 --> [100, 50, 5, 50, 100]
+        """
+        pass
+    ###########################################################################
+    
+    ###########################################################################
+###############################################################################
 class FileDirectory:
     """Handle common operations with files and directories"""
 
