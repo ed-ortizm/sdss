@@ -24,16 +24,43 @@ class ConfigurationFile:
         pass
 
     ###########################################################################
-    def section_to_dictionary(self, items:tuple) -> dict:
+    def section_to_dictionary(self,
+        section_items:tuple,
+        value_separators:list,
+        # multiple_lines: bool,
+        # comma_values:bool,
+    ) -> dict:
         """
+        Converts a section in the configuration file to a dictionary.
+        WARNING: all values are strings.
+        If there is a variable with multiple lines, the values of the
+        associated key in the dictionary would be a list
 
         PARAMETERS
-            items: items in a section of the configuration file
+            section_items: items in a section of the configuration file
 
         OUTPUTS
-            items_as_dictionary: items transformed
+            section_dictionary: items transformed
         """
-        pass
+        section_dictionary = dict(section_items)
+
+        for key in section_dictionary:
+
+            ###################################################################
+            if "\n" in section_dictionary[key]:
+
+                values = section_dictionary[key].split("\n")
+                section_dictionary[key] = values
+                
+            ###################################################################
+            for separator in value_separators:
+
+                if separator in section_dictionary[key]:
+
+                    values = section_dictionary[key].split(separator)
+                    section_dictionary[key] = values
+
+        return section_dictionary
     ###########################################################################
     def entry_to_list(self, entry: str, entry_type: str)->list:
         """
@@ -51,7 +78,7 @@ class ConfigurationFile:
         """
         pass
     ###########################################################################
-    
+
     ###########################################################################
 ###############################################################################
 class FileDirectory:
