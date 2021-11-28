@@ -83,7 +83,8 @@ class SampleData(FileDirectory):
         return sample_selection_mask
 
     ###########################################################################
-    def signal_to_noise(self,
+    def signal_to_noise(
+        self,
         spectra_df: "pandas data frame",
         lower_bound: "float",
         upper_bound: "float",
@@ -98,8 +99,11 @@ class SampleData(FileDirectory):
         """
         signal_to_noise = spectra_df["snMedian"]
 
-        sample_selection_mask = (lower_bound < signal_to_noise)\
-            * (signal_to_noise < upper_bound)
+        sample_selection_mask = (lower_bound < signal_to_noise) * (
+            signal_to_noise < upper_bound
+        )
 
         return sample_selection_mask
+
+
 ###############################################################################

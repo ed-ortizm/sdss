@@ -171,7 +171,6 @@ class DataProcess(FileDirectory, MetaData):
         save_to = f"{self.output_directory}/interpolate.npy"
         np.save(save_to, fluxes)
 
-
         return fluxes
 
     ###########################################################################
@@ -248,22 +247,21 @@ class DataProcess(FileDirectory, MetaData):
         return wave
 
     ###########################################################################
-    def replace_missing_fluxes_and_normalize_by_median(self,
-        spectra: "np.array",
-    )->"np.array":
+    def replace_missing_fluxes_and_normalize_by_median(
+        self, spectra: "np.array"
+    ) -> "np.array":
         """
         """
-
 
         missing_values_mask = ~np.isfinite(spectra)
 
         nan_median = np.nanmedian(spectra, axis=1)
-        null_median_mask = nan_median == 0.
-        nan_median[null_median_mask] = 1.
+        null_median_mask = nan_median == 0.0
+        nan_median[null_median_mask] = 1.0
 
-        spectra *= 1/nan_median.reshape((-1,1))
+        spectra *= 1 / nan_median.reshape((-1, 1))
 
-        spectra[missing_values_mask] = 1.
+        spectra[missing_values_mask] = 1.0
 
         # zero for spectra where nanmedian is null
         spectra[null_median_mask, :] = 0
