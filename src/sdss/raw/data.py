@@ -92,10 +92,9 @@ class RawData(FileDirectory, MetaData):
 
         file_row = files_df.loc[file_index]
 
-        [
-            file_directory,
-            spectrum_name
-        ] = super().get_file_location_sas(file_row)
+        [file_directory, spectrum_name] = super().get_file_location_sas(
+            file_row
+        )
 
         file_location = f"{file_directory}/{spectrum_name}.fits"
 

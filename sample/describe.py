@@ -24,8 +24,7 @@ meta_data_directory = parser.get("directories", "meta_data")
 spectra_df_name = parser.get("files", "spectra_df")
 
 spectra_df = pd.read_csv(
-    f"{meta_data_directory}/{spectra_df_name}",
-    index_col="specobjid",
+    f"{meta_data_directory}/{spectra_df_name}", index_col="specobjid"
 )
 
 number_spectra = parser.getint("parameters", "number_spectra")
@@ -39,14 +38,13 @@ generate_stats = parser.getboolean("stats", "generate")
 
 if generate_stats:
 
-
     describe_parameters = parser.get("stats", "variables")
     describe_parameters = str_to_list(describe_parameters)
 
     data_description = spectra_df[describe_parameters].describe()
     ###########################################################################
     # Set parameters for memoir table
-    formatter = lambda x: f"{x:.4f}" if x%1 != 0 else f"{x:.0f}"
+    formatter = lambda x: f"{x:.4f}" if x % 1 != 0 else f"{x:.0f}"
 
     save_to = parser.get("stats", "save_to")
 
@@ -87,10 +85,7 @@ if generate_histogram:
 
     for variable in variables:
 
-        spectra_df[variable].hist(
-        bins=number_bins,
-        label=variable
-        )
+        spectra_df[variable].hist(bins=number_bins, label=variable)
 
         location = f"{save_to}/{variable}.pdf"
         plt.savefig(location)

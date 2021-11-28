@@ -22,8 +22,7 @@ meta_data_directory = parser.get("directories", "meta_data")
 spectra_df_name = parser.get("files", "spectra_df")
 
 spectra_df = pd.read_csv(
-    f"{meta_data_directory}/{spectra_df_name}",
-    index_col="specobjid",
+    f"{meta_data_directory}/{spectra_df_name}", index_col="specobjid"
 )
 
 number_spectra = parser.getint("parameters", "number_spectra")
@@ -40,9 +39,7 @@ z_upper_bound = parser.getfloat("redshift", "upper_bound")
 
 # sample
 z_selection_mask = sample.red_shift(
-    spectra_df=spectra_df,
-    lower_bound=z_lower_bound,
-    upper_bound=z_upper_bound
+    spectra_df=spectra_df, lower_bound=z_lower_bound, upper_bound=z_upper_bound
 )
 ###########################################################################
 # Set sample parameters for snr
@@ -53,7 +50,7 @@ snr_upper_bound = parser.getfloat("signal_to_noise", "upper_bound")
 signal_to_noise_selection_mask = sample.signal_to_noise(
     spectra_df=spectra_df,
     lower_bound=snr_lower_bound,
-    upper_bound=snr_upper_bound
+    upper_bound=snr_upper_bound,
 )
 ###########################################################################
 # Save new data frame
@@ -75,9 +72,8 @@ signal_to_noise_name = (
 spectra_df_name = f"{z_name}_{signal_to_noise_name}.csv.gz"
 
 spectra_df.loc[selection_mask].to_csv(
-    f"{meta_data_directory}/{spectra_df_name}",
-    index=True
-    )
+    f"{meta_data_directory}/{spectra_df_name}", index=True
+)
 ###########################################################################
 finish_time = time.time()
 print(f"Run time: {finish_time - start_time:.2f}")
