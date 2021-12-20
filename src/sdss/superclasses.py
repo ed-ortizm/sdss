@@ -44,21 +44,27 @@ class ConfigurationFile:
         """
         section_dictionary = dict(section_items)
 
-        for key in section_dictionary:
+        for key, value in section_dictionary.items():
 
+            value = str(value)
             ###################################################################
-            if "\n" in section_dictionary[key]:
+            if "\n" in value:
 
-                values = section_dictionary[key].split("\n")
-                section_dictionary[key] = values
-                
+                value = value.split("\n")
+                section_dictionary[key] = value
+
             ###################################################################
             for separator in value_separators:
 
-                if separator in section_dictionary[key]:
+                if separator in value:
 
-                    values = section_dictionary[key].split(separator)
-                    section_dictionary[key] = values
+                    value = value.split(separator)
+                    section_dictionary[key] = value
+            ###################################################################
+
+        section_dictionary = self._transform_values_in_dictionary(
+                section_dictionary
+            )
 
         return section_dictionary
     ###########################################################################
@@ -77,6 +83,55 @@ class ConfigurationFile:
                 100, 50, 5, 50, 100 --> [100, 50, 5, 50, 100]
         """
         pass
+    ###########################################################################
+    def _transform_values_in_dictionary(self, dictionary: dict):
+
+        for key, value in dictionary.items():
+
+            is_list = type(value) is list
+            value = self._transform_values(value, is_list)
+
+            dictionary[key] = value
+
+        return dictionary
+    ###########################################################################
+    def _transform_values(self, items: str, is_list: bool=False):
+
+        if is_list is True:
+
+            new_items = []
+
+            for string in items:
+
+                value = self._get_value_from_string(string)
+                new_items.append(value)
+
+            return new_items
+
+        return self._get_value_from_string(items)
+
+    ###########################################################################
+    def _get_value_from_string(self, string: str):
+
+        """
+        Get value from string variable, could be: bool, str, int or float
+        """
+        #######################################################################
+        if (string == "True") or (string == "False"):
+
+            return string == "True"
+
+        #######################################################################
+        if string.isalpha() is True:
+
+            return string
+        #######################################################################
+        numeric_value = float(string)
+        if numeric_value.is_integer():
+
+            return int(numeric_value)
+
+        return numeric_value
     ###########################################################################
 
     ###########################################################################
