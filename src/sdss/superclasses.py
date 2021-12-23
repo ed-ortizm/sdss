@@ -116,13 +116,14 @@ class ConfigurationFile:
         """
         Get value from string variable, could be: bool, str, int or float
         """
+        string = string.strip()
         #######################################################################
         if (string == "True") or (string == "False"):
 
             return string == "True"
 
         #######################################################################
-        if string.isalpha() is True:
+        if (string.isalpha() is True) | ("_" in string) is True  :
 
             return string
         #######################################################################
