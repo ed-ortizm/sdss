@@ -26,14 +26,14 @@ spectra_df = pd.read_csv(
 
 print(f"Load spectra and index array", end="\n")
 
-input_directory = parser.get("directories", "output")
+in_out_directory = parser.get("directories", "output")
 
 data_name = parser.get("files", "spectra")
-data = np.load(f"{input_directory}/{data_name}")
+data = np.load(f"{in_out_directory}/{data_name}")
 
 # this array relates the index of the array with the index in the data frame
 index_name = parsed.get("files", "indexes")
-index_data = np.load(f"{input_directory}/{index_name}")
+index_data = np.load(f"{in_out_directory}/{index_name}")
 
 # Augment data frame with integer position of specobjid in spectra array
 spectra_df.loc[index_data[:, 1], "indexArray"] = index_data[:, 0]
@@ -73,16 +73,28 @@ for n, right_slice in enumerate(data_slices):
     index_slice = spectra_df["indexArray"].iloc[left_slice:right_slice]
 
     snr_min = spectra_df.iloc[left_slice]["snMedian"]
-    snr_min = spectra_df.iloc[right_slice]["snMedian"]
+    snr_max = spectra_df.iloc[right_slice]["snMedian"]
 
-    save_to = f"{bin_{n:02d}}_fluxes_snr_{}_{}.npy"
-    np.save("", data[index_slice])
+    array_name = (
+        f"bin_{n:02d}_fluxes_"
+        f"snr_{snr_min:05.2f}_{snr_max:05.2f}.npy"
+    )
+
+    np.save(f"{save_to}/{array_name}", data[index_slice])
 
     specobjid_slice = spectra_df.iloc[left_slice:right_slice].index
     index_specobjid_slice = np.stack(index_slice, specobjid_slice, axis=1)
-    np.save("index_specobjid.npy", )
 
-    initial_set_number = set_number
+    array_name = (
+        f"bin_{n:02d}_index_specobjid_"
+        f"snr_{snr_min:05.2f}_{snr_max:05.2f}.npy"
+    )
+
+    np.save(f"{save_to}/{array_name}", index_specobjid_slice)
+
+    left_slice = right_slice
+###############################################################################
+# Get remaining slices
 ###############################################################################
 
 finish_time = time.time()
