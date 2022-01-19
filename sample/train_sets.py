@@ -50,8 +50,8 @@ print(f"Save spectra with zWarning", end="\n")
 warning_mask = spectra_df["zWarning"] != 0
 number_warnings = np.invert(warning_mask).sum()
 print(f"Number of warnings: {number_warnings}", end="\n")
-index_warning = spectra_df.loc[warning_mask, "indexArray"].to_numpy(dtype(int))
-spectra_warnings = np.save("fluxes_with_warnings.npy", data[index_warning])
+index_warning = spectra_df.loc[warning_mask, "indexArray"].to_numpy(dtype=int)
+np.save(f"{in_out_directory}/fluxes_with_warnings.npy", data[index_warning])
 # get meta data of spectra without flags
 spectra_df = spectra_df[np.invert(warning_mask)]
 ###############################################################################
@@ -70,7 +70,7 @@ left_slice = 0
 
 for n, right_slice in enumerate(data_slices):
 
-    index_slice = spectra_df["indexArray"].iloc[left_slice:right_slice]
+    index_slice = spectra_df["indexArray"].iloc[left_slice:right_slice].to_numpy(dtype=int)
 
     snr_min = spectra_df.iloc[left_slice]["snMedian"]
     snr_max = spectra_df.iloc[right_slice]["snMedian"]
@@ -90,7 +90,7 @@ for n, right_slice in enumerate(data_slices):
     )
 
     specobjid_slice = spectra_df.iloc[left_slice:right_slice].index
-    index_specobjid_slice = np.stack(index_slice, specobjid_slice, axis=1)
+    index_specobjid_slice = np.stack((index_slice, specobjid_slice), axis=1)
 
     array_name = (
         f"bin_{n:02d}_index_specobjid_"
@@ -105,7 +105,7 @@ for n, right_slice in enumerate(data_slices):
 
 if number_remaining_spectra > 1:
 
-    index_slice = spectra_df["indexArray"].iloc[-number_remaining_spectra:]
+    index_slice = spectra_df["indexArray"].iloc[-number_remaining_spectra:].to_numpy(dtype=int)
 
     snr_min = spectra_df.iloc[-number_remaining_spectra]["snMedian"]
     snr_max = spectra_df.iloc[-1]["snMedian"]
