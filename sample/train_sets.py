@@ -26,17 +26,17 @@ spectra_df = pd.read_csv(
 
 print(f"Load spectra and index array", end="\n")
 
-in_out_directory = parser.get("directories", "output")
+in_out_directory = parser.get("directories", "in_output")
 
 data_name = parser.get("files", "spectra")
 data = np.load(f"{in_out_directory}/{data_name}")
 
 # this array relates the index of the array with the index in the data frame
-index_name = parsed.get("files", "indexes")
+index_name = parser.get("files", "indexes")
 index_data = np.load(f"{in_out_directory}/{index_name}")
 
 # Augment data frame with integer position of specobjid in spectra array
-spectra_df.loc[index_data[:, 1], "indexArray"] = index_data[:, 0]
+spectra_df.loc[index_data[:, 1], "indexArray"] = index_data[:, 0].astype(int)
 ###############################################################################
 # print(f"Get data frame according to specobjid in spectra array", end="\n")
 
@@ -50,7 +50,7 @@ print(f"Save spectra with zWarning", end="\n")
 warning_mask = spectra_df["zWarning"] != 0
 number_warnings = np.invert(warning_mask).sum()
 print(f"Number of warnings: {number_warnings}", end="\n")
-index_warning = spectra_df.loc[warning_mask, "indexArray"]
+index_warning = spectra_df.loc[warning_mask, "indexArray"].to_numpy(dtype(int))
 spectra_warnings = np.save("fluxes_with_warnings.npy", data[index_warning])
 # get meta data of spectra without flags
 spectra_df = spectra_df[np.invert(warning_mask)]
@@ -79,6 +79,8 @@ for n, right_slice in enumerate(data_slices):
         f"bin_{n:02d}_fluxes_"
         f"snr_{snr_min:05.2f}_{snr_max:05.2f}"
     )
+
+    print(array_name, end="\r")
 
     np.save(f"{in_out_directory}/{array_name}.npy", data[index_slice])
 
