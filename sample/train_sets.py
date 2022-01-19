@@ -64,7 +64,7 @@ number_bins = parser.getint("parameters", "number_bins")
 split_number = spectra_df.shape[0] // number_bins
 number_remaining_spectra = spectra_df.shape[0] % split_number
 
-data_slices = [split_number * i for i in range(1, split_number + 1)]
+data_slices = [split_number * i for i in range(1, number_bins + 1)]
 
 left_slice = 0
 
@@ -77,10 +77,15 @@ for n, right_slice in enumerate(data_slices):
 
     array_name = (
         f"bin_{n:02d}_fluxes_"
-        f"snr_{snr_min:05.2f}_{snr_max:05.2f}.npy"
+        f"snr_{snr_min:05.2f}_{snr_max:05.2f}"
     )
 
-    np.save(f"{save_to}/{array_name}", data[index_slice])
+    np.save(f"{in_out_directory}/{array_name}.npy", data[index_slice])
+
+    np.save(
+        f"{in_out_directory}/{array_name}_shuffle.npy",
+        np.random.shuffle(data[index_slice])
+    )
 
     specobjid_slice = spectra_df.iloc[left_slice:right_slice].index
     index_specobjid_slice = np.stack(index_slice, specobjid_slice, axis=1)
@@ -90,11 +95,37 @@ for n, right_slice in enumerate(data_slices):
         f"snr_{snr_min:05.2f}_{snr_max:05.2f}.npy"
     )
 
-    np.save(f"{save_to}/{array_name}", index_specobjid_slice)
+    np.save(f"{in_out_directory}/{array_name}", index_specobjid_slice)
 
     left_slice = right_slice
 ###############################################################################
 # Get remaining slices
+
+if number_remaining_spectra > 1:
+
+    index_slice = spectra_df["indexArray"].iloc[-number_remaining_spectra:]
+
+    snr_min = spectra_df.iloc[-number_remaining_spectra]["snMedian"]
+    snr_max = spectra_df.iloc[-1]["snMedian"]
+
+    array_name = (
+        f"bin_last_fluxes_"
+        f"snr_{snr_min:05.2f}_{snr_max:05.2f}"
+    )
+
+    np.save(f"{in_out_directory}/{array_name}.npy", data[index_slice])
+
+    np.save(
+        f"{in_out_directory}/{array_name}_shuffle.npy",
+        np.random.shuffle(data[index_slice])
+    )
+
+    array_name = (
+        f"bin_last_index_specobjid_"
+        f"snr_{snr_min:05.2f}_{snr_max:05.2f}.npy"
+    )
+
+    np.save(f"{in_out_directory}/{array_name}", index_specobjid_slice)
 ###############################################################################
 
 finish_time = time.time()
