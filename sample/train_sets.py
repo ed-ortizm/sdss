@@ -38,13 +38,6 @@ index_data = np.load(f"{in_out_directory}/{index_name}")
 # Augment data frame with integer position of specobjid in spectra array
 spectra_df.loc[index_data[:, 1], "indexArray"] = index_data[:, 0].astype(int)
 ###############################################################################
-# print(f"Get data frame according to specobjid in spectra array", end="\n")
-
-# specobjid_from_array = index_data[:, 1]
-# del index_data
-
-# spectra_df = spectra_df.loc[specobjid_from_array]
-###############################################################################
 print(f"Save spectra with zWarning", end="\n")
 
 warning_mask = spectra_df["zWarning"] != 0
@@ -75,10 +68,7 @@ for n, right_slice in enumerate(data_slices):
     snr_min = spectra_df.iloc[left_slice]["snMedian"]
     snr_max = spectra_df.iloc[right_slice]["snMedian"]
 
-    array_name = (
-        f"bin_{n:02d}_fluxes_"
-        f"snr_{snr_min:05.2f}_{snr_max:05.2f}"
-    )
+    array_name = f"bin_{n:02d}_fluxes"
 
     print(array_name, end="\r")
 
@@ -92,10 +82,7 @@ for n, right_slice in enumerate(data_slices):
     specobjid_slice = spectra_df.iloc[left_slice:right_slice].index
     index_specobjid_slice = np.stack((index_slice, specobjid_slice), axis=1)
 
-    array_name = (
-        f"bin_{n:02d}_index_specobjid_"
-        f"snr_{snr_min:05.2f}_{snr_max:05.2f}.npy"
-    )
+    array_name = f"bin_{n:02d}_index_specobjid.npy"
 
     np.save(f"{in_out_directory}/{array_name}", index_specobjid_slice)
 
@@ -110,10 +97,7 @@ if number_remaining_spectra > 1:
     snr_min = spectra_df.iloc[-number_remaining_spectra]["snMedian"]
     snr_max = spectra_df.iloc[-1]["snMedian"]
 
-    array_name = (
-        f"bin_last_fluxes_"
-        f"snr_{snr_min:05.2f}_{snr_max:05.2f}"
-    )
+    array_name = f"bin_last_fluxes"
 
     np.save(f"{in_out_directory}/{array_name}.npy", data[index_slice])
 
@@ -122,10 +106,7 @@ if number_remaining_spectra > 1:
         np.random.shuffle(data[index_slice])
     )
 
-    array_name = (
-        f"bin_last_index_specobjid_"
-        f"snr_{snr_min:05.2f}_{snr_max:05.2f}.npy"
-    )
+    array_name = f"bin_last_index_specobjid.npy"
 
     np.save(f"{in_out_directory}/{array_name}", index_specobjid_slice)
 ###############################################################################
