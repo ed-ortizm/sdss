@@ -250,8 +250,7 @@ class DataProcess(FileDirectory, MetaData):
     def replace_missing_fluxes_and_normalize_by_median(
         self, spectra: "np.array"
     ) -> "np.array":
-        """
-        """
+        """ """
 
         missing_values_mask = ~np.isfinite(spectra)
 
