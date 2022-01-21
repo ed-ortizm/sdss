@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 
 from sdss.superclasses import FileDirectory
-
 ###############################################################################
 start_time = time.time()
 
@@ -65,10 +64,8 @@ left_slice = 0
 
 for n, right_slice in enumerate(data_slices):
 
-    index_slice = (
-        spectra_df["indexArray"]
-        .iloc[left_slice:right_slice]
-        .to_numpy(dtype=int)
+    index_slice =(
+    spectra_df["indexArray"].iloc[left_slice:right_slice].to_numpy(dtype=int)
     )
 
     array_name = f"bin_{n:02d}_fluxes"
@@ -82,7 +79,7 @@ for n, right_slice in enumerate(data_slices):
 
     np.save(
         f"{save_to}/{array_name}_shuffle.npy",
-        np.random.shuffle(data[index_slice]),
+        np.random.shuffle(data[index_slice])
     )
 
     specobjid_slice = spectra_df.iloc[left_slice:right_slice].index
@@ -98,11 +95,7 @@ for n, right_slice in enumerate(data_slices):
 
 if number_remaining_spectra > 1:
 
-    index_slice = (
-        spectra_df["indexArray"]
-        .iloc[-number_remaining_spectra:]
-        .to_numpy(dtype=int)
-    )
+    index_slice = spectra_df["indexArray"].iloc[-number_remaining_spectra:].to_numpy(dtype=int)
 
     save_to = f"{in_out_directory}/bin_{number_bins + 1:02d}"
     FileDirectory().check_directory(save_to, exit=False)
@@ -113,10 +106,10 @@ if number_remaining_spectra > 1:
 
     np.save(
         f"{save_to}/{array_name}_shuffle.npy",
-        np.random.shuffle(data[index_slice]),
+        np.random.shuffle(data[index_slice])
     )
 
-    array_name = f"bin_{number_bins + 1:02d}index_specobjid.npy"
+    array_name = f"bin_{number_bins + 1:02d}_index_specobjid.npy"
 
     np.save(f"{save_to}/{array_name}", index_specobjid_slice)
 ###############################################################################
