@@ -42,12 +42,12 @@ spectra_df.loc[index_data[:, 1], "indexArray"] = index_data[:, 0].astype(int)
 print(f"Save spectra with zWarning", end="\n")
 
 warning_mask = spectra_df["zWarning"] != 0
-number_warnings = np.invert(warning_mask).sum()
+number_warnings = warning_mask.sum()
 print(f"Number of warnings: {number_warnings}", end="\n")
 index_warning = spectra_df.loc[warning_mask, "indexArray"].to_numpy(dtype=int)
 np.save(f"{in_out_directory}/fluxes_with_warnings.npy", data[index_warning])
 # get meta data of spectra without flags
-spectra_df = spectra_df[np.invert(warning_mask)]
+spectra_df = spectra_df.loc[np.invert(warning_mask)]
 ###############################################################################
 print(f"Get snMedian bins", end="\n")
 
@@ -75,11 +75,14 @@ for n, right_slice in enumerate(data_slices):
     save_to = f"{in_out_directory}/bin_{n:02d}"
     FileDirectory().check_directory(save_to, exit=False)
 
-    np.save(f"{save_to}/{array_name}.npy", data[index_slice])
+    data_bin = data[index_slice].copy()
+    np.save(f"{save_to}/{array_name}.npy", data_bin)
+
+    np.random.shuffle(data_bin)
 
     np.save(
         f"{save_to}/{array_name}_shuffle.npy",
-        np.random.shuffle(data[index_slice])
+        data_bin
     )
 
     specobjid_slice = spectra_df.iloc[left_slice:right_slice].index
