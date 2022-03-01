@@ -24,9 +24,10 @@ class ConfigurationFile:
         pass
 
     ###########################################################################
-    def section_to_dictionary(self,
-        section_items:tuple,
-        value_separators:list,
+    def section_to_dictionary(
+        self,
+        section_items: tuple,
+        value_separators: list,
         # multiple_lines: bool,
         # comma_values:bool,
     ) -> dict:
@@ -63,10 +64,11 @@ class ConfigurationFile:
             ###################################################################
 
         section_dictionary = self._transform_values_in_dictionary(
-                section_dictionary
-            )
+            section_dictionary
+        )
 
         return section_dictionary
+
     ###########################################################################
     def entry_to_list(self, entry: str, entry_type: type, separator: str)-> list:
         """
@@ -98,8 +100,9 @@ class ConfigurationFile:
             dictionary[key] = value
 
         return dictionary
+
     ###########################################################################
-    def _transform_values(self, items: str, is_list: bool=False):
+    def _transform_values(self, items: str, is_list: bool = False):
 
         if is_list is True:
 
@@ -127,7 +130,7 @@ class ConfigurationFile:
             return string == "True"
 
         #######################################################################
-        if (string.isalpha() is True) | ("_" in string) is True  :
+        if (string.isalpha() is True) | ("_" in string) is True:
 
             return string
         #######################################################################
@@ -137,9 +140,12 @@ class ConfigurationFile:
             return int(numeric_value)
 
         return numeric_value
+
     ###########################################################################
 
     ###########################################################################
+
+
 ###############################################################################
 class FileDirectory:
     """Handle common operations with files and directories"""
@@ -208,7 +214,7 @@ class FileDirectory:
 
 ###############################################################################
 class MetaData:
-    """Deal with medata data """
+    """Deal with medata data"""
 
     def __init__(self):
         pass
