@@ -68,7 +68,7 @@ class ConfigurationFile:
 
         return section_dictionary
     ###########################################################################
-    def entry_to_list(self, entry: str, entry_type: str)->list:
+    def entry_to_list(self, entry: str, entry_type: type, separator: str)-> list:
         """
 
         PARAMETERS
@@ -76,13 +76,17 @@ class ConfigurationFile:
             entry: a coma separated string
                 architecture: 100, 50, 5, 50, 100
 
-            entry_type: either float, int or bool
+            entry_type: either str, float, int or bool
+            separator: separator to use when spliting entry string
 
         OUTPUTS
             entry_list: list of elements in entry with the type
-                100, 50, 5, 50, 100 --> [100, 50, 5, 50, 100]
+                100 separator 50 separator 5... --> [100, 50, 5, ...]
         """
-        pass
+        entry = entry.strip().split(separator)
+        entry = [entry_type(value) for value in entry]
+
+        return entry
     ###########################################################################
     def _transform_values_in_dictionary(self, dictionary: dict):
 
