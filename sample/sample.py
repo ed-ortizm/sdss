@@ -24,11 +24,6 @@ spectra_df_name = parser.get("files", "spectra_df")
 spectra_df = pd.read_csv(
     f"{meta_data_directory}/{spectra_df_name}", index_col="specobjid"
 )
-
-number_spectra = parser.getint("parameters", "number_spectra")
-
-if number_spectra != -1:
-    spectra_df = spectra_df[:number_spectra]
 ###########################################################################
 # Set sample class
 sample = SampleData()
@@ -69,10 +64,17 @@ signal_to_noise_name = (
 )
 
 
-spectra_df_name = f"{z_name}_{signal_to_noise_name}.csv.gz"
+spectra_df_name = f"{z_name}_{signal_to_noise_name}"
 
 spectra_df.loc[selection_mask].to_csv(
     f"{meta_data_directory}/{spectra_df_name}", index=True
+)
+# save to output, for isntance, the ae direcotry
+output_directory = parser.get("directories", "output")
+check.check_directory(f"{output_directory}/{spectra_df_name}", exit=False)
+
+spectra_df.loc[selection_mask].to_csv(
+    f"{output_directory}/{spectra_df_name}.csv.gz", index=True
 )
 ###########################################################################
 finish_time = time.time()
