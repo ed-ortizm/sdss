@@ -20,7 +20,8 @@ if __name__ == "__main__":
     start_time = time.time()
 
     parser = ConfigParser(interpolation=ExtendedInterpolation())
-    parser.read("process.ini")
+    name_config_file = "process.ini"
+    parser.read(f"{name_config_file}")
     ###########################################################################
     raw_data_directory = parser.get("directories", "raw_spectra")
     output_directory = parser.get("directories", "output")
@@ -87,6 +88,10 @@ if __name__ == "__main__":
 
     np.save(f"{output_directory}/fluxes.npy", spectra.astype(np.float32))
     np.save(f"{output_directory}/wave.npy", wave)
+    ###########################################################################
+    # Save configuration file
+    with open(f"{output_directory}/{name_config_file}", "w") as configfile:
+        parser.write(configfile)
     ###########################################################################
     finish_time = time.time()
     print(f"Running time: {finish_time - start_time:.2f} [s]")

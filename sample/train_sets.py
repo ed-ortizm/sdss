@@ -13,7 +13,8 @@ from sdss.superclasses import FileDirectory
 start_time = time.time()
 
 parser = ConfigParser(interpolation=ExtendedInterpolation())
-parser.read("train_sets.ini")
+name_config_file = "train_sets.ini"
+parser.read(f"{name_config_file}")
 ###############################################################################
 # A load data frame with meta data
 print(f"Load data frame with metadata", end="\n")
@@ -116,6 +117,10 @@ if number_remaining_spectra > 1:
 
     np.save(f"{save_to}/{array_name}", index_specobjid_slice)
 ###############################################################################
+###############################################################################
+# Save configuration file
+with open(f"{in_out_directory}/{name_config_file}", "w") as configfile:
+    parser.write(configfile)
 
 finish_time = time.time()
 print(f"Running time: {finish_time - start_time:.2f} [s]")

@@ -12,7 +12,8 @@ from sdss.process.sample import SampleData
 start_time = time.time()
 ###########################################################################
 parser = ConfigParser(interpolation=ExtendedInterpolation())
-parser.read("sample.ini")
+name_cofig_file = "sample.ini"
+parser.read(f"{name_cofig_file}")
 # Check files and directory
 check = FileDirectory()
 ###########################################################################
@@ -71,11 +72,17 @@ spectra_df.loc[selection_mask].to_csv(
 )
 # save to output, for isntance, the ae direcotry
 output_directory = parser.get("directories", "output")
-check.check_directory(f"{output_directory}/{spectra_df_name}", exit=False)
+output_directory = f"{output_directory}/{spectra_df_name}"
+check.check_directory(f"{output_directory}", exit=False)
 
 spectra_df.loc[selection_mask].to_csv(
-    f"{output_directory}/{spectra_df_name}.csv.gz", index=True
+    f"{output_directory}/{spectra_df_name}.csv.gz",
+    index=True
 )
+###########################################################################
+# Save configuration file
+with open(f"{output_directory}/{name_cofig_file}", "w") as configfile:
+    parser.write(configfile)
 ###########################################################################
 finish_time = time.time()
 print(f"Run time: {finish_time - start_time:.2f}")
