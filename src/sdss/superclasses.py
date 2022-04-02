@@ -163,7 +163,7 @@ class FileDirectory:
         if not os.path.exists(directory):
 
             if exit:
-                print(f"Directory {diretory} NOT FOUND")
+                print(f"Directory {directory} NOT FOUND")
                 print("Code cannot execute")
                 sys.exit()
 
