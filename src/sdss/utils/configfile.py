@@ -63,7 +63,9 @@ class ConfigurationFile:
         return section_dictionary
 
     ###########################################################################
-    def entry_to_list(self, entry: str, entry_type: type, separator: str)-> list:
+    def entry_to_list(
+        self, entry: str, entry_type: type, separator: str
+    ) -> list:
         """
 
         PARAMETERS
@@ -82,6 +84,7 @@ class ConfigurationFile:
         entry = [entry_type(value) for value in entry]
 
         return entry
+
     ###########################################################################
     def _transform_values_in_dictionary(self, dictionary: dict):
 

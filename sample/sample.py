@@ -76,8 +76,7 @@ output_directory = f"{output_directory}/{spectra_df_name}"
 check.check_directory(f"{output_directory}", exit=False)
 
 spectra_df.loc[selection_mask].to_csv(
-    f"{output_directory}/{spectra_df_name}.csv.gz",
-    index=True
+    f"{output_directory}/{spectra_df_name}.csv.gz", index=True
 )
 ###########################################################################
 # Save configuration file
