@@ -20,9 +20,7 @@ class ConfigurationFile:
 
     ###########################################################################
     def section_to_dictionary(
-        self,
-        section_items: tuple,
-        value_separators: list,
+        self, section_items: tuple, value_separators: list
     ) -> dict:
         """
         Converts a section in the configuration file to a dictionary.
@@ -63,9 +61,7 @@ class ConfigurationFile:
         return section_dictionary
 
     @staticmethod
-    def entry_to_list(
-        entry: str, entry_type: type, separator: str
-    ) -> list:
+    def entry_to_list(entry: str, entry_type: type, separator: str) -> list:
         """
 
         PARAMETERS

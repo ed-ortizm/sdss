@@ -1,14 +1,18 @@
+"""Module to handle meta data from SDSS spectra"""
 import urllib.request
 
-###############################################################################
+import numpy as np
+import pandas as pd
+
+
 class MetaData:
     """Deal with medata data"""
 
     def __init__(self):
         pass
 
-    ###########################################################################
-    def get_z_warning_meaning(self, warning_flag: int) -> list:
+    @staticmethod
+    def get_z_warning_meaning(warning_flag: int) -> list:
 
         """
         Takes the interger representing the z warning and converts it to
@@ -47,13 +51,13 @@ class MetaData:
         return warning_meaning
 
     ###########################################################################
+    @staticmethod
     def get_sdss_image(
-        self,
         galaxy_specobjid: int,
         RA: float,
         DEC: float,
         save_to: str,
-        format: str,
+        image_format: str,
         scale: float = 0.2,
         width: int = 200,
         height: int = 200,
@@ -67,11 +71,11 @@ class MetaData:
             RA:
             DEC:
             save_to:
-            format:
+            image_format:
             scale:
             width:
             height:
-            format:
+            image_format:
 
         """
 
@@ -87,19 +91,20 @@ class MetaData:
         image_url = f"{sdss_url}&{coordinates}&{image_dimensions}&opt=G"
 
         urllib.request.urlretrieve(
-            image_url, f"{save_to}/{galaxy_specobjid}.{format}"
+            image_url, f"{save_to}/{galaxy_specobjid}.{image_format}"
         )
 
     ###########################################################################
+    @staticmethod
     def download_sdss_spectrum_image(
-        self, galaxy_specobjid: int, save_to: str, format: str
+        galaxy_specobjid: int, save_to: str, image_format: str
     ) -> None:
         """
         PARAMETERS
             galaxy_specobjid: unique identification of a galaxy in
                 the data frame with the meta data
             save_to: directory location to save the image
-            format:
+            image_format:
         """
 
         sdss_url = f"http://skyserver.sdss.org/dr16/en/get/SpecById.ashx?id="
@@ -107,11 +112,12 @@ class MetaData:
         spectrum_url = f"{sdss_url}{galaxy_specobjid}"
 
         urllib.request.urlretrieve(
-            spectrum_url, f"{save_to}/{galaxy_specobjid}.{format}"
+            spectrum_url, f"{save_to}/{galaxy_specobjid}.{image_format}"
         )
 
     ###########################################################################
-    def get_sky_server_url(self, galaxy_specobjid: int) -> str:
+    @staticmethod
+    def get_sky_server_url(galaxy_specobjid: int) -> str:
         """
         PARAMETERS
             galaxy_specobjid: unique identification of a galaxy in
@@ -129,7 +135,8 @@ class MetaData:
         return galaxy_url
 
     ###########################################################################
-    def get_file_location_sas(self, file_row: pd.Series) -> list:
+    @staticmethod
+    def get_file_location_sas(file_row: pd.Series) -> list:
         """
         PARAMETERS
             file_row: contains at least the columns
@@ -141,7 +148,7 @@ class MetaData:
                 spectrum_name: f'spec-{plate}-{mjd}-{fiberid}'
         """
 
-        [plate, mjd, fiberid, run2d] = self.galaxy_identifiers(file_row)
+        [plate, mjd, fiberid, run2d] = MetaData.galaxy_identifiers(file_row)
 
         spectrum_name = f"spec-{plate}-{mjd}-{fiberid}"
 
@@ -151,17 +158,8 @@ class MetaData:
 
         return [file_directory, spectrum_name]
 
-    ###########################################################################
-    def get_spectrum_name(self, file_row: pd.Series) -> str:
-
-        [plate, mjd, fiberid, run2d] = self.galaxy_identifiers(file_row)
-
-        spectrum_name = f"spec-{plate}-{mjd}-{fiberid}"
-
-        pass
-
-    ###########################################################################
-    def galaxy_identifiers(self, file_row: "df.row") -> list:
+    @staticmethod
+    def galaxy_identifiers(file_row: pd.Series) -> list:
         """
         PARAMETER
             file_row: contains at least the columns
