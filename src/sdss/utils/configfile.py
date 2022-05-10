@@ -1,4 +1,6 @@
-###############################################################################
+"""Module to handle common operations with configuration files"""
+
+
 class ConfigurationFile:
     """Manage common operation with configuration files.
     For instance:
@@ -21,8 +23,6 @@ class ConfigurationFile:
         self,
         section_items: tuple,
         value_separators: list,
-        # multiple_lines: bool,
-        # comma_values:bool,
     ) -> dict:
         """
         Converts a section in the configuration file to a dictionary.
@@ -62,9 +62,9 @@ class ConfigurationFile:
 
         return section_dictionary
 
-    ###########################################################################
+    @staticmethod
     def entry_to_list(
-        self, entry: str, entry_type: type, separator: str
+        entry: str, entry_type: type, separator: str
     ) -> list:
         """
 
@@ -90,7 +90,7 @@ class ConfigurationFile:
 
         for key, value in dictionary.items():
 
-            is_list = type(value) is list
+            is_list = isinstance(value, list)
             value = self._transform_values(value, is_list)
 
             dictionary[key] = value
@@ -114,14 +114,15 @@ class ConfigurationFile:
         return self._get_value_from_string(items)
 
     ###########################################################################
-    def _get_value_from_string(self, string: str):
+    @staticmethod
+    def _get_value_from_string(string: str):
 
         """
         Get value from string variable, could be: bool, str, int or float
         """
         string = string.strip()
         #######################################################################
-        if (string == "True") or (string == "False"):
+        if string in ("True", "False"):
 
             return string == "True"
 
@@ -136,7 +137,3 @@ class ConfigurationFile:
             return int(numeric_value)
 
         return numeric_value
-
-    ###########################################################################
-
-    ###########################################################################
