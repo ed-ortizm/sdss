@@ -53,21 +53,18 @@ class MetaData:
     ###########################################################################
     @staticmethod
     def get_sdss_image(
-        galaxy_specobjid: int,
-        RA: float,
-        DEC: float,
+        specobjid: int,
+        coordinates: tuple,
         save_to: str,
         image_format: str,
-        scale: float = 0.2,
-        width: int = 200,
-        height: int = 200,
+        dimensions: tuple=(0.2, 200, 200),
     ) -> None:
 
         """
-        Download sdss image of the galaxy associated to galaxy_specobjid
+        Download sdss image of the galaxy associated to specobjid
 
         PARAMETERS
-            galaxy_specobjid:
+            specobjid:
             RA:
             DEC:
             save_to:
@@ -84,24 +81,26 @@ class MetaData:
             f"getjpeg?TaskName=Skyserver.Explore.Image"
         )
 
+        RA, DEC = coordinates
         coordinates = f"ra={RA}&dec={DEC}"
 
+        scale, width, height = dimensions
         image_dimensions = f"scale={scale}&width={width}&height={height}"
 
         image_url = f"{sdss_url}&{coordinates}&{image_dimensions}&opt=G"
 
         urllib.request.urlretrieve(
-            image_url, f"{save_to}/{galaxy_specobjid}.{image_format}"
+            image_url, f"{save_to}/{specobjid}.{image_format}"
         )
 
     ###########################################################################
     @staticmethod
     def download_sdss_spectrum_image(
-        galaxy_specobjid: int, save_to: str, image_format: str
+        specobjid: int, save_to: str, image_format: str
     ) -> None:
         """
         PARAMETERS
-            galaxy_specobjid: unique identification of a galaxy in
+            specobjid: unique identification of a galaxy in
                 the data frame with the meta data
             save_to: directory location to save the image
             image_format:
@@ -109,18 +108,18 @@ class MetaData:
 
         sdss_url = f"http://skyserver.sdss.org/dr16/en/get/SpecById.ashx?id="
 
-        spectrum_url = f"{sdss_url}{galaxy_specobjid}"
+        spectrum_url = f"{sdss_url}{specobjid}"
 
         urllib.request.urlretrieve(
-            spectrum_url, f"{save_to}/{galaxy_specobjid}.{image_format}"
+            spectrum_url, f"{save_to}/{specobjid}.{image_format}"
         )
 
     ###########################################################################
     @staticmethod
-    def get_sky_server_url(galaxy_specobjid: int) -> str:
+    def get_sky_server_url(specobjid: int) -> str:
         """
         PARAMETERS
-            galaxy_specobjid: unique identification of a galaxy in
+            specobjid: unique identification of a galaxy in
                 the data frame with the meta data
 
         OUTPUTS
@@ -128,7 +127,7 @@ class MetaData:
         """
 
         explorer_url = "http://skyserver.sdss.org/dr16/en/tools/explore"
-        galaxy_id = f"summary.aspx?sid={galaxy_specobjid}&apid="
+        galaxy_id = f"summary.aspx?sid={specobjid}&apid="
 
         galaxy_url = f"{explorer_url}/{galaxy_id}"
 
