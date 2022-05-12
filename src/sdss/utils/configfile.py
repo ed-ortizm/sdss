@@ -76,8 +76,12 @@ class ConfigurationFile:
             entry_list: list of elements in entry with the type
                 100 separator 50 separator 5... --> [100, 50, 5, ...]
         """
+
         entry = entry.strip().split(separator)
         entry = [entry_type(value) for value in entry]
+
+        if isinstance(entry[0], str):
+            entry = [value.strip() for value in entry]
 
         return entry
 
