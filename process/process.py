@@ -1,10 +1,6 @@
-#! /usr/bin/env python3
-####################################################################
-# Idea is to handle everything from the data frame
-####################################################################
+"""Spectra processing"""
 from configparser import ConfigParser, ExtendedInterpolation
 import multiprocessing as mp
-import os
 import time
 
 import numpy as np
@@ -22,7 +18,19 @@ if __name__ == "__main__":
     parser = ConfigParser(interpolation=ExtendedInterpolation())
     name_config_file = "process.ini"
     parser.read(f"{name_config_file}")
-    ###########################################################################
+
+    # A load data frame with meta data
+    meta_data_directory = parser.get("directories", "meta_data")
+
+    spectra_df_name = parser.get("files", "spectra_df")
+    spectra_df = pd.read_csv(
+        f"{meta_data_directory}/{spectra_df_name}", index_col="specobjid"
+    )
+
+    # Compute E(B-V) values from Schlegel, Finkbeiner & Davis (1998)
+    # dust map FITS files.
+    # https://github.com/kbarbary/sfdmap
+
     raw_data_directory = parser.get("directories", "raw_spectra")
     output_directory = parser.get("directories", "output")
 
@@ -54,7 +62,7 @@ if __name__ == "__main__":
     # interpolate spectra
     have_to_interpolate = parser.getboolean("parameters", "interpolate")
 
-    if not have_to_interpolate:
+    if have_to_interpolate is False:
 
         spectra_interpolate = parser.get("files", "interpolate")
         spectra = np.load(f"{output_directory}/{spectra_interpolate}")

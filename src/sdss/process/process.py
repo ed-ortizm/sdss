@@ -1,34 +1,26 @@
+"""Functionality for data processing, including code to do it in parallel"""
 import ctypes
-from functools import partial
 import multiprocessing as mp
 from multiprocessing.sharedctypes import RawArray
-import os
-import warnings
 
-import astropy.io.fits as pyfits
 import numpy as np
 import pandas as pd
+import sfdmap
 
-from sdss.superclasses import FileDirectory
-from sdss.superclasses import MetaData
-
-###############################################################################
-def to_numpy_array(input_shared_array, array_shape):
-    """Create a numpy array backed by a shared memory Array."""
-
-    share_array = np.ctypeslib.as_array(input_shared_array)
-
-    return share_array.reshape(array_shape)
+from sdss.utils.managefiles import FileDirectory
+from sdss.metadata import MetaData
 
 
-def init_process_worker(
-    input_counter: "mp.Value",
-    input_df: "pandas dataframe",
-    input_share_array: "c_float share array",
-    array_shape: "tuple",
-    input_share_track_indexes: "c_uint shared array",
-    input_share_track_indexes_shape,
-) -> "None":
+
+def shared_data(
+    directories: dict,
+    input_counter: mp.Value,
+    input_df: pd.DataFrame,
+    input_share_array: RawArray,
+    array_shape: tuple,
+    input_share_track_indexes: RawArray,
+    input_share_track_indexes_shape: RawArray,
+) -> None:
     """
     Initialize worker to get sample relevant for the science
     PARAMETERS
@@ -38,13 +30,20 @@ def init_process_worker(
         array_shape:
         input_share_track_indexes:
     """
+
+    global shared_maps_directory
+
+
+    shared_maps_directory = directories["maps_directory"]
+
     global counter
-    global spectra_df
+    global meta_data
     global fluxes
     global track_indexes
 
+
     counter = input_counter
-    spectra_df = input_df
+    meta_data = input_df
 
     fluxes = to_numpy_array(input_share_array, array_shape)
 
@@ -53,7 +52,6 @@ def init_process_worker(
     )
 
 
-###############################################################################
 class DataProcess(FileDirectory, MetaData):
     """Process sdss spectra"""
 
@@ -76,23 +74,26 @@ class DataProcess(FileDirectory, MetaData):
                     "lower": "lower bound in the grid",
                     "upper": "upper bound in the grid"
                 }
-            number_processes: number of jobs when processing a bulk of a spectra
+            number_processes: number of jobs when processing a
+                bulk of a spectra
         OUTPUT
             check how to document the constructor of a class
         """
 
-        super().check_directory(raw_data_directory, exit=True)
+        FileDirectory.__init__(self)
+        MetaData.__init__(self)
+        super().check_directory(raw_data_directory, exit_program=True)
         self.spectra_directory = raw_data_directory
 
-        super().check_directory(output_directory, exit=False)
+        super().check_directory(output_directory, exit_program=False)
         self.output_directory = output_directory
 
         self.grid = self._get_grid(grid_parameters)
 
         self.number_processes = number_processes
 
-    ###########################################################################
-    def _get_grid(self, grid_parameters: "dict") -> "np.array":
+    @staticmethod
+    def _get_grid(grid_parameters: dict) -> np.array:
         """
         Computes the master grid for the interpolation of the spectra
 
@@ -117,8 +118,7 @@ class DataProcess(FileDirectory, MetaData):
 
         return grid
 
-    ###########################################################################
-    def interpolate(self, spectra_df: "pandas dataframe") -> "np.array":
+    def interpolate(self, spectra_df: pd.DataFrame) -> np.array:
         """
         Interpolate rest frame spectra from data directory according to
         wave master  and save it to output directory
@@ -156,7 +156,7 @@ class DataProcess(FileDirectory, MetaData):
             ),
         ) as pool:
 
-            results = pool.map(self._interpolate, spectra_indexes)
+            _ = pool.map(self._interpolate, spectra_indexes)
 
         track_indexes = to_numpy_array(track_indexes, track_indexes_shape)
         success_interpolation_mask = ~track_indexes[:, 2].astype(np.bool)
@@ -174,7 +174,7 @@ class DataProcess(FileDirectory, MetaData):
         return fluxes
 
     ###########################################################################
-    def _interpolate(self, spectrum_index: "int") -> "None":
+    def _interpolate(self, spectrum_index: int) -> None:
         """
         Interpolate a single spectrum
 
@@ -190,7 +190,7 @@ class DataProcess(FileDirectory, MetaData):
             spectrum = np.load(spectrum_location)
 
             wave = spectrum[0]
-            z = spectra_df.loc[spectrum_index, "z"]
+            z = meta_data.loc[spectrum_index, "z"]
             wave = self._convert_to_rest_frame(wave, z)
 
             flux = spectrum[1]
@@ -248,8 +248,8 @@ class DataProcess(FileDirectory, MetaData):
 
     ###########################################################################
     def replace_missing_fluxes_and_normalize_by_median(
-        self, spectra: "np.array"
-    ) -> "np.array":
+        self, spectra: np.array
+    ) -> np.array:
         """ """
 
         missing_values_mask = ~np.isfinite(spectra)
@@ -269,8 +269,8 @@ class DataProcess(FileDirectory, MetaData):
 
     ###########################################################################
     def drop_indefinite_values(
-        self, spectra: "np.array", drop: "float" = 0.1
-    ) -> "[2D np.array, 1D np.array]":
+        self, spectra: np.array, drop: float = 0.1
+    ) -> list:
         """
         Drops indefinite values per wavelength according to
         the drop fraction specified by the drop parameter
@@ -304,8 +304,3 @@ class DataProcess(FileDirectory, MetaData):
         wave = self.grid[keep_fluxes_mask]
 
         return [spectra, wave]
-
-    ###########################################################################
-
-
-###############################################################################
