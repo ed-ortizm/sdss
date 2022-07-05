@@ -1,9 +1,8 @@
-#! /usr/bin/env python3
+"""Extract relevant data from fits files"""
 from configparser import ConfigParser, ExtendedInterpolation
 import multiprocessing as mp
 import time
 
-import numpy as np
 import pandas as pd
 
 from sdss.raw import data

@@ -15,7 +15,7 @@ def filter_noise(spectrum: np.array, kernel_size: int) -> tuple:
 
     filtered_spectrum, noise:
         filtered_spectrum: spectrum with noise removed
-        noise: spectrum's noise 
+        noise: spectrum's noise
     """
     kernel = Gaussian1DKernel(kernel_size)
 

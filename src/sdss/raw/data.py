@@ -1,14 +1,13 @@
+"""Extract relevanta data from fits files"""
 import multiprocessing as mp
-import os
-import sys
 import warnings
 
 import astropy.io.fits as pyfits
 import numpy as np
 import pandas as pd
 
-from sdss.superclasses import FileDirectory
-from sdss.superclasses import MetaData
+from sdss.utils.managefiles import FileDirectory
+from sdss.metadata import MetaData
 
 ###############################################################################
 def init_worker(
@@ -33,9 +32,9 @@ class RawData(FileDirectory, MetaData):
 
     def __init__(
         self,
-        data_directory: "str",
-        output_directory: "str",
-        number_processes: "int",
+        data_directory: str,
+        output_directory: str,
+        number_processes: int,
     ):
         """
         PARAMETERS
@@ -50,14 +49,14 @@ class RawData(FileDirectory, MetaData):
 
         self.number_processes = number_processes
 
-        super().check_directory(data_directory, exit=True)
+        super().check_directory(data_directory, exit_program=True)
         self.data_directory = data_directory
 
         super().check_directory(output_directory)
         self.output_directory = output_directory
 
     ###########################################################################
-    def remove_fits_files(self, files_df: "pandas_data_frame") -> "None":
+    def remove_fits_files(self, files_df: "pandas_data_frame") -> None:
         """
         Remove unwanted files, e.g. non galaxies fro sample
 
@@ -65,7 +64,7 @@ class RawData(FileDirectory, MetaData):
             files_df: data frame with necessary data to delete
                 unwanted files
         """
-        print(f"Remove files...")
+        print("Remove files...")
 
         # I use specobjid as the index in the data frame
         files_indexes = files_df.index.values
@@ -80,7 +79,7 @@ class RawData(FileDirectory, MetaData):
 
             pool.map(self._remove_fits_file, files_indexes)
 
-        print(f"Remove files finish...")
+        print("Remove files finish...")
 
     ###########################################################################
     def _remove_fits_file(self, file_index: "int") -> "None":
@@ -154,7 +153,7 @@ class RawData(FileDirectory, MetaData):
             f"{self.data_directory}/{sas_directory}/{spectrum_name}.fits"
         )
 
-        if not super().file_exists(file_location, exit=False):
+        if not super().file_exists(file_location, exit_program=False):
             print(file_location)
 
             return 1
@@ -196,7 +195,7 @@ class RawData(FileDirectory, MetaData):
 
         save_to = f"{self.output_directory}/{file_index}.npy"
 
-        if super().file_exists(save_to, exit=False):
+        if super().file_exists(save_to, exit_program=False):
             print(f"Data of {spectrum_name} already saved!", end="\r")
             return 0
 
