@@ -11,7 +11,7 @@ from sdss.utils.parallel import to_numpy_array
 
 
 def get_ebv_value(
-    right_ascention: float, declination: float, maps_directory:str
+    right_ascention: float, declination: float, ebv_map
 )-> float:
     """
     Compute E(B-V) values from Schlegel, Finkbeiner & Davis (1998)
@@ -26,7 +26,7 @@ def get_ebv_value(
     ebv_value: value of E(B-V) at (ra, dec) from
         Schlegel, Finkbeiner & Davis (1998)
     """
-    ebv_map = sfdmap.SFDMap(maps_directory)
+    #ebv_map = sfdmap.SFDMap(maps_directory)
     ebv_value = ebv_map.ebv(right_ascention, declination)
 
     return ebv_value
@@ -39,18 +39,21 @@ def shared_ebv_data(
 ):
     """share data among child processes"""
 
-    global shared_maps_directory
+    #global shared_maps_directory
+    global ebv_map
     global ebv_counter
     global shared_ebv_values
     global shared_meta_data
 
     ebv_counter = counter
-    shared_maps_directory = maps_directory
+    #shared_maps_directory = maps_directory
+    ebv_map = sfdmap.SFDMap(maps_directory)
 
     # first column for specobjid and second for ebv value
-    shared_ebv_values = to_numpy_array(
-        input_array=ebv_values, array_shape=(meta_data.shape[0], 2)
-    )
+    #shared_ebv_values = to_numpy_array(
+    #    input_array=ebv_values, array_shape=(meta_data.shape[0], 2)
+    #)
+    shared_ebv_values = ebv_values
 
     shared_meta_data = meta_data
 
@@ -60,13 +63,16 @@ def ebv_worker(specobjid: int) -> None:
     right_ascention = shared_meta_data.loc[specobjid]["ra"]
     declination = shared_meta_data.loc[specobjid]["dec"]
 
+    ebv_value = get_ebv_value(
+        right_ascention, declination, ebv_map
+    )
+
+
     with ebv_counter.get_lock():
 
-        ebv_value = get_ebv_value(
-            right_ascention, declination, shared_maps_directory
-        )
-
-        shared_ebv_values[ebv_counter.value, :] = specobjid, ebv_value
+        # print(specobjid, ebv_value, end="\r")
+        shared_ebv_values[ebv_counter.value, 0] = specobjid
+        shared_ebv_values[ebv_counter.value, 1] = ebv_value
 
         print(f"E(B-V) N: {ebv_counter.value}", end="\r")
 

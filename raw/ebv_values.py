@@ -2,7 +2,7 @@
 """Spectra processing"""
 from configparser import ConfigParser, ExtendedInterpolation
 import multiprocessing as mp
-from multiprocessing.sharedctypes import Array
+from multiprocessing.sharedctypes import Array, RawArray
 import time
 
 import pandas as pd
@@ -27,13 +27,20 @@ if __name__ == "__main__":
     meta_data = pd.read_csv(
         f"{meta_data_directory}/{meta_data_name}", index_col="specobjid"
     )
+    meta_data = meta_data.iloc[:1_000]
 
     # col 1: specobjid
     # col 2: E(B-V) value
-    ebv_values = Array(
+    ebv_values = RawArray(
         typecode_or_type="d",
         size_or_initializer=2*meta_data.shape[0]
     )
+
+    from sdss.utils.parallel import to_numpy_array
+    ebv_values = to_numpy_array(ebv_values, (meta_data.shape[0], 2))
+
+
+    print(ebv_values[0:5, :])
 
     maps_directory = parser.get("directories", "ebv_maps")
     counter = mp.Value("i", 0)
@@ -55,9 +62,13 @@ if __name__ == "__main__":
         pool.map(deredspectra.ebv_worker, specobjids)
 
     # save data
+    print("\n\n")
+    print(ebv_values[0:5, :])
     specobjids = ebv_values[:, 0].astype(int)
+    import numpy as np
+    meta_data["ebv"] = np.nan
     meta_data.loc[specobjids, "ebv"] = ebv_values[:, 1]
-    meta_data.to_csv(f"{meta_data_directory}/{meta_data_name}")
+    #meta_data.to_csv(f"{meta_data_directory}/{meta_data_name}")
 
     finish_time = time.time()
     print(f"Running time: {finish_time - start_time:.2f} [s]")
