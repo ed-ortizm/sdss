@@ -68,4 +68,6 @@ def ebv_worker(specobjid: int) -> None:
 
         shared_ebv_values[ebv_counter.value, :] = specobjid, ebv_value
 
+        print(f"E(B-V) N: {ebv_counter.value}", end="\r")
+
         ebv_counter.value += 1

@@ -17,7 +17,7 @@ if __name__ == "__main__":
     start_time = time.time()
 
     parser = ConfigParser(interpolation=ExtendedInterpolation())
-    name_config_file = "process.ini"
+    name_config_file = "ebv_values.ini"
     parser.read(f"{name_config_file}")
 
     # Load data frame with meta data
@@ -28,18 +28,11 @@ if __name__ == "__main__":
         f"{meta_data_directory}/{meta_data_name}", index_col="specobjid"
     )
 
-    # set number of rows from data frame
-    number_spectra = parser.getint("parameters", "number_spectra")
-
-    if number_spectra != -1:
-        meta_data = meta_data[:number_spectra]
-
     # col 1: specobjid
     # col 2: E(B-V) value
-
     ebv_values = Array(
-        typecode_or_type=float,
-        size_or_initializer=2*number_spectra
+        typecode_or_type="d",
+        size_or_initializer=2*meta_data.shape[0]
     )
 
     maps_directory = parser.get("directories", "ebv_maps")
