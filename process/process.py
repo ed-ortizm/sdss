@@ -26,10 +26,11 @@ if __name__ == "__main__":
     spectra_df = pd.read_csv(
         f"{meta_data_directory}/{spectra_df_name}", index_col="specobjid"
     )
+    # set number of rows from data frame
+    number_spectra = parser.getint("parameters", "number_spectra")
 
-    # Compute E(B-V) values from Schlegel, Finkbeiner & Davis (1998)
-    # dust map FITS files.
-    # https://github.com/kbarbary/sfdmap
+    if number_spectra != -1:
+        spectra_df = spectra_df[:number_spectra]
 
     raw_data_directory = parser.get("directories", "raw_spectra")
     output_directory = parser.get("directories", "output")
@@ -43,22 +44,7 @@ if __name__ == "__main__":
         grid_parameters=grid_parameters,
         number_processes=number_processes,
     )
-    ###########################################################################
-    # A load data frame with meta data
-    meta_data_directory = parser.get("directories", "meta_data")
 
-    spectra_df_name = parser.get("files", "spectra_df")
-    spectra_df = pd.read_csv(
-        f"{meta_data_directory}/{spectra_df_name}", index_col="specobjid"
-    )
-
-    # set number of rows from data frame
-    number_spectra = parser.getint("parameters", "number_spectra")
-
-    if number_spectra != -1:
-        spectra_df = spectra_df[:number_spectra]
-
-    ###########################################################################
     # interpolate spectra
     have_to_interpolate = parser.getboolean("parameters", "interpolate")
 

@@ -1,25 +1,33 @@
-"""Functionality for data processing, including code to do it in parallel"""
 import ctypes
+from functools import partial
 import multiprocessing as mp
 from multiprocessing.sharedctypes import RawArray
+import os
+import warnings
 
+import astropy.io.fits as pyfits
 import numpy as np
 import pandas as pd
-import sfdmap
 
 from sdss.utils.managefiles import FileDirectory
 from sdss.metadata import MetaData
 
+###############################################################################
+def to_numpy_array(input_shared_array, array_shape):
+    """Create a numpy array backed by a shared memory Array."""
+
+    share_array = np.ctypeslib.as_array(input_shared_array)
+
+    return share_array.reshape(array_shape)
 
 
-def shared_data(
-    directories: dict,
+def init_process_worker(
     input_counter: mp.Value,
     input_df: pd.DataFrame,
     input_share_array: RawArray,
     array_shape: tuple,
     input_share_track_indexes: RawArray,
-    input_share_track_indexes_shape: RawArray,
+    input_share_track_indexes_shape: tuple,
 ) -> None:
     """
     Initialize worker to get sample relevant for the science
@@ -30,20 +38,13 @@ def shared_data(
         array_shape:
         input_share_track_indexes:
     """
-
-    global shared_maps_directory
-
-
-    shared_maps_directory = directories["maps_directory"]
-
     global counter
-    global meta_data
+    global spectra_df
     global fluxes
     global track_indexes
 
-
     counter = input_counter
-    meta_data = input_df
+    spectra_df = input_df
 
     fluxes = to_numpy_array(input_share_array, array_shape)
 
@@ -52,6 +53,7 @@ def shared_data(
     )
 
 
+###############################################################################
 class DataProcess(FileDirectory, MetaData):
     """Process sdss spectra"""
 
@@ -64,7 +66,6 @@ class DataProcess(FileDirectory, MetaData):
     ):
         """
         Class to process  spectra
-
         PARAMETERS
             data_directory: location of raw spectra
             output_directory:
@@ -74,38 +75,32 @@ class DataProcess(FileDirectory, MetaData):
                     "lower": "lower bound in the grid",
                     "upper": "upper bound in the grid"
                 }
-            number_processes: number of jobs when processing a
-                bulk of a spectra
+            number_processes: number of jobs when processing a bulk of a spectra
         OUTPUT
             check how to document the constructor of a class
         """
 
-        FileDirectory.__init__(self)
-        MetaData.__init__(self)
-        super().check_directory(raw_data_directory, exit_program=True)
+        super().check_directory(raw_data_directory, exit=True)
         self.spectra_directory = raw_data_directory
 
-        super().check_directory(output_directory, exit_program=False)
+        super().check_directory(output_directory, exit=False)
         self.output_directory = output_directory
 
         self.grid = self._get_grid(grid_parameters)
 
         self.number_processes = number_processes
 
-    @staticmethod
-    def _get_grid(grid_parameters: dict) -> np.array:
+    ###########################################################################
+    def _get_grid(self, grid_parameters: "dict") -> "np.array":
         """
         Computes the master grid for the interpolation of the spectra
-
         ARGUMENTS
-
             grid_parameters: dictionary with structure
                 {
                     "number_waves": "number fluxes in the grid",
                     "lower": "lower bound in the grid",
                     "upper": "upper bound in the grid"
                 }
-
         RETURN
             wave_grid: numpy array with the grid
         """
@@ -118,11 +113,11 @@ class DataProcess(FileDirectory, MetaData):
 
         return grid
 
+    ###########################################################################
     def interpolate(self, spectra_df: pd.DataFrame) -> np.array:
         """
         Interpolate rest frame spectra from data directory according to
         wave master  and save it to output directory
-
         OUTPUT
             fluxes: contains interpolate fluxes
         """
@@ -156,7 +151,7 @@ class DataProcess(FileDirectory, MetaData):
             ),
         ) as pool:
 
-            _ = pool.map(self._interpolate, spectra_indexes)
+            results = pool.map(self._interpolate, spectra_indexes)
 
         track_indexes = to_numpy_array(track_indexes, track_indexes_shape)
         success_interpolation_mask = ~track_indexes[:, 2].astype(np.bool)
@@ -174,13 +169,11 @@ class DataProcess(FileDirectory, MetaData):
         return fluxes
 
     ###########################################################################
-    def _interpolate(self, spectrum_index: int) -> None:
+    def _interpolate(self, spectrum_index: "int") -> "None":
         """
         Interpolate a single spectrum
-
         PARAMETERS
             spectrum_index: specobj of a spectrum in spectra_df
-
         """
 
         spectrum_location = f"{self.spectra_directory}/{spectrum_index}.npy"
@@ -190,10 +183,12 @@ class DataProcess(FileDirectory, MetaData):
             spectrum = np.load(spectrum_location)
 
             wave = spectrum[0]
-            z = meta_data.loc[spectrum_index, "z"]
-            wave = self._convert_to_rest_frame(wave, z)
-
             flux = spectrum[1]
+            # remove sky emission
+            flux[np.bitwise_and(wave > 5565, wave < 5590)] = np.nan
+
+            z = spectra_df.loc[spectrum_index, "z"]
+            wave = self._convert_to_rest_frame(wave, z)
 
             flux = np.interp(self.grid, wave, flux, left=np.nan, right=np.nan)
 
@@ -248,8 +243,8 @@ class DataProcess(FileDirectory, MetaData):
 
     ###########################################################################
     def replace_missing_fluxes_and_normalize_by_median(
-        self, spectra: np.array
-    ) -> np.array:
+        self, spectra: "np.array"
+    ) -> "np.array":
         """ """
 
         missing_values_mask = ~np.isfinite(spectra)
@@ -274,13 +269,11 @@ class DataProcess(FileDirectory, MetaData):
         """
         Drops indefinite values per wavelength according to
         the drop fraction specified by the drop parameter
-
         PARAMETERS
             spectra: contains interpolated fluxes in a common grid
             drop: fraction of indefinite values to discard at a given
                 wavelength, e.g. drop = 0.1 will discard a wavelength
                 where more than 10% of fluxes are indefinite values
-
         OUTPUTS
             [spectra, wave]:
                 spectra: fluxes without indefinite values
