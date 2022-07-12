@@ -3,6 +3,7 @@ Functionality to interpolate spectra in a common grid.
 Functionality to do the computations in parallel 
 """
 
+from collections import namedtuple
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
@@ -10,9 +11,9 @@ from scipy.interpolate import interp1d
 
 from sdss.metadata import MetaData
 from sdss.utils.managefiles import FileDirectory
+from sdss.utils.parallel import to_numpy_array
 
-
-class DataProcess(FileDirectory, MetaData):
+class Interpolate(FileDirectory, MetaData):
     """
     Interpolate SDSS spectra in a common grid, follwing these steps
 
@@ -175,46 +176,106 @@ class DataProcess(FileDirectory, MetaData):
 
         return wave
 
+def shared_data(
+    input_counter: mp.Value,
+    input_meta_data: pd.DataFrame,
+    input_grid_parameters: dict,
+    input_raw_data_directory: str,
+    share_arrays_parameters: namedtuple
+) -> None:
 
-def worker_interpolation(specobjid: int):
+    """
+    Data to share with child processes during interpolation.
+
+    INPUTS
+    input_counter: value with lock to track each spectrum
+    input_meta_data: data frame with meda data of all spectra
+    input_grid_parameters:
+        {
+            "upper": upper bound in wavelength common grid,
+            "lower": lower bound in wavelength common grid,
+            "number_waves": number of elements in common grid
+        }
+    input_raw_data_directory: path to raw data
+    share_arrays_parameters: contains data of shared arrays
+        .spectra: RawArray for spectra
+        .spectra_shape: (number_of_spectra, number_of_waves)
+        .variance: RawArray for variance of spectra's fluxes
+        .variance_shape: (number_of_spectra, number_of_waves)
+        .ids: RawArray to link the position of a spectrum with
+            its specobjid in the spectra array
+        .ids_shape: (number_of_spectra, 2)
+            column 0: spectra id, column 1: specobjid
+    
+    """
+    
+    global counter
+    global meta_data
+    global grid_parameters
+    global raw_data_directory
+    global spectra
+    global variance_of_spectra
+    global track_indexes
+    global interpolator
+
+    couter = input_counter
+    meta_data = input_meta_data
+    grid_parameters = input_grid_parameters
+    raw_data_directory = input_raw_data_directory
+
+    spectra = share_arrays_parameters.spectra
+    spectra_shape = share_arrays_parameters.spectra_shape
+    spectra = to_numpy_array(spectra, spectra_shape)
+
+    variance_of_spectra = share_arrays_parameters.variance
+    variance_shape = share_arrays_parameters.variance_shape
+    variance_of_spectra = to_numpy_array(variance_of_spectra, variance_shape)
+
+    track_indexes = share_arrays_parameters.ids
+    ids_shape = share_arrays_parameters.ids_shape
+    track_indexes = to_numpy_array(track_indexes, ids_shape)
+
+    interpolator = Interpolate(
+        meta_data=meta_data,
+        raw_data_directory=raw_data_directory,
+        grid_parameters=grid_parameters
+    )
+
+def worker_interpolation(specobjid: int) -> None:
+
+    """
+    Worker to do interpolation of spectra in parallel.
+    The workflow per spectrum is:
+
+    1. Remove wavelengths where sky is problematic
+    2. Remove large relative uncertainties (where std>flux)
+    3. Deredenning spectrum
+    4. Deredshift
+    5. Interpolate
+
+    NOTE: remove means to replace with a NaNs
+
+    INPUTS
+    specobjid: unique identifier of spectrum in data frame
+        containing meta data
+    """
+
+    spectrum, variance_of_spectrum = interpolator.interpolate(specobjid=specobjid)
 
     with counter.get_lock():
 
-        fluxes[counter.value, :] = flux[:]
-
-        index_track = np.array(
-            [counter.value, spectrum_index, 0], dtype=np.uint
-        )
-        track_indexes[counter.value, :] = index_track[:]
-
-        print(
-            f"[{counter.value}] Interpolate {spectrum_index}", end="\r"
-        )
-
+        counter_value = counter.value
         counter.value += 1
 
-        return 0
+        print(
+            f"[{counter_value}] Interpolate {specobjid}", end="\r"
+        )
 
-    except Exception as e:
+    spectra[counter_value, :] = spectrum[:]
+    variance_of_spectra[counter_value, :] = variance_of_spectrum
 
-        with counter.get_lock():
-            # ?
-            dummy_flux = np.empty(fluxes.shape[1]) * np.nan
+    index_track = np.array(
+        [counter_value, specobjid], dtype=np.uint
+    )
 
-            fluxes[counter.value, :] = dummy_flux[:]
-
-            index_track = np.array(
-                [counter.value, spectrum_index, 1], dtype=np.uint
-            )
-            track_indexes[counter.value, :] = index_track[:]
-
-            print(
-                f"[{counter.value}] Fail to interpolate {spectrum_index}",
-                end="\r",
-            )
-
-            counter.value += 1
-
-            print(e, index_track)
-
-        return 1
+    track_indexes[counter_value, :] = index_track[:]
