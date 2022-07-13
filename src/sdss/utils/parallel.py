@@ -2,6 +2,7 @@
 
 import numpy as np
 
+
 def to_numpy_array(input_array, array_shape):
     """Create a numpy array backed by a shared memory Array."""
 

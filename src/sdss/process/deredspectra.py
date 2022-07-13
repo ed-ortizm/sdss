@@ -12,7 +12,7 @@ from sdss.utils.parallel import to_numpy_array
 
 def get_ebv_value(
     right_ascention: float, declination: float, ebv_map
-)-> float:
+) -> float:
     """
     Compute E(B-V) values from Schlegel, Finkbeiner & Davis (1998)
     dust map FITS files: https://github.com/kbarbary/sfdmap
@@ -26,36 +26,37 @@ def get_ebv_value(
     ebv_value: value of E(B-V) at (ra, dec) from
         Schlegel, Finkbeiner & Davis (1998)
     """
-    #ebv_map = sfdmap.SFDMap(maps_directory)
+    # ebv_map = sfdmap.SFDMap(maps_directory)
     ebv_value = ebv_map.ebv(right_ascention, declination)
 
     return ebv_value
 
+
 def shared_ebv_data(
     input_ebv_values: Array,
     input_meta_data: pd.DataFrame,
-    maps_directory:str,
-    input_counter: mp.Value
+    maps_directory: str,
+    input_counter: mp.Value,
 ):
     """share data among child processes"""
 
-    #global shared_maps_directory
+    # global shared_maps_directory
     global ebv_map
     global ebv_counter
     global ebv_values
     global meta_data
-    
+
     meta_data = input_meta_data
 
     ebv_counter = input_counter
-    #shared_maps_directory = maps_directory
+    # shared_maps_directory = maps_directory
     ebv_map = sfdmap.SFDMap(maps_directory)
 
     # first column for specobjid and second for ebv value
     ebv_values = to_numpy_array(
-       input_array=input_ebv_values, array_shape=(meta_data.shape[0], 2)
+        input_array=input_ebv_values, array_shape=(meta_data.shape[0], 2)
     )
-    
+
 
 def ebv_worker(specobjid: int) -> None:
     """Obtain E(B-V) values"""
@@ -63,10 +64,7 @@ def ebv_worker(specobjid: int) -> None:
     right_ascention = meta_data.loc[specobjid]["ra"]
     declination = meta_data.loc[specobjid]["dec"]
 
-    ebv_value = get_ebv_value(
-        right_ascention, declination, ebv_map
-    )
-
+    ebv_value = get_ebv_value(right_ascention, declination, ebv_map)
 
     with ebv_counter.get_lock():
 

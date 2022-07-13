@@ -57,7 +57,7 @@ class MetaData:
         coordinates: tuple,
         save_to: str,
         image_format: str,
-        dimensions: tuple=(0.2, 200, 200),
+        dimensions: tuple = (0.2, 200, 200),
     ) -> None:
 
         """

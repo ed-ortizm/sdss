@@ -2,6 +2,7 @@
 from astropy.convolution import Gaussian1DKernel, convolve
 import numpy as np
 
+
 def filter_noise(spectrum: np.array, kernel_size: int) -> tuple:
     """
     Filter noise on a spectrum with a gaussian kernel

@@ -36,12 +36,12 @@ if __name__ == "__main__":
 
     # Create shared array to store spectra in my desired grid
 
-    #INTERPOLATE
+    # INTERPOLATE
     # (remove means set to nan)
     # (no all raw spectra has the same number of fluxes)
-        # remove sky
-        # Remove large relative uncertainties (where std>flux)
-        # Deredenning spectrum
+    # remove sky
+    # Remove large relative uncertainties (where std>flux)
+    # Deredenning spectrum
 
     # De-redshift spectrum
     # interpolate in common grid
@@ -98,7 +98,7 @@ if __name__ == "__main__":
         np.save(save_to, fluxes)
 
         return fluxes
- 
+
     # filter
     # Removing spectra with many NaNs.
 
@@ -106,11 +106,6 @@ if __name__ == "__main__":
 
     # Normalize spectra by median
     # Impute NaNs by median
-
-
-
-
-
 
     output_directory = parser.get("directories", "output")
 

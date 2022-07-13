@@ -1,4 +1,3 @@
-
 """Spectra processing"""
 from configparser import ConfigParser, ExtendedInterpolation
 import multiprocessing as mp
@@ -31,8 +30,7 @@ if __name__ == "__main__":
     # col 1: specobjid
     # col 2: E(B-V) value
     ebv_values = RawArray(
-        typecode_or_type="d",
-        size_or_initializer=2*meta_data.shape[0]
+        typecode_or_type="d", size_or_initializer=2 * meta_data.shape[0]
     )
 
     maps_directory = parser.get("directories", "ebv_maps")
@@ -44,21 +42,18 @@ if __name__ == "__main__":
     with mp.Pool(
         processes=number_processes,
         initializer=deredspectra.shared_ebv_data,
-        initargs=(
-            ebv_values,
-            meta_data,
-            maps_directory,
-            counter
-        ),
+        initargs=(ebv_values, meta_data, maps_directory, counter),
     ) as pool:
 
         pool.map(deredspectra.ebv_worker, specobjids)
 
     from sdss.utils.parallel import to_numpy_array
+
     ebv_values = to_numpy_array(ebv_values, (meta_data.shape[0], 2))
     # save data
     specobjids = ebv_values[:, 0].astype(int)
     import numpy as np
+
     meta_data["ebv"] = np.nan
     meta_data.loc[specobjids, "ebv"] = ebv_values[:, 1]
     meta_data.to_csv(f"{meta_data_directory}/{meta_data_name}")

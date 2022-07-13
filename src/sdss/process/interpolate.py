@@ -13,6 +13,7 @@ from sdss.metadata import MetaData
 from sdss.utils.managefiles import FileDirectory
 from sdss.utils.parallel import to_numpy_array
 
+
 class Interpolate(FileDirectory, MetaData):
     """
     Interpolate SDSS spectra in a common grid, follwing these steps
@@ -51,14 +52,13 @@ class Interpolate(FileDirectory, MetaData):
 
         FileDirectory.__init__(self)
         MetaData.__init__(self)
-        
+
         super().check_directory(raw_data_directory, exit_program=True)
         self.spectra_directory = raw_data_directory
         self.meta_data = meta_data
         self.grid = self.get_grid(grid_parameters)
-        
-        self.extinction = self.dust_model()
 
+        self.extinction = self.dust_model()
 
     def get_grid(self, grid_parameters: dict) -> np.array:
         """
@@ -112,76 +112,73 @@ class Interpolate(FileDirectory, MetaData):
 
         # interpolate to common grid
         flux = np.interp(self.grid, wave, flux, left=np.nan, right=np.nan)
-        
+
         variance = np.interp(
             self.grid, wave, variance, left=np.nan, right=np.nan
         )
-        
+
         return flux, variance
 
-    def dered_spectrum(self,
-        flux: np.array,
-        wave: np.array,
-        ebv: float
-    )-> np.array:
-        
+    def dered_spectrum(
+        self, flux: np.array, wave: np.array, ebv: float
+    ) -> np.array:
+
         # extinction array for this spectrum
         extinction = self.extinction(wave)
         extinction *= ebv
 
-        dereded_flux = flux * 10 ** (extinction/2.5)
+        dereded_flux = flux * 10 ** (extinction / 2.5)
 
         return dereded_flux
-        
+
     def dust_model(self) -> object:
         # dust model for dereden_spectrum
-        wave = np.array(
-            [ 2600,  2700,  4110,  4670,  5470,  6000, 12200, 26500]
-        )
-        
+        wave = np.array([2600, 2700, 4110, 4670, 5470, 6000, 12200, 26500])
+
         extinction = np.array(
-            [ 6.591,  6.265,  4.315,  3.806,  3.055,  2.688,  0.829,  0.265]
+            [6.591, 6.265, 4.315, 3.806, 3.055, 2.688, 0.829, 0.265]
         )
-        
+
         extinction = interp1d(wave, extinction, kind="cubic")
-        
+
         return extinction
-        
-    def remove_large_uncertainties(self,
-        flux: np.array, ivar: np.array
-    )-> tuple(np.array, np.array):
-        
+
+    def remove_large_uncertainties(
+        self, flux: np.array, ivar: np.array
+    ) -> tuple(np.array, np.array):
+
         # Get variance of each flux
         ivar[ivar == 0] = np.nan
-        variance = 1/ivar
+        variance = 1 / ivar
         variance[np.isnan(ivar)] = np.inf
         variance = np.nan_to_num(variance)
-        
+
         # mask of: variance > flux [higly uncertain values]
         flux_no_nans = np.nan_to_num(flux)
         large_variance_mask = np.sqrt(variance) > flux_no_nans
-        
+
         flux[large_variance_mask] = np.nan
-        
+
         return flux, variance
-        
+
     def convert_to_rest_frame(
-            self,
-            wave: np.array,
-            z: float,
-        ) -> np.array:
+        self,
+        wave: np.array,
+        z: float,
+    ) -> np.array:
 
         rest_frame_factor = 1.0 / (1.0 + z)
         wave = wave * rest_frame_factor
 
         return wave
 
+
 def shared_data(
     input_counter: mp.Value,
     input_meta_data: pd.DataFrame,
     input_grid_parameters: dict,
     input_raw_data_directory: str,
-    share_arrays_parameters: namedtuple
+    shared_arrays_parameters: namedtuple,
 ) -> None:
 
     """
@@ -206,9 +203,9 @@ def shared_data(
             its specobjid in the spectra array
         .ids_shape: (number_of_spectra, 2)
             column 0: spectra id, column 1: specobjid
-    
+
     """
-    
+
     global counter
     global meta_data
     global grid_parameters
@@ -223,23 +220,24 @@ def shared_data(
     grid_parameters = input_grid_parameters
     raw_data_directory = input_raw_data_directory
 
-    spectra = share_arrays_parameters.spectra
-    spectra_shape = share_arrays_parameters.spectra_shape
+    spectra = shared_arrays_parameters.spectra
+    spectra_shape = shared_arrays_parameters.spectra_shape
     spectra = to_numpy_array(spectra, spectra_shape)
 
-    variance_of_spectra = share_arrays_parameters.variance
-    variance_shape = share_arrays_parameters.variance_shape
+    variance_of_spectra = shared_arrays_parameters.variance
+    variance_shape = shared_arrays_parameters.variance_shape
     variance_of_spectra = to_numpy_array(variance_of_spectra, variance_shape)
 
-    track_indexes = share_arrays_parameters.ids
-    ids_shape = share_arrays_parameters.ids_shape
+    track_indexes = shared_arrays_parameters.ids
+    ids_shape = shared_arrays_parameters.ids_shape
     track_indexes = to_numpy_array(track_indexes, ids_shape)
 
     interpolator = Interpolate(
         meta_data=meta_data,
         raw_data_directory=raw_data_directory,
-        grid_parameters=grid_parameters
+        grid_parameters=grid_parameters,
     )
+
 
 def worker_interpolation(specobjid: int) -> None:
 
@@ -260,22 +258,20 @@ def worker_interpolation(specobjid: int) -> None:
         containing meta data
     """
 
-    spectrum, variance_of_spectrum = interpolator.interpolate(specobjid=specobjid)
+    spectrum, variance_of_spectrum = interpolator.interpolate(
+        specobjid=specobjid
+    )
 
     with counter.get_lock():
 
         counter_value = counter.value
         counter.value += 1
 
-        print(
-            f"[{counter_value}] Interpolate {specobjid}", end="\r"
-        )
+        print(f"[{counter_value}] Interpolate {specobjid}", end="\r")
 
     spectra[counter_value, :] = spectrum
     variance_of_spectra[counter_value, :] = variance_of_spectrum
 
-    index_track = np.array(
-        [counter_value, specobjid], dtype=np.uint
-    )
+    index_track = np.array([counter_value, specobjid], dtype=np.uint)
 
     track_indexes[counter_value, :] = index_track
