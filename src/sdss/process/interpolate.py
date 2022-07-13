@@ -66,9 +66,9 @@ class Interpolate(FileDirectory, MetaData):
         ARGUMENTS
             grid_parameters: dictionary with structure
                 {
-                    "number_waves": "number fluxes in the grid",
-                    "lower": "lower bound in the grid",
-                    "upper": "upper bound in the grid"
+                    "number_waves": number fluxes in the grid,
+                    "lower": lower bound in the grid,
+                    "upper": upper bound in the grid
                 }
         RETURN
             wave_grid: numpy array with the grid
@@ -82,12 +82,17 @@ class Interpolate(FileDirectory, MetaData):
 
         return grid
 
-    def interpolate(self, specobjid: int) -> np.array:
+    def interpolate(self, specobjid: int) -> tuple:
         """
         Interpolate a single spectrum
-        PARAMETERS
-        spectrum_index: specobj of a spectrum, the name of the file
+        
+        INPUTS
+        specobjid: specobj of a spectrum, the name of the file
             with raw data is f'{raw_data_directory}/{specobjid}.npy'
+        
+        OUTPUT
+        spectrum, variance: interpolated spectrum and its variance
+            over the common grid
         """
 
         spectrum_location = f"{self.spectra_directory}/{specobjid}.npy"
@@ -123,6 +128,18 @@ class Interpolate(FileDirectory, MetaData):
         self, flux: np.array, wave: np.array, ebv: float
     ) -> np.array:
 
+        """
+        Apply extinction function to spectrum for deredening.
+
+        INPUTS
+        flux: spectrum fluxes in observer frame
+        wave: wavelengths of spectrum in observer frame
+        ebv: E(B-v) from from Schlegel, Finkbeiner & Davis (1998)
+
+        OUTPUT
+        dered_flux: fluxes corrected by extinction
+        """
+
         # extinction array for this spectrum
         extinction = self.extinction(wave)
         extinction *= ebv
@@ -132,6 +149,7 @@ class Interpolate(FileDirectory, MetaData):
         return dereded_flux
 
     def dust_model(self) -> object:
+        """Extinction function to dered spectra"""
         # dust model for dereden_spectrum
         wave = np.array([2600, 2700, 4110, 4670, 5470, 6000, 12200, 26500])
 
@@ -146,6 +164,18 @@ class Interpolate(FileDirectory, MetaData):
     def remove_large_uncertainties(
         self, flux: np.array, ivar: np.array
     ) -> np.array:
+        """
+        Set to NaN fluxes with large variance in their measurements
+        
+        INPUT
+        flux: raw spectrum
+        ivar: inverse of variance for fluxe measurements of spectrum
+
+        OUTPUTS
+
+        flux, variance: masked flux with large noise in its measurements
+            and variance of flux measurements
+        """
 
         # Get variance of each flux
         ivar[ivar == 0] = np.nan
@@ -166,6 +196,18 @@ class Interpolate(FileDirectory, MetaData):
         wave: np.array,
         z: float,
     ) -> np.array:
+
+        """
+        Convert from observer frame to rest frame according to
+        redshift of galaxy
+        
+        INPUTS
+        wave: wavelegths in observer frame
+        z: redshift
+
+        OUTPUTS
+        wave: wavelengths in rest frame
+        """
 
         rest_frame_factor = 1.0 / (1.0 + z)
         wave = wave * rest_frame_factor
@@ -195,13 +237,13 @@ def shared_data(
         }
     input_raw_data_directory: path to raw data
     share_arrays_parameters: contains data of shared arrays
-        .spectra: RawArray for spectra
-        .spectra_shape: (number_of_spectra, number_of_waves)
-        .variance: RawArray for variance of spectra's fluxes
-        .variance_shape: (number_of_spectra, number_of_waves)
-        .ids: RawArray to link the position of a spectrum with
+        spectra: RawArray for spectra
+        spectra_shape: (number_of_spectra, number_of_waves)
+        variance: RawArray for variance of spectra's fluxes
+        variance_shape: (number_of_spectra, number_of_waves)
+        ids: RawArray to link the position of a spectrum with
             its specobjid in the spectra array
-        .ids_shape: (number_of_spectra, 2)
+        ids_shape: (number_of_spectra, 2)
             column 0: spectra id, column 1: specobjid
 
     """
