@@ -82,7 +82,7 @@ class Interpolate(FileDirectory, MetaData):
 
         return grid
 
-    def interpolate(self, specobjid: int) -> tuple(np.array, np.array):
+    def interpolate(self, specobjid: int) -> np.array:
         """
         Interpolate a single spectrum
         PARAMETERS
@@ -101,10 +101,10 @@ class Interpolate(FileDirectory, MetaData):
         # remove sky emission
         flux[np.bitwise_and(wave > 5565, wave < 5590)] = np.nan
         # remove large uncertainties
-        flux, variance = self.remove_large_uncertanties(flux, ivar)
+        flux, variance = self.remove_large_uncertainties(flux, ivar)
         # correct for extinction
         ebv = self.meta_data.loc[specobjid, "ebv"]
-        flux = self.dered_spectrumb(flux, wave, ebv)
+        flux = self.dered_spectrum(flux, wave, ebv)
 
         # deredshift
         z = self.meta_data.loc[specobjid, "z"]
@@ -145,7 +145,7 @@ class Interpolate(FileDirectory, MetaData):
 
     def remove_large_uncertainties(
         self, flux: np.array, ivar: np.array
-    ) -> tuple(np.array, np.array):
+    ) -> np.array:
 
         # Get variance of each flux
         ivar[ivar == 0] = np.nan
@@ -178,7 +178,7 @@ def shared_data(
     input_meta_data: pd.DataFrame,
     input_grid_parameters: dict,
     input_raw_data_directory: str,
-    shared_arrays_parameters: namedtuple,
+    shared_arrays_parameters: tuple,
 ) -> None:
 
     """
@@ -215,21 +215,21 @@ def shared_data(
     global track_indexes
     global interpolator
 
-    couter = input_counter
+    counter = input_counter
     meta_data = input_meta_data
     grid_parameters = input_grid_parameters
     raw_data_directory = input_raw_data_directory
 
-    spectra = shared_arrays_parameters.spectra
-    spectra_shape = shared_arrays_parameters.spectra_shape
+    spectra = shared_arrays_parameters[0]
+    spectra_shape = shared_arrays_parameters[1]
     spectra = to_numpy_array(spectra, spectra_shape)
 
-    variance_of_spectra = shared_arrays_parameters.variance
-    variance_shape = shared_arrays_parameters.variance_shape
+    variance_of_spectra = shared_arrays_parameters[2]
+    variance_shape = shared_arrays_parameters[3]
     variance_of_spectra = to_numpy_array(variance_of_spectra, variance_shape)
 
-    track_indexes = shared_arrays_parameters.ids
-    ids_shape = shared_arrays_parameters.ids_shape
+    track_indexes = shared_arrays_parameters[4]
+    ids_shape = shared_arrays_parameters[5]
     track_indexes = to_numpy_array(track_indexes, ids_shape)
 
     interpolator = Interpolate(

@@ -26,7 +26,7 @@ if __name__ == "__main__":
     config_file = ConfigurationFile()
 
     # A load data frame with meta data
-    meta_data_directory = parser.get("directories", "meta_data")
+    meta_data_directory = parser.get("directory", "meta_data")
 
     spectra_df_name = parser.get("files", "spectra_df")
     spectra_df = pd.read_csv(
@@ -39,12 +39,11 @@ if __name__ == "__main__":
     if number_spectra != -1:
         spectra_df = spectra_df[:number_spectra]
 
-    raw_data_directory = parser.get("directories", "raw_spectra")
+    raw_data_directory = parser.get("directory", "raw_spectra")
 
     # grid paramenters
     grid_parameters = parser.items("grid")
-    grid_parameters = config_file.section_to_dictionary(grid_parameters)
-
+    grid_parameters = config_file.section_to_dictionary(grid_parameters, value_separators=[" "])
     # counter to track spectra and link it with specobjid in
     # track_indexes array
     counter = mp.Value("i", 0)
@@ -58,19 +57,19 @@ if __name__ == "__main__":
     )
 
     # named tuple with shared arrays and theyr meta data
-    SharedArrays = namedtuple(
-        "SharedArrays",
-        [
-            "spectra",
-            "spectra_shape",
-            "variance",
-            "variance_shape",
-            "ids",
-            "ids_shape",
-        ],
-    )
+    # SharedArrays = namedtuple(
+    #     "SharedArrays",
+    #     [
+    #         "spectra",
+    #         "spectra_shape",
+    #         "variance",
+    #         "variance_shape",
+    #         "ids",
+    #         "ids_shape",
+    #     ],
+    # )
 
-    shared_arrays_parameters = SharedArrays(
+    shared_arrays_parameters = (
         spectra,
         (number_spectra, grid_parameters["number_waves"]),
         variance_of_spectra,
@@ -78,7 +77,9 @@ if __name__ == "__main__":
         track_indexes,
         (number_spectra, 2),
     )
-
+    # print(shared_arrays_parameters)
+    # import sys
+    # sys.exit()
     # Set pool of workers
     number_processes = parser.getint("parameters", "processes")
 
@@ -108,22 +109,22 @@ if __name__ == "__main__":
     output_directory = parser.get("directory", "output")
     
     spectra = to_numpy_array(
-        shared_arrays_parameters.spectra,
-        shared_arrays_parameters.spectra_shape
+        spectra,
+        shared_arrays_parameters[1]
     )
     
     np.save(f"{output_directory}/interpolated_spectra.npy", spectra)
     
     variance_of_spectra = to_numpy_array(
-        shared_arrays_parameters.variance,
-        shared_arrays_parameters.variance_shape
+        variance_of_spectra,
+        shared_arrays_parameters[3]
     )
 
     np.save(f"{output_directory}/interpolated_variance_spectra.npy", variance_of_spectra)
     
     track_indexes = to_numpy_array(
-        shared_arrays_parameters.ids,
-        shared_arrays_parameters.ids_shape
+        track_indexes,
+        shared_arrays_parameters[5]
     )
 
     np.save(f"{output_directory}/ids_interpolation.npy", track_indexes)
