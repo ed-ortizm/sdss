@@ -74,9 +74,9 @@ class Interpolate(FileDirectory, MetaData):
             wave_grid: numpy array with the grid
         """
 
-        number_waves = int(grid_parameters["number_waves"])
-        lower = float(grid_parameters["lower"])
-        upper = float(grid_parameters["upper"])
+        number_waves = grid_parameters["number_waves"]
+        lower = grid_parameters["lower"]
+        upper = grid_parameters["upper"]
 
         grid = np.linspace(lower, upper, number_waves)
 
@@ -271,11 +271,11 @@ def worker_interpolation(specobjid: int) -> None:
             f"[{counter_value}] Interpolate {specobjid}", end="\r"
         )
 
-    spectra[counter_value, :] = spectrum[:]
+    spectra[counter_value, :] = spectrum
     variance_of_spectra[counter_value, :] = variance_of_spectrum
 
     index_track = np.array(
         [counter_value, specobjid], dtype=np.uint
     )
 
-    track_indexes[counter_value, :] = index_track[:]
+    track_indexes[counter_value, :] = index_track
