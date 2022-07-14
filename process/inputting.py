@@ -72,12 +72,12 @@ print(f"Set new wavelength grid", end="\n")
 
 interpolation_config_file = parser.get("files", "interpolation_config")
 interpolation_parser = ConfigParser(interpolation=ExtendedInterpolation())
-parser.read(interpolation_config_file)
+interpolation_parser.read(interpolation_config_file)
 
 config = ConfigurationFile()
 
 grid_parametes = config.section_to_dictionary(
-    interpolation_parser.items("grid")
+    interpolation_parser.items("grid"), value_separators=[" "]
 )
 
 wave = np.linspace(
@@ -88,12 +88,16 @@ wave = np.linspace(
 
 wave = wave[keep_waves_mask]
 
-np.save(f"{data_directory}/wave.npy")
+np.save(f"{data_directory}/wave.npy", wave)
 
 print("Inputting indefinite values by the median", end="\n")
 nan_median = np.nanmedian(spectra, axis=1)
 indefinite_values_mask = ~np.isfinite(spectra)
-spectra[indefinite_values_mask] = nan_median
+
+for idx, row_mask in enumerate(indefinite_values_mask):
+
+    spectra[idx, row_mask] = nan_median[idx]
+
 print("Normalize by the median", end="\n")
 spectra *= 1 / nan_median.reshape(-1, 1)
 
