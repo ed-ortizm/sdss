@@ -8,7 +8,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from sdss.superclasses import FileDirectory
+from sdss.utils.managefiles import FileDirectory
 
 ###############################################################################
 start_time = time.time()
@@ -77,7 +77,7 @@ for n, right_slice in enumerate(data_slices):
     print(array_name, end="\r")
 
     save_to = f"{in_out_directory}/bin_{n:02d}"
-    FileDirectory().check_directory(save_to, exit=False)
+    FileDirectory().check_directory(save_to, exit_program=False)
 
     data_bin = data[index_slice].copy()
     np.save(f"{save_to}/{array_name}.npy", data_bin)
@@ -106,7 +106,7 @@ if number_remaining_spectra > 1:
     )
 
     save_to = f"{in_out_directory}/bin_{number_bins + 1:02d}"
-    FileDirectory().check_directory(save_to, exit=False)
+    FileDirectory().check_directory(save_to, exit_program=False)
 
     array_name = f"bin_{number_bins + 1:02d}_fluxes"
 
