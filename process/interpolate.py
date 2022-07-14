@@ -39,6 +39,8 @@ if __name__ == "__main__":
     if number_spectra != -1:
         spectra_df = spectra_df[:number_spectra]
 
+    number_spectra = spectra_df.shape[0]
+
     raw_data_directory = parser.get("directory", "raw_spectra")
 
     # grid paramenters
