@@ -45,7 +45,9 @@ if __name__ == "__main__":
 
     # grid paramenters
     grid_parameters = parser.items("grid")
-    grid_parameters = config_file.section_to_dictionary(grid_parameters, value_separators=[" "])
+    grid_parameters = config_file.section_to_dictionary(
+        grid_parameters, value_separators=[" "]
+    )
     # counter to track spectra and link it with specobjid in
     # track_indexes array
     counter = mp.Value("i", 0)
@@ -109,25 +111,21 @@ if __name__ == "__main__":
         pool.map(interpolate.worker_interpolation, spectra_df.index)
 
     output_directory = parser.get("directory", "output")
-    
-    spectra = to_numpy_array(
-        spectra,
-        shared_arrays_parameters[1]
-    )
-    
+
+    spectra = to_numpy_array(spectra, shared_arrays_parameters[1])
+
     np.save(f"{output_directory}/interpolated_spectra.npy", spectra)
-    
+
     variance_of_spectra = to_numpy_array(
-        variance_of_spectra,
-        shared_arrays_parameters[3]
+        variance_of_spectra, shared_arrays_parameters[3]
     )
 
-    np.save(f"{output_directory}/interpolated_variance_spectra.npy", variance_of_spectra)
-    
-    track_indexes = to_numpy_array(
-        track_indexes,
-        shared_arrays_parameters[5]
+    np.save(
+        f"{output_directory}/interpolated_variance_spectra.npy",
+        variance_of_spectra,
     )
+
+    track_indexes = to_numpy_array(track_indexes, shared_arrays_parameters[5])
 
     np.save(f"{output_directory}/ids_interpolation.npy", track_indexes)
 
