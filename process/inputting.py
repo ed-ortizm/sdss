@@ -17,19 +17,18 @@ name_config_file = "inputting.ini"
 parser.read(f"{name_config_file}")
 
 # A load data frame with meta data
-meta_data_directory = parser.get("directory", "meta_data")
+data_directory = parser.get("directory", "data")
 
 spectra_df_name = parser.get("files", "spectra_df")
 spectra_df = pd.read_csv(
-    f"{meta_data_directory}/{spectra_df_name}", index_col="specobjid"
+    f"{data_directory}/{spectra_df_name}", index_col="specobjid"
 )
 
-data_directory = parser.get("directory", "data")
 # Load interpolated spectra
 spectra_file_name = parser.get("files", "spectra")
 spectra = np.load(f"{data_directory}/{spectra_file_name}")
 # Load indexes and specobjid of interpolated spectra
-ids_file_name = parser.get("files", "ids") 
+ids_file_name = parser.get("files", "ids")
 track_indexes = np.load(f"{data_directory}/{ids_file_name}")
 
 print("Remove spectra with many indefinite values", end="\n")

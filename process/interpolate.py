@@ -51,7 +51,7 @@ if __name__ == "__main__":
     # counter to track spectra and link it with specobjid in
     # track_indexes array
     counter = mp.Value("i", 0)
-    track_indexes = RawArray("i", number_spectra * 2)
+    track_indexes = RawArray("Q", number_spectra * 2)
 
     # RawArray for spectra
     spectra = RawArray("d", number_spectra * grid_parameters["number_waves"])
@@ -59,19 +59,6 @@ if __name__ == "__main__":
     variance_of_spectra = RawArray(
         "d", number_spectra * grid_parameters["number_waves"]
     )
-
-    # named tuple with shared arrays and theyr meta data
-    # SharedArrays = namedtuple(
-    #     "SharedArrays",
-    #     [
-    #         "spectra",
-    #         "spectra_shape",
-    #         "variance",
-    #         "variance_shape",
-    #         "ids",
-    #         "ids_shape",
-    #     ],
-    # )
 
     shared_arrays_parameters = (
         spectra,
@@ -81,9 +68,6 @@ if __name__ == "__main__":
         track_indexes,
         (number_spectra, 2),
     )
-    # print(shared_arrays_parameters)
-    # import sys
-    # sys.exit()
     # Set pool of workers
     number_processes = parser.getint("parameters", "processes")
 
