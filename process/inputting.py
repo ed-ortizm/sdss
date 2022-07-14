@@ -31,6 +31,9 @@ spectra = np.load(f"{data_directory}/{spectra_file_name}")
 ids_file_name = parser.get("files", "ids")
 track_indexes = np.load(f"{data_directory}/{ids_file_name}")
 
+variance_file_name = parser.get("files", "variance")
+variance_of_spectra = np.load(f"{data_directory}/{variance_file_name}")
+
 print("Remove spectra with many indefinite values", end="\n")
 
 number_indefinite_values = np.count_nonzero(~np.isfinite(spectra))
@@ -43,10 +46,13 @@ keep_spectra_mask = inputting.drop_spectra(
 )
 
 spectra = spectra[keep_spectra_mask, :]
+
 specobjids = track_indexes[keep_spectra_mask, 1].reshape(-1, 1)
 indexes = np.arange(0, specobjids.size, 1).reshape(-1, 1)
-
 track_indexes = np.hstack((indexes, specobjids))
+np.save(f"{data_directory}/ids_inputting.npy", track_indexes)
+
+variance_of_spectra = variance_of_spectra[keep_spectra_mask, :]
 
 # update meta data with remaining galaxies
 spectra_df = spectra_df.loc[specobjids[:, 0]]
@@ -57,9 +63,6 @@ print(f"Indefinite fluxes after drop: {number_indefinite_values}")
 
 print("Remove wavelegths with many indefinite values", end="\n")
 
-number_indefinite_values = np.count_nonzero(~np.isfinite(spectra))
-print(f"Indefinite values before drop: {number_indefinite_values}", end="\n")
-
 drop_fraction_waves = parser.getfloat("processing", "drop_waves")
 
 keep_waves_mask = inputting.drop_waves(
@@ -67,6 +70,13 @@ keep_waves_mask = inputting.drop_waves(
 )
 
 spectra = spectra[:, keep_waves_mask]
+
+# Save variance of spectra after indefinite values removal
+variance_of_spectra = variance_of_spectra[:, keep_waves_mask]
+np.save(f"{data_directory}/inputting_variance_spectra.npy", variance_of_spectra)
+
+number_indefinite_values = np.count_nonzero(~np.isfinite(spectra))
+print(f"Indefinite values after drop: {number_indefinite_values}", end="\n")
 
 print(f"Set new wavelength grid", end="\n")
 
