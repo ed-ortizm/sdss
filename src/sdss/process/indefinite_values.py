@@ -1,10 +1,10 @@
 """Handle indefinite values in spectra"""
 import numpy as np
 
-###########################################################################
+#########################################################################
 def replace_missing_fluxes_and_normalize_by_median(
-    self, spectra: "np.array"
-) -> "np.array":
+    self, spectra: np.array
+) -> np.array:
     """ """
 
     missing_values_mask = ~np.isfinite(spectra)
@@ -23,7 +23,7 @@ def replace_missing_fluxes_and_normalize_by_median(
     return spectra
 
 
-###########################################################################
+#########################################################################
 def drop_indefinite_values(self, spectra: np.array, drop: float = 0.1) -> list:
     """
     Drops indefinite values per wavelength according to

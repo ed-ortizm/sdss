@@ -5,12 +5,12 @@ import astropy.io.fits as pyfits
 import numpy as np
 import pandas as pd
 
-from sdss.superclasses import FileDirectory
+from sdss.utils.managefiles import FileDirectory
 
-###############################################################################
+#########################################################################
 def init_sample_data_worker(
-    input_counter: "mp.Value", input_df: "pandas dataframe"
-) -> "None":
+    input_counter: mp.Value, input_df: pd.DataFrame
+) -> None:
     """
     Initialize worker to get sample relevant for the science
     PARAMETERS
@@ -24,7 +24,7 @@ def init_sample_data_worker(
     galaxies_df = input_df
 
 
-###############################################################################
+#########################################################################
 class SampleData(FileDirectory):
     """Use meta data to define a sample for science"""
 
@@ -53,13 +53,13 @@ class SampleData(FileDirectory):
 
         # self.number_processes = number_processes
 
-    ###########################################################################
+    #####################################################################
     def red_shift(
         self,
-        spectra_df: "pandas data frame",
-        lower_bound: "float",
-        upper_bound: "float",
-    ) -> "pandas series":
+        spectra_df: pd.DataFrame,
+        lower_bound: float,
+        upper_bound: float,
+    ) -> pd.Series:
 
         """
         PARAMETERS
@@ -82,13 +82,13 @@ class SampleData(FileDirectory):
 
         return sample_selection_mask
 
-    ###########################################################################
+    #####################################################################
     def signal_to_noise(
         self,
-        spectra_df: "pandas data frame",
-        lower_bound: "float",
-        upper_bound: "float",
-    ) -> "":
+        spectra_df: pd.DataFrame,
+        lower_bound: float,
+        upper_bound: float,
+    ) -> np.array:
         """
         PARAMETERS
 
@@ -104,6 +104,3 @@ class SampleData(FileDirectory):
         )
 
         return sample_selection_mask
-
-
-###############################################################################
