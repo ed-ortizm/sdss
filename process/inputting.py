@@ -26,6 +26,7 @@ spectra_df = pd.read_csv(
 
 # Load interpolated spectra
 spectra_file_name = parser.get("files", "spectra")
+print(f"{data_directory}/{spectra_file_name}")
 spectra = np.load(f"{data_directory}/{spectra_file_name}")
 # Load indexes and specobjid of interpolated spectra
 ids_file_name = parser.get("files", "ids")
@@ -42,7 +43,10 @@ keep_spectra_mask = inputting.drop_spectra(
     spectra=spectra, drop_fraction=drop_fraction_spectra
 )
 
+print("nothing", spectra.shape)
+print("keep mask", keep_spectra_mask.shape, np.sum(keep_spectra_mask))
 spectra = spectra[keep_spectra_mask, :]
+print("remove spectra", spectra.shape)
 
 specobjids = track_indexes[keep_spectra_mask, 1].reshape(-1, 1)
 indexes = np.arange(0, specobjids.size, 1).reshape(-1, 1)
@@ -64,7 +68,7 @@ keep_waves_mask = inputting.drop_waves(
 )
 
 spectra = spectra[:, keep_waves_mask]
-
+print(spectra.shape)
 # Save variance of spectra after indefinite values removal
 variance_of_spectra = variance_of_spectra[:, keep_waves_mask]
 np.save(
@@ -88,7 +92,7 @@ wave = np.linspace(
     grid_parametes["upper"],
     grid_parametes["number_waves"],
 )
-
+print(wave.shape, keep_waves_mask.shape)
 wave = wave[keep_waves_mask]
 
 np.save(f"{data_directory}/wave.npy", wave)

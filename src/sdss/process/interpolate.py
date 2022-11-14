@@ -104,7 +104,7 @@ class Interpolate(FileDirectory, MetaData):
         ivar = spectrum[2]
 
         # remove [OI]5577 line
-        remove_OI5577 = ~np.bitwise_and(wave > 5565, wave < 5590)
+        remove_OI5577 = np.bitwise_and(wave > 5565, wave < 5590)
         flux[remove_OI5577] = np.nan
         # remove large uncertainties
         flux, variance = self.remove_large_uncertainties(flux, ivar)
