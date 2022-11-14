@@ -104,8 +104,10 @@ class Interpolate(FileDirectory, MetaData):
         ivar = spectrum[2]
 
         # remove [OI]5577 line
-        remove_OI5577 = np.bitwise_and(wave > 5565, wave < 5590)
-        flux[remove_OI5577] = np.nan
+        remove_OI5577 = ~np.bitwise_and(wave > 5565, wave < 5590)
+        flux = flux[remove_OI5577]
+        ivar = ivar[remove_OI5577]
+        wave = wave[remove_OI5577]
         # remove large uncertainties
         flux, variance = self.remove_large_uncertainties(flux, ivar)
         # correct for extinction
@@ -117,7 +119,9 @@ class Interpolate(FileDirectory, MetaData):
         wave = self.convert_to_rest_frame(wave, z)
 
         # interpolate to common grid
-        flux = np.interp(self.grid, wave, flux, left=np.nan, right=np.nan)
+        flux = np.interp(
+            self.grid, wave, flux, left=np.nan, right=np.nan
+        )
 
         variance = np.interp(
             self.grid, wave, variance, left=np.nan, right=np.nan
