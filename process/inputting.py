@@ -34,10 +34,7 @@ track_indexes = np.load(f"{data_directory}/{ids_file_name}")
 variance_file_name = parser.get("files", "variance")
 variance_of_spectra = np.load(f"{data_directory}/{variance_file_name}")
 
-print("Remove spectra with many indefinite values", end="\n")
-
-number_indefinite_values = np.count_nonzero(~np.isfinite(spectra))
-print(f"Indefinite fluxes before drop: {number_indefinite_values}", end="\n")
+print("Remove spectra with many indefinite values")
 
 drop_fraction_spectra = parser.getfloat("processing", "drop_spectra")
 
@@ -58,10 +55,7 @@ variance_of_spectra = variance_of_spectra[keep_spectra_mask, :]
 spectra_df = spectra_df.loc[specobjids[:, 0]]
 spectra_df.to_csv(f"{data_directory}/drop_{spectra_df_name}")
 
-number_indefinite_values = np.count_nonzero(~np.isfinite(spectra))
-print(f"Indefinite fluxes after drop: {number_indefinite_values}")
-
-print("Remove wavelegths with many indefinite values", end="\n")
+print("Remove wavelegths with many indefinite values")
 
 drop_fraction_waves = parser.getfloat("processing", "drop_waves")
 
@@ -73,12 +67,11 @@ spectra = spectra[:, keep_waves_mask]
 
 # Save variance of spectra after indefinite values removal
 variance_of_spectra = variance_of_spectra[:, keep_waves_mask]
-np.save(f"{data_directory}/inputting_variance_spectra.npy", variance_of_spectra)
+np.save(
+    f"{data_directory}/inputting_variance_spectra.npy", variance_of_spectra
+)
 
-number_indefinite_values = np.count_nonzero(~np.isfinite(spectra))
-print(f"Indefinite values after drop: {number_indefinite_values}", end="\n")
-
-print(f"Set new wavelength grid", end="\n")
+print(f"Set new wavelength grid")
 
 interpolation_config_file = parser.get("files", "interpolation_config")
 interpolation_parser = ConfigParser(interpolation=ExtendedInterpolation())
@@ -93,27 +86,25 @@ grid_parametes = config.section_to_dictionary(
 wave = np.linspace(
     grid_parametes["lower"],
     grid_parametes["upper"],
-    grid_parametes["number_waves"]
+    grid_parametes["number_waves"],
 )
 
 wave = wave[keep_waves_mask]
 
 np.save(f"{data_directory}/wave.npy", wave)
 
-print("Inputting indefinite values by the median", end="\n")
-nan_median = np.nanmedian(spectra, axis=1)
-indefinite_values_mask = ~np.isfinite(spectra)
+print("Inputting indefinite values by the median")
 
-for idx, row_mask in enumerate(indefinite_values_mask):
+spectra = inputting.missing_wave_to_median(spectra)
 
-    spectra[idx, row_mask] = nan_median[idx]
+print("Normalize by the median")
 
-print("Normalize by the median", end="\n")
-spectra *= 1 / nan_median.reshape(-1, 1)
+median_flux = np.median(spectra, axis=1)
+spectra *= 1 / median_flux.reshape(-1, 1)
 
 np.save(f"{data_directory}/spectra.npy", spectra.astype(np.float32))
 
-print("Save configuration file", end="\n")
+print("Save configuration file")
 
 with open(f"{data_directory}/{name_config_file}", "w") as configfile:
     parser.write(configfile)
