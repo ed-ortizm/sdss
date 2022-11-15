@@ -8,6 +8,7 @@ import multiprocessing as mp
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
+from scipy.signal import medfilt
 
 from sdss.metadata import MetaData
 from sdss.utils.managefiles import FileDirectory
@@ -82,6 +83,40 @@ class Interpolate(FileDirectory, MetaData):
 
         return grid
 
+    @property
+    def OI_5577_interpolation(
+        wave: np.array, spectrum: np.array
+    ) -> np.array:
+        """
+        Interpolate region of airglow radiation from the
+        [OI]5577 region with the average flux of neighboring
+        segments to that region
+
+        INPUTS
+        wave: wavelengths of the raw spectrum in observers
+            frame
+        spectrum: flux of spectrum in observers frame
+
+        OUTPUT
+        spectrum: flux with interpolation of the [OI]5577
+            region caused by atmospheric airglow
+        """
+
+        OI_mask = np.logical_and(wave > 5565, wave < 5590)
+        n_mask = OI_mask.sum()
+
+        left_idx = np.argwhere(wave==wave[OI_mask][0])[0,0]
+        right_idx = np.argwhere(wave==wave[OI_mask][-1])[0,0]
+
+        left_flux = spectrum[left_idx-n_mask: left_idx]
+        right_flux = spectrum[right_idx: right_idx+n_mask]
+
+        average_flux = (left_flux + right_flux)/2.
+
+        spectrum[OI_mask] = average_flux
+
+        return spectrum
+
     def interpolate(self, specobjid: int) -> tuple:
         """
         Interpolate a single spectrum
@@ -104,10 +139,7 @@ class Interpolate(FileDirectory, MetaData):
         ivar = spectrum[2]
 
         # remove [OI]5577 line
-        remove_OI5577 = ~np.bitwise_and(wave > 5565, wave < 5590)
-        flux = flux[remove_OI5577]
-        ivar = ivar[remove_OI5577]
-        wave = wave[remove_OI5577]
+        flux = self.OI_5577_interpolation(wave, flux)
         # remove large uncertainties
         flux, variance = self.remove_large_uncertainties(flux, ivar)
         # correct for extinction
