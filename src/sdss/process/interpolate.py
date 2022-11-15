@@ -1,14 +1,12 @@
 """
 Functionality to interpolate spectra in a common grid.
-Functionality to do the computations in parallel 
+Functionality to do the computations in parallel
 """
 
-from collections import namedtuple
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
-from scipy.signal import medfilt
 
 from sdss.metadata import MetaData
 from sdss.utils.managefiles import FileDirectory
@@ -38,15 +36,16 @@ class Interpolate(FileDirectory, MetaData):
         """
         Class to process  spectra
         PARAMETERS
-            data_directory: location of raw spectra
-            output_directory:
-            grid_parameters: dictionary with structure
-                {
-                    "number_waves": "number fluxes in the grid",
-                    "lower": "lower bound in the grid",
-                    "upper": "upper bound in the grid"
-                }
-            number_processes: number of jobs when processing a bulk of a spectra
+        data_directory: location of raw spectra
+        output_directory:
+        grid_parameters: dictionary with structure
+            {
+                "number_waves": "number fluxes in the grid",
+                "lower": "lower bound in the grid",
+                "upper": "upper bound in the grid"
+            }
+        number_processes: number of jobs when processing a bulk
+            of a spectra
         OUTPUT
             check how to document the constructor of a class
         """
@@ -84,9 +83,7 @@ class Interpolate(FileDirectory, MetaData):
         return grid
 
     @staticmethod
-    def OI_5577_interpolation(
-        wave: np.array, spectrum: np.array
-    ) -> np.array:
+    def OI_5577_interpolation(wave: np.array, spectrum: np.array) -> np.array:
         """
         Interpolate region of airglow radiation from the
         [OI]5577 region with the average flux of neighboring
@@ -105,13 +102,13 @@ class Interpolate(FileDirectory, MetaData):
         OI_mask = np.logical_and(wave > 5565, wave < 5590)
         n_mask = OI_mask.sum()
 
-        left_idx = np.argwhere(wave==wave[OI_mask][0])[0,0]
-        right_idx = np.argwhere(wave==wave[OI_mask][-1])[0,0]
+        left_idx = np.argwhere(wave == wave[OI_mask][0])[0, 0]
+        right_idx = np.argwhere(wave == wave[OI_mask][-1])[0, 0]
 
-        left_flux = spectrum[left_idx-n_mask: left_idx]
-        right_flux = spectrum[right_idx: right_idx+n_mask]
+        left_flux = spectrum[left_idx - n_mask : left_idx]
+        right_flux = spectrum[right_idx : right_idx + n_mask]
 
-        average_flux = (left_flux + right_flux)/2.
+        average_flux = (left_flux + right_flux) / 2.0
 
         spectrum[OI_mask] = average_flux
 
@@ -139,7 +136,7 @@ class Interpolate(FileDirectory, MetaData):
         ivar = spectrum[2]
 
         # remove [OI]5577 line
-        flux = self.OI_5577_interpolation(wave, flux)
+        flux = self.OI_5577_interpolation(wave=wave, spectrum=flux)
         # remove large uncertainties
         flux, variance = self.remove_large_uncertainties(flux, ivar)
         # correct for extinction
@@ -151,9 +148,7 @@ class Interpolate(FileDirectory, MetaData):
         wave = self.convert_to_rest_frame(wave, z)
 
         # interpolate to common grid
-        flux = np.interp(
-            self.grid, wave, flux, left=np.nan, right=np.nan
-        )
+        flux = np.interp(self.grid, wave, flux, left=np.nan, right=np.nan)
 
         variance = np.interp(
             self.grid, wave, variance, left=np.nan, right=np.nan
