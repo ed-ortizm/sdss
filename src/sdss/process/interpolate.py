@@ -83,7 +83,7 @@ class Interpolate(FileDirectory, MetaData):
 
         return grid
 
-    @property
+    @staticmethod
     def OI_5577_interpolation(
         wave: np.array, spectrum: np.array
     ) -> np.array:
