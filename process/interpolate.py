@@ -1,6 +1,5 @@
 """Interpolate spectra to a common grid in parallel"""
 from configparser import ConfigParser, ExtendedInterpolation
-from collections import namedtuple
 import multiprocessing as mp
 from multiprocessing.sharedctypes import RawArray
 import time
@@ -113,7 +112,9 @@ if __name__ == "__main__":
 
     np.save(f"{output_directory}/ids_interpolation.npy", track_indexes)
 
-    with open(f"{output_directory}/{name_config_file}", "w") as configfile:
+    with open(
+        f"{output_directory}/{name_config_file}", "w", encoding="utf8"
+    ) as configfile:
         parser.write(configfile)
 
     finish_time = time.time()

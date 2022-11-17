@@ -29,9 +29,9 @@ class Interpolate(FileDirectory, MetaData):
 
     def __init__(
         self,
-        meta_data: pd.DataFrame,
-        raw_data_directory: str,
-        grid_parameters: dict,
+        meta_data_df: pd.DataFrame,
+        raw_data_dir: str,
+        wave_parameters: dict,
     ):
         """
         Class to process  spectra
@@ -53,14 +53,14 @@ class Interpolate(FileDirectory, MetaData):
         FileDirectory.__init__(self)
         MetaData.__init__(self)
 
-        super().check_directory(raw_data_directory, exit_program=True)
-        self.spectra_directory = raw_data_directory
-        self.meta_data = meta_data
-        self.grid = self.get_grid(grid_parameters)
+        super().check_directory(raw_data_dir, exit_program=True)
+        self.spectra_directory = raw_data_dir
+        self.meta_data = meta_data_df
+        self.grid = self.get_grid(wave_parameters)
 
         self.extinction = self.dust_model()
 
-    def get_grid(self, grid_parameters: dict) -> np.array:
+    def get_grid(self, wave_parameters: dict) -> np.array:
         """
         Computes the master grid for the interpolation of the spectra
         ARGUMENTS
@@ -74,9 +74,9 @@ class Interpolate(FileDirectory, MetaData):
             wave_grid: numpy array with the grid
         """
 
-        number_waves = grid_parameters["number_waves"]
-        lower = grid_parameters["lower"]
-        upper = grid_parameters["upper"]
+        number_waves = wave_parameters["number_waves"]
+        lower = wave_parameters["lower"]
+        upper = wave_parameters["upper"]
 
         grid = np.linspace(lower, upper, number_waves)
 
@@ -307,9 +307,9 @@ def shared_data(
     track_indexes = to_numpy_array(track_indexes, ids_shape)
 
     interpolator = Interpolate(
-        meta_data=meta_data,
-        raw_data_directory=raw_data_directory,
-        grid_parameters=grid_parameters,
+        meta_data_df=meta_data,
+        raw_data_dir=raw_data_directory,
+        wave_parameters=grid_parameters,
     )
 
 
