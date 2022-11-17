@@ -102,8 +102,14 @@ class Interpolate(FileDirectory, MetaData):
         OI_mask = np.logical_and(wave > 5565, wave < 5590)
         n_mask = OI_mask.sum()
 
-        left_idx = np.argwhere(wave == wave[OI_mask][0])[0, 0]
-        right_idx = np.argwhere(wave == wave[OI_mask][-1])[0, 0]
+        try:
+
+            left_idx = np.argwhere(wave == wave[OI_mask][0])[0, 0]
+            right_idx = np.argwhere(wave == wave[OI_mask][-1])[0, 0]
+
+        except IndexError:
+
+            return spectrum
 
         left_flux = spectrum[left_idx - n_mask : left_idx]
         right_flux = spectrum[right_idx : right_idx + n_mask]
