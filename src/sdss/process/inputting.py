@@ -45,7 +45,9 @@ def drop_spectra(spectra: np.array, drop_fraction: float) -> np.array:
         for further processing with specobjid arrays
     """
 
-    number_indefinite_values = np.count_nonzero(~np.isfinite(spectra), axis=1)
+    number_indefinite_values = np.count_nonzero(
+        ~np.isfinite(spectra), axis=1
+    )
 
     number_waves = spectra.shape[1]
 
@@ -71,7 +73,9 @@ def drop_waves(spectra: np.array, drop_fraction: float) -> np.array:
         for further processing with specobjid arrays
     """
 
-    number_indefinite_values = np.count_nonzero(~np.isfinite(spectra), axis=0)
+    number_indefinite_values = np.count_nonzero(
+        ~np.isfinite(spectra), axis=0
+    )
 
     number_spectra = spectra.shape[0]
 
