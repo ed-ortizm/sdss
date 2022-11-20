@@ -12,7 +12,7 @@ from sdss.utils.configfile import ConfigurationFile
 start_time = time.time()
 
 parser = ConfigParser(interpolation=ExtendedInterpolation())
-name_config_file = "inputting.ini"
+name_config_file = "imputing.ini"
 parser.read(f"{name_config_file}")
 
 # A load data frame with meta data
@@ -25,7 +25,6 @@ spectra_df = pd.read_csv(
 
 # Load interpolated spectra
 spectra_file_name = parser.get("files", "spectra")
-print(f"{data_directory}/{spectra_file_name}")
 spectra = np.load(f"{data_directory}/{spectra_file_name}")
 # Load indexes and specobjid of interpolated spectra
 ids_file_name = parser.get("files", "ids")
@@ -49,7 +48,7 @@ print("Spectra shape", spectra.shape)
 specobjids = track_indexes[keep_spectra_mask, 1].reshape(-1, 1)
 indexes = np.arange(0, specobjids.size, 1).reshape(-1, 1)
 track_indexes = np.hstack((indexes, specobjids))
-np.save(f"{data_directory}/ids_inputting.npy", track_indexes)
+np.save(f"{data_directory}/ids_imputing.npy", track_indexes)
 
 variance_of_spectra = variance_of_spectra[keep_spectra_mask, :]
 
@@ -73,7 +72,7 @@ print("Spectra shape", spectra.shape)
 # Save variance of spectra after indefinite values removal
 variance_of_spectra = variance_of_spectra[:, keep_waves_mask]
 np.save(
-    f"{data_directory}/inputting_variance_spectra.npy", variance_of_spectra
+    f"{data_directory}/imputing_variance_spectra.npy", variance_of_spectra
 )
 
 print("Set new wavelength grid")
@@ -95,10 +94,13 @@ wave = np.linspace(
     grid_parametes["upper"],
     grid_parametes["number_waves"],
 )
-print(wave.shape, keep_waves_mask.shape)
-wave = wave[keep_waves_mask]
 
-np.save(f"{data_directory}/wave.npy", wave)
+print("wave shape", wave.shape)
+wave = wave[keep_waves_mask]
+print("wave shape", wave.shape)
+
+name_wave = parser.get("files", "wave")
+np.save(f"{data_directory}/{name_wave}", wave)
 #########################################################################
 print("Normalize by the median")
 
@@ -108,7 +110,9 @@ spectra *= 1 / median_flux.reshape(-1, 1)
 print("Inputting indefinite values by the median")
 
 spectra = inputting.missing_wave_to_median(spectra)
-np.save(f"{data_directory}/spectra.npy", spectra.astype(np.float32))
+
+name_spectra = parser.get("files", "imputing")
+np.save(f"{data_directory}/{name_spectra}", spectra.astype(np.float32))
 #########################################################################
 print("Save configuration file")
 
