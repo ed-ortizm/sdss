@@ -19,15 +19,15 @@ def missing_wave_to_median(spectra: np.array) -> np.array:
         by its median in each wavelength
     """
 
-    median_flux = np.nanmedian(spectra, axis=0)
+    spectra = spectra.T
 
-    for idx, fluxes in enumerate(spectra.T):
+    for fluxes in spectra:
 
         missing_mask = ~np.isfinite(fluxes)
 
-        fluxes[missing_mask] = median_flux[idx]
+        fluxes[missing_mask] = np.nanmedian(fluxes)
 
-    return spectra
+    return spectra.T
 
 
 def drop_spectra(spectra: np.array, drop_fraction: float) -> np.array:

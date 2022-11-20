@@ -1,7 +1,6 @@
 """Imputting of missing values in interpolated spectra"""
 from configparser import ConfigParser, ExtendedInterpolation
 import time
-from matplotlib.pyplot import grid
 
 import numpy as np
 import pandas as pd
@@ -75,7 +74,7 @@ np.save(
     f"{data_directory}/inputting_variance_spectra.npy", variance_of_spectra
 )
 
-print(f"Set new wavelength grid")
+print("Set new wavelength grid")
 
 interpolation_config_file = parser.get("files", "interpolation_config")
 interpolation_parser = ConfigParser(interpolation=ExtendedInterpolation())
@@ -110,7 +109,9 @@ np.save(f"{data_directory}/spectra.npy", spectra.astype(np.float32))
 
 print("Save configuration file")
 
-with open(f"{data_directory}/{name_config_file}", "w") as configfile:
+with open(
+    f"{data_directory}/{name_config_file}", "w", encoding="utf-8"
+) as configfile:
     parser.write(configfile)
 
 finish_time = time.time()
