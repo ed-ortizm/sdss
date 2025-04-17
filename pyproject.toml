@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sdss"
+version = "0.0.1"
+description = "Module to process SDSS spectra for outlier detection"
+readme = "README.md"
+authors = [{ name = "Edgar Ortiz", email = "ed.ortizm@gmail.com" }]
+license = { text = "MIT" }
+keywords = ["astrophysics", "galaxy", "Machine Learning", "SDSS"]
+dependencies = []
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["[a-z]*"]
+exclude = ["old_code"]
