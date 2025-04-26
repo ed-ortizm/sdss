@@ -90,7 +90,7 @@ class MetaData:
         image_url = f"{sdss_url}&{coordinates}&{image_dimensions}&opt=G"
 
         urllib.request.urlretrieve(
-            image_url, f"{save_to}/{specobjid}.{image_format}"
+            image_url, f"{save_to}/image_{specobjid}.{image_format}"
         )
 
     ###########################################################################
@@ -111,7 +111,7 @@ class MetaData:
         spectrum_url = f"{sdss_url}{specobjid}"
 
         urllib.request.urlretrieve(
-            spectrum_url, f"{save_to}/{specobjid}.{image_format}"
+            spectrum_url, f"{save_to}/spec_{specobjid}.{image_format}"
         )
 
     ###########################################################################
