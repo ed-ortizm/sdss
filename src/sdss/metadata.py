@@ -58,6 +58,7 @@ class MetaData:
         save_to: str,
         image_format: str,
         dimensions: tuple = (0.2, 200, 200),
+        fname_prefix: str = "",
     ) -> None:
 
         """
@@ -89,14 +90,19 @@ class MetaData:
 
         image_url = f"{sdss_url}&{coordinates}&{image_dimensions}&opt=G"
 
+        if fname_prefix != "":
+            fname = f"{fname_prefix}_image_{specobjid}.{image_format}"
+        else:
+            fname = f"image_{specobjid}.{image_format}"
+
         urllib.request.urlretrieve(
-            image_url, f"{save_to}/image_{specobjid}.{image_format}"
+            image_url, f"{save_to}/{fname}"
         )
 
     ###########################################################################
     @staticmethod
     def download_sdss_spectrum_image(
-        specobjid: int, save_to: str, image_format: str
+        specobjid: int, save_to: str, image_format: str, fname_prefix: str = ""
     ) -> None:
         """
         PARAMETERS
@@ -110,8 +116,13 @@ class MetaData:
 
         spectrum_url = f"{sdss_url}{specobjid}"
 
+        if fname_prefix != "":
+            fname = f"{fname_prefix}_spec_{specobjid}.{image_format}"
+        else:
+            fname = f"spec_{specobjid}.{image_format}"
+        
         urllib.request.urlretrieve(
-            spectrum_url, f"{save_to}/spec_{specobjid}.{image_format}"
+            spectrum_url, f"{save_to}/{fname}"
         )
 
     ###########################################################################
