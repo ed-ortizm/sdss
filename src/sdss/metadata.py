@@ -78,8 +78,8 @@ class MetaData:
         """
 
         sdss_url = (
-            f"http://skyserver.sdss.org/dr16/SkyServerWS/ImgCutout/"
-            f"getjpeg?TaskName=Skyserver.Explore.Image"
+            "http://skyserver.sdss.org/dr16/SkyServerWS/ImgCutout/"
+            "getjpeg?TaskName=Skyserver.Explore.Image"
         )
 
         RA, DEC = coordinates
@@ -112,7 +112,7 @@ class MetaData:
             image_format:
         """
 
-        sdss_url = f"http://skyserver.sdss.org/dr16/en/get/SpecById.ashx?id="
+        sdss_url = "http://skyserver.sdss.org/dr16/en/get/SpecById.ashx?id="
 
         spectrum_url = f"{sdss_url}{specobjid}"
 
@@ -120,7 +120,7 @@ class MetaData:
             fname = f"{fname_prefix}_spec_{specobjid}.{image_format}"
         else:
             fname = f"spec_{specobjid}.{image_format}"
-        
+
         urllib.request.urlretrieve(
             spectrum_url, f"{save_to}/{fname}"
         )
