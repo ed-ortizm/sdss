@@ -24,21 +24,26 @@ if __name__ == "__main__":
     parser = ConfigParser(interpolation=ExtendedInterpolation())
     parser.read("raw.ini")
     ###########################################################################
-    meta_data_directory = parser.get("directories", "meta_data")
+    data_directory = parser.get("directories", "data_dir")
+    spec_directory = parser.get("directories", "spec_dir")
 
     spectra_df_name = parser.get("files", "spectra_df")
     spectra_df = pd.read_csv(
-        f"{meta_data_directory}/{spectra_df_name}", index_col="specobjid"
+        f"{spec_directory}/{spectra_df_name}",
+        index_col="specobjid"
     )
 
-    number_spectra = parser.getint("parameters", "number_spectra")
+    number_spectra = parser.getint(
+        "parameters", "number_spectra"
+    )
 
     if number_spectra != -1:
         spectra_df = spectra_df[:number_spectra]
     ###########################################################################
-    data_directory = parser.get("directories", "data")
     output_directory = parser.get("directories", "output")
-    number_processes = parser.getint("parameters", "number_processes")
+    number_processes = parser.getint(
+        "parameters", "number_processes"
+    )
 
     raw_data = data.RawData(
         data_directory=data_directory,

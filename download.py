@@ -25,10 +25,10 @@ if __name__ == "__main__":
     parser = ConfigParser(interpolation=ExtendedInterpolation())
     parser.read("download.ini")
     ###########################################################################
-    meta_data_directory = parser.get("directories", "meta_data")
+    data_directory = parser.get("directories", "data_dir")
     spectra_df_name = parser.get("files", "spectra_df")
 
-    spectra_df = pd.read_csv(f"{meta_data_directory}/{spectra_df_name}")
+    spectra_df = pd.read_csv(f"{data_directory}/{spectra_df_name}")
 
     number_spectra = parser.getint("parameters", "number_spectra")
 
