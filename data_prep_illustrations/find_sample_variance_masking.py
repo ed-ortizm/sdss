@@ -78,7 +78,7 @@ def main():
     if number_spectra != -1:
         spectra_df = spectra_df[:number_spectra]
 
-    count_arr = np.empty(spectra_df.shape[0], 2)
+    count_arr = np.empty((spectra_df.shape[0], 2))
 
     for idx, specobjid in enumerate(spectra_df.index.values):
 
