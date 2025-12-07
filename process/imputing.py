@@ -16,22 +16,22 @@ name_config_file = "imputing.ini"
 parser.read(f"{name_config_file}")
 
 # A load data frame with meta data
-data_directory = parser.get("directory", "data")
+spectra_dir = parser.get("directory", "spectra_dir")
 
 spectra_df_name = parser.get("files", "spectra_df")
 spectra_df = pd.read_csv(
-    f"{data_directory}/{spectra_df_name}", index_col="specobjid"
+    f"{spectra_dir}/{spectra_df_name}", index_col="specobjid"
 )
 
 # Load interpolated spectra
 spectra_file_name = parser.get("files", "spectra")
-spectra = np.load(f"{data_directory}/{spectra_file_name}")
+spectra = np.load(f"{spectra_dir}/{spectra_file_name}")
 # Load indexes and specobjid of interpolated spectra
 ids_file_name = parser.get("files", "ids")
-track_indexes = np.load(f"{data_directory}/{ids_file_name}")
+track_indexes = np.load(f"{spectra_dir}/{ids_file_name}")
 
 variance_file_name = parser.get("files", "variance")
-variance_of_spectra = np.load(f"{data_directory}/{variance_file_name}")
+variance_of_spectra = np.load(f"{spectra_dir}/{variance_file_name}")
 #########################################################################
 print("Remove spectra with many indefinite values")
 
@@ -48,13 +48,13 @@ print("Spectra shape", spectra.shape)
 specobjids = track_indexes[keep_spectra_mask, 1].reshape(-1, 1)
 indexes = np.arange(0, specobjids.size, 1).reshape(-1, 1)
 track_indexes = np.hstack((indexes, specobjids))
-np.save(f"{data_directory}/ids_imputing.npy", track_indexes)
+np.save(f"{spectra_dir}/ids_imputing.npy", track_indexes)
 
 variance_of_spectra = variance_of_spectra[keep_spectra_mask, :]
 
 # update meta data with remaining galaxies
 spectra_df = spectra_df.loc[specobjids[:, 0]]
-spectra_df.to_csv(f"{data_directory}/drop_{spectra_df_name}")
+spectra_df.to_csv(f"{spectra_dir}/drop_{spectra_df_name}")
 #########################################################################
 print("Remove wavelegths with many indefinite values")
 
@@ -72,7 +72,7 @@ print("Spectra shape", spectra.shape)
 # Save variance of spectra after indefinite values removal
 variance_of_spectra = variance_of_spectra[:, keep_waves_mask]
 np.save(
-    f"{data_directory}/imputing_variance_spectra.npy", variance_of_spectra
+    f"{spectra_dir}/imputing_variance_spectra.npy", variance_of_spectra
 )
 
 print("Set new wavelength grid")
@@ -100,7 +100,7 @@ wave = wave[keep_waves_mask]
 print("wave shape", wave.shape)
 
 name_wave = parser.get("files", "wave")
-np.save(f"{data_directory}/{name_wave}", wave)
+np.save(f"{spectra_dir}/{name_wave}", wave)
 #########################################################################
 print("Normalize by the median")
 
@@ -112,12 +112,12 @@ print("Inputting indefinite values by the median")
 spectra = inputting.missing_wave_to_median(spectra)
 
 name_spectra = parser.get("files", "imputing")
-np.save(f"{data_directory}/{name_spectra}", spectra.astype(np.float32))
+np.save(f"{spectra_dir}/{name_spectra}", spectra.astype(np.float32))
 #########################################################################
 print("Save configuration file")
 
 with open(
-    f"{data_directory}/{name_config_file}", "w", encoding="utf-8"
+    f"{spectra_dir}/{name_config_file}", "w", encoding="utf-8"
 ) as configfile:
     parser.write(configfile)
 
