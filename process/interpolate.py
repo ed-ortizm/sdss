@@ -25,11 +25,11 @@ if __name__ == "__main__":
     config_file = ConfigurationFile()
 
     # A load data frame with meta data
-    meta_data_directory = parser.get("directory", "meta_data")
+    data_dir = parser.get("directories", "spec_dir")
 
     spectra_df_name = parser.get("files", "spectra_df")
     spectra_df = pd.read_csv(
-        f"{meta_data_directory}/{spectra_df_name}", index_col="specobjid"
+        f"{data_dir}/{spectra_df_name}", index_col="specobjid"
     )
     # set number of rows from data frame
     number_spectra = parser.getint("parameters", "number_spectra")
@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     number_spectra = spectra_df.shape[0]
 
-    raw_data_directory = parser.get("directory", "raw_spectra")
+    raw_data_directory = parser.get("directories", "raw_data_dir")
 
     # grid paramenters
     grid_parameters = parser.items("grid")
@@ -93,8 +93,7 @@ if __name__ == "__main__":
 
         pool.map(interpolate.worker_interpolation, spectra_df.index)
 
-    output_directory = parser.get("directory", "output")
-
+    output_directory = parser.get("directories", "output")
     spectra = to_numpy_array(spectra, shared_arrays_parameters[1])
 
     np.save(f"{output_directory}/interpolated_spectra.npy", spectra)
