@@ -97,7 +97,7 @@ for n, right_slice in enumerate(data_slices):
 ###############################################################################
 # Get remaining slices
 
-if number_remaining_spectra > 1:
+if number_remaining_spectra >= 1:
 
     index_slice = (
         spectra_df["indexArray"]
