@@ -72,7 +72,8 @@ print("Spectra shape", spectra.shape)
 # Save variance of spectra after indefinite values removal
 variance_of_spectra = variance_of_spectra[:, keep_waves_mask]
 np.save(
-    f"{spectra_dir}/imputing_variance_spectra.npy", variance_of_spectra
+    f"{spectra_dir}/imputing_variance_spectra.npy",
+    variance_of_spectra.astype(np.float32)
 )
 
 print("Set new wavelength grid")
