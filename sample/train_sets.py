@@ -20,23 +20,21 @@ parser.read(f"{name_config_file}")
 # A load data frame with meta data
 print(f"Load data frame with metadata", end="\n")
 
-meta_data_directory = parser.get("directories", "meta_data")
+spec_dir = parser.get("directories", "spectra")
 
 spectra_df_name = parser.get("files", "spectra_df")
 spectra_df = pd.read_csv(
-    f"{meta_data_directory}/{spectra_df_name}", index_col="specobjid"
+    f"{spec_dir}/{spectra_df_name}", index_col="specobjid"
 )
 
 print(f"Load spectra and index array", end="\n")
 
-in_out_directory = parser.get("directories", "in_output")
-
 data_name = parser.get("files", "spectra")
-data = np.load(f"{in_out_directory}/{data_name}")
+data = np.load(f"{spec_dir}/{data_name}")
 
 # this array relates the index of the array with the index in the data frame
 index_name = parser.get("files", "indexes")
-index_data = np.load(f"{in_out_directory}/{index_name}")
+index_data = np.load(f"{spec_dir}/{index_name}")
 
 # Augment data frame with integer position of specobjid in spectra array
 spectra_df.loc[index_data[:, 1], "indexArray"] = index_data[:, 0].astype(int)
@@ -47,9 +45,10 @@ warning_mask = spectra_df["zWarning"] != 0
 number_warnings = warning_mask.sum()
 print(f"Number of warnings: {number_warnings}", end="\n")
 index_warning = spectra_df.loc[warning_mask, "indexArray"].to_numpy(dtype=int)
-np.save(f"{in_out_directory}/fluxes_with_warnings.npy", data[index_warning])
+np.save(f"{spec_dir}/fluxes_with_warnings.npy", data[index_warning])
 # get meta data of spectra without flags
 spectra_df = spectra_df.loc[np.invert(warning_mask)]
+spectra_df.to_csv(f"{spec_dir}/final_spec_n_z_warning_drop.csv.gz", index=True)
 ###############################################################################
 print(f"Get snMedian bins", end="\n")
 
@@ -76,15 +75,11 @@ for n, right_slice in enumerate(data_slices):
 
     print(array_name, end="\r")
 
-    save_to = f"{in_out_directory}/bin_{n:02d}"
+    save_to = f"{spec_dir}/bin_{n:02d}"
     FileDirectory().check_directory(save_to, exit_program=False)
 
     data_bin = data[index_slice].copy()
     np.save(f"{save_to}/{array_name}.npy", data_bin)
-
-    np.random.shuffle(data_bin)
-
-    np.save(f"{save_to}/{array_name}_shuffle.npy", data_bin)
 
     specobjid_slice = spectra_df.iloc[left_slice:right_slice].index
     index_specobjid_slice = np.stack((index_slice, specobjid_slice), axis=1)
@@ -105,17 +100,12 @@ if number_remaining_spectra >= 1:
         .to_numpy(dtype=int)
     )
 
-    save_to = f"{in_out_directory}/bin_{number_bins + 1:02d}"
+    save_to = f"{spec_dir}/bin_{number_bins + 1:02d}"
     FileDirectory().check_directory(save_to, exit_program=False)
 
     array_name = f"bin_{number_bins + 1:02d}_fluxes"
 
     np.save(f"{save_to}/{array_name}.npy", data[index_slice])
-
-    np.save(
-        f"{save_to}/{array_name}_shuffle.npy",
-        np.random.shuffle(data[index_slice]),
-    )
 
     array_name = f"bin_{number_bins + 1:02d}_index_specobjid.npy"
 
@@ -123,7 +113,7 @@ if number_remaining_spectra >= 1:
 ###############################################################################
 ###############################################################################
 # Save configuration file
-with open(f"{in_out_directory}/{name_config_file}", "w") as configfile:
+with open(f"{spec_dir}/{name_config_file}", "w") as configfile:
     parser.write(configfile)
 
 finish_time = time.time()
